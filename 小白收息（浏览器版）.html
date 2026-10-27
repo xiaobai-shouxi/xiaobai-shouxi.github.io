@@ -82,7 +82,6 @@
   .brand-logo .cat-arm { transform-origin: 41.5px 55px; animation: cat-wave 1.3s ease-in-out infinite; }
   .brand-logo .cat-hand { transform-origin: 48.4px 38.4px; animation: cat-beckon 1.3s ease-in-out infinite; }
   .brand-logo:hover .cat-arm, .brand-logo:hover .cat-hand { animation-duration: .65s; }
-  .brand-logo .cat-paw { animation: cat-paw 3.6s ease-in-out infinite; }
   .brand-logo .cat-star { transform-box: fill-box; transform-origin: center; animation: cat-star 2.4s ease-in-out infinite; }
   .brand-logo .cat-star.s2 { animation-delay: 1.2s; }
   @keyframes cat-bob { 0%, 100% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-1.4px) rotate(-2.5deg); } 65% { transform: translateY(-.4px) rotate(2deg); } }
@@ -93,7 +92,6 @@
   @keyframes cat-bell { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
   @keyframes cat-wave { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(6deg); } }
   @keyframes cat-beckon { 0%, 100% { transform: rotate(-6deg) scaleY(1); } 55% { transform: rotate(34deg) scaleY(.88); } }
-  @keyframes cat-paw { 0%, 40%, 60%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.4px); } }
   @keyframes cat-star { 0%, 100% { transform: scale(.65) rotate(0); opacity: .55; } 50% { transform: scale(1.1) rotate(45deg); opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .brand-logo::before, .brand-logo .shine::after, .brand-logo svg * { animation: none !important; } }
   h1 {
@@ -588,27 +586,29 @@
               <circle cx="30" cy="49.3" r="2.9" fill="url(#ingotDome)" stroke="#b45309" stroke-width=".45"/>
               <path d="M27.4 49.1h5.2M30 49.1v2.2" stroke="#92400e" stroke-width=".55" stroke-linecap="round"/>
             </g>
+            <path d="M20.6 47.4C19.4 50.4 19 53 19.5 55.2" stroke="#d5dbea" stroke-width=".7" stroke-linecap="round"/>
+            <g class="cat-paw">
+              <ellipse cx="22.6" cy="56" rx="4.5" ry="3.5" fill="url(#catFur)" stroke="#d3d9e8" stroke-width=".5"/>
+              <path d="M21.1 57.3v1.3M24.1 57.3v1.3" stroke="#b9c0d6" stroke-width=".7" stroke-linecap="round"/>
+            </g>
             <g class="cat-arm">
-              <path d="M37.2 55.5C39.4 47.6 42.6 42 46 37.8L51 38.6C49.1 43.8 47 49.8 45.4 56Z" fill="url(#catFur)"/>
-              <path d="M38.6 51.5C40.4 46.4 42.8 42.4 45.6 39" stroke="#d5dbea" stroke-width=".7" stroke-linecap="round"/>
+              <path d="M37 56C38.4 49.6 41.4 43.8 44.6 39.6 46.6 38.2 50 38.4 51.6 40 50.2 45 48.6 50.6 47 56Z" fill="url(#catFur)"/>
+              <path d="M41.4 50.4q1.5-.8 2.3-2.5" stroke="#d5dbea" stroke-width=".6" stroke-linecap="round"/>
               <g class="cat-hand">
-                <ellipse cx="48.8" cy="34.4" rx="4.8" ry="5.2" fill="url(#catFur)"/>
-                <path d="M47.2 29.6v1.5M50.4 29.6v1.5" stroke="#c3c9dc" stroke-width=".6" stroke-linecap="round"/>
-                <ellipse cx="48.8" cy="35.9" rx="2.1" ry="1.7" fill="#ffb3c7"/>
-                <circle cx="46.6" cy="32.7" r=".8" fill="#ffb3c7"/>
-                <circle cx="48.8" cy="31.9" r=".8" fill="#ffb3c7"/>
-                <circle cx="51" cy="32.7" r=".8" fill="#ffb3c7"/>
+                <circle cx="45.5" cy="30.6" r="1.9" fill="#fff"/>
+                <circle cx="48.6" cy="29.4" r="2" fill="#fff"/>
+                <circle cx="51.7" cy="30.6" r="1.9" fill="#fff"/>
+                <ellipse cx="48.6" cy="34.2" rx="5.3" ry="5" fill="url(#catFur)"/>
+                <path d="M47.1 34.9c0-1 .7-1.5 1.5-1.5s1.5.5 1.5 1.5c1.2.1 1.6 1 1.6 1.7 0 1-1.1 1.4-3.1 1.4s-3.1-.4-3.1-1.4c0-.7.4-1.6 1.6-1.7Z" fill="#ff9fbb"/>
+                <circle cx="45.9" cy="31.9" r="1" fill="#ffb3c7"/>
+                <circle cx="48.6" cy="30.9" r="1.05" fill="#ffb3c7"/>
+                <circle cx="51.3" cy="31.9" r="1" fill="#ffb3c7"/>
               </g>
             </g>
-            <ellipse cx="41.2" cy="55" rx="5.6" ry="4.2" fill="url(#catFur)"/>
+            <ellipse cx="41.4" cy="55.2" rx="5.8" ry="4.3" fill="url(#catFur)"/>
           </g></g>
-          <rect x="0" y="53" width="60" height="8" fill="url(#catDeep)"/>
+          <rect x="0" y="55" width="60" height="6" fill="url(#catDeep)"/>
         </g>
-        <ellipse cx="22" cy="63.2" rx="6.5" ry="1.6" fill="#000" opacity=".45" filter="url(#catSoft)"/>
-        <g transform="translate(22 59.4)"><g class="cat-paw">
-          <ellipse rx="4.6" ry="4.2" fill="url(#catFur)"/>
-          <path d="M-1.6 1.4v2M1.6 1.4v2" stroke="#b9c0d6" stroke-width=".8" stroke-linecap="round"/>
-        </g></g>
         <path class="cat-star" d="M51 4c.4 2.2 1.2 3 3.4 3.4-2.2.4-3 1.2-3.4 3.4-.4-2.2-1.2-3-3.4-3.4 2.2-.4 3-1.2 3.4-3.4Z" fill="#fff"/>
         <path class="cat-star s2" d="M36.5 51.5c.2 1 .5 1.3 1.5 1.5-1 .2-1.3.5-1.5 1.5-.2-1-.5-1.3-1.5-1.5 1-.2 1.3-.5 1.5-1.5Z" fill="#fff"/>
       </svg>
