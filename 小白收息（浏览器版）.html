@@ -422,6 +422,44 @@
   .dlg-msg { margin: 0; font-size: 14px; line-height: 1.75; color: var(--muted); white-space: pre-line; }
   .dlg-input { width: 100%; margin-top: 14px; }
   #holdDlgs { --c: 79,140,255; }
+  #dlgAdd { width: min(520px, calc(100vw - 32px)); transition: width .3s ease; }
+  #dlgAdd.wide { width: min(1100px, calc(100vw - 32px)); }
+  .add-mode { margin-bottom: 18px; background: rgba(255,255,255,.04); }
+  .add-mode[hidden] { display: none; }
+  .add-mode .seg-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 6px; }
+  .add-mode .seg-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .add-mode .seg-btn.active { background: rgba(255,255,255,.12); color: var(--text); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+  .peek { display: flex; flex-wrap: wrap; gap: 6px; min-height: 0; margin-top: 8px; font-size: 12.5px; }
+  .peek:empty { display: none; }
+  .pk-tip { color: var(--muted-2); }
+  .pk-ok { color: var(--ok); font-weight: 600; }
+  .pk-ok small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+  .pk-it { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--border-soft); background: rgba(255,255,255,.04); color: var(--text); font: inherit; font-size: 12.5px; cursor: pointer; }
+  .pk-it small { color: var(--muted-2); font-size: 11px; }
+  .pk-it:hover, .pk-it:focus-visible { border-color: rgba(var(--c),.6); background: rgba(var(--c),.1); outline: none; }
+  .pk-it:first-child { border-color: rgba(var(--c),.4); }
+  .start-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 760px; margin: 0 auto; }
+  .start-card {
+    position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 18px 16px; border-radius: 18px; text-align: left; cursor: pointer;
+    border: 1px solid var(--border-soft); background: rgba(255,255,255,.035); color: var(--text); font: inherit; transition: transform .2s ease, border-color .2s ease, background .2s ease;
+  }
+  .start-card:hover { transform: translateY(-2px); border-color: rgba(52,211,153,.45); background: rgba(52,211,153,.06); }
+  .start-card svg { width: 26px; height: 26px; padding: 6px; box-sizing: content-box; border-radius: 11px; fill: none; stroke: #34d399; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; background: rgba(52,211,153,.12); }
+  .start-card b { font-size: 14.5px; margin-top: 4px; }
+  .start-card span { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .start-card.hot { border-color: rgba(250,204,21,.45); background: linear-gradient(160deg, rgba(250,204,21,.1), rgba(255,255,255,.03)); }
+  .start-card.hot svg { stroke: #facc15; background: rgba(250,204,21,.14); }
+  .start-card em { position: absolute; top: 12px; right: 12px; padding: 2px 8px; border-radius: 999px; font-style: normal; font-size: 11px; font-weight: 700; color: #1a1300; background: linear-gradient(135deg, #fde68a, #facc15); }
+  @media (max-width: 640px) {
+    .start-grid { grid-template-columns: 1fr; gap: 10px; }
+    .start-card { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 12px; padding: 14px; }
+    .start-card svg { grid-row: span 2; }
+    .start-card b { margin: 0; }
+    .start-card span { flex-basis: 100%; padding-left: 50px; margin-top: -4px; }
+    .add-mode .seg-btn { font-size: 12.5px; gap: 4px; }
+    #dlgAdd, #dlgAdd.wide { width: 100%; }
+    .lg-only { display: none; }
+  }
   .eng-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 14px 0 12px; }
   .status { white-space: pre-line; }
   .free-tip { margin-top: 14px; font-size: 12px; color: var(--muted-2); line-height: 1.7; }
@@ -757,7 +795,7 @@
       <p class="sub">A股 · 港股 · 美股 · ETF 分红自动追踪,数据只存在本机浏览器</p>
     </div>
     <div class="brand-right">
-      <button class="pill-btn primary" data-add="one" title="录入我的真实持仓"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span class="bt">添加持仓</span></button>
+      <button class="pill-btn primary" data-add="auto" title="手动、截图识别、批量粘贴都在这里"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span class="bt">添加持仓</span></button>
       <select class="acc-sel" id="accSel" title="切换账户"></select>
       <button class="pill-btn" id="btnRefresh" title="重新拉取行情与分红"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 4v5h-5"/></svg><span class="bt">刷新数据</span></button>
       <span class="brand-badge" id="badge"><span class="dot"></span><span id="badgeTxt">就绪</span></span>
@@ -826,9 +864,8 @@
   <div class="sheet-tabs" id="sheetTabs"></div>
   <div class="sec-h" style="--c:52,211,153;margin-top:18px">录入持仓</div>
   <div class="sheet-acts">
-    <button class="run sm" data-add="one">+ 手动添加</button>
+    <button class="run sm" data-add="auto">+ 添加持仓</button>
     <button class="run sm ghost" data-add="shot">截图导入</button>
-    <button class="run sm ghost" data-add="bulk">批量导入</button>
   </div>
 </dialog>
 
@@ -1099,10 +1136,13 @@ function renderOverview(s) {
     el.innerHTML = head('overview', '收息总览', '打开就看见:今年能收多少股息') + `
       <div class="hero"><div class="hero-label">预计年度股息</div><div class="hero-big num"><small>¥</small>0.00</div>
       <div class="hero-sub">添加持仓后,自动同步分红方案并计算</div></div>
-      <div class="box"><div class="empty"><b>还没有持仓</b>支持 A股、场内 ETF、港股、美股,录入代码和股数即可自动追踪每一笔分红
-      <div class="chips" style="justify-content:center;margin-top:16px">
-        <button class="run sm" data-go="holdings">添加第一只持仓</button>
-        <button class="run sm ghost" id="btnDemo">载入示例持仓</button></div></div></div>`;
+      <div class="box"><div class="empty" style="padding-bottom:18px"><b>还没有持仓,选一种方式开始</b>支持 A股、场内 ETF、港股、美股,录入后自动追踪每一笔分红</div>
+        <div class="start-grid">
+          <button class="start-card hot" data-add="shot"><em>最快</em><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg><b>截图识别</b><span>券商 App 持仓页截一张图,全部持仓一次导入</span></button>
+          <button class="start-card" data-add="one"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><b>手动添加</b><span>输入代码、名称或拼音,10 秒加一只</span></button>
+          <button class="start-card" data-add="bulk"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><b>批量粘贴</b><span>从表格复制多行,一次导入</span></button>
+        </div>
+        <div style="text-align:center;margin-top:16px"><button class="link-btn" id="btnDemo">先载入示例看看效果 ›</button></div></div>`;
     $('#btnDemo').onclick = loadDemo;
     return;
   }
@@ -1121,7 +1161,7 @@ function renderOverview(s) {
   const contrib = [...s.rows].sort((a, b) => b.annual - a.annual);
   const cmax = Math.max(1e-9, ...contrib.map(r => r.annual));
   el.innerHTML = head('overview', '收息总览', `${S.acc === 'all' ? '全部账户' : esc(accName(S.acc))} · ${s.rows.length} 只持仓 · ${tax}口径`,
-    `<button class="run sm" data-add="one">+ 添加持仓</button><button class="run sm ghost" data-add="shot">截图导入</button><button class="run sm ghost" data-add="bulk">批量导入</button>`) + demoBanner() + `
+    `<button class="run sm" data-add="auto">+ 添加持仓</button><button class="run sm ghost" data-add="shot">截图导入</button>`) + demoBanner() + `
     <div class="hero ov-hero">
       <div class="hs">
         <div class="hero-label">预计年度股息 <span class="badge on">${tax}</span></div>
@@ -1166,7 +1206,7 @@ let formMk = 'A', editingId = null;
 const accName = id => (S.accounts.find(a => a.id === id) || {}).name || '未知账户';
 const CODE_PH = { A: '如 600519 / 601398', F: '如 510880 / 159905(场内 ETF)', HK: '如 00700 / 00941', US: '如 AAPL / KO' };
 function buildHoldings() {
-  $('#holdings').innerHTML = head('holdings', '我的持仓', '录入代码与股数,自动拉取行情和分红方案', `<button class="run sm" data-add="one">+ 添加持仓</button><button class="run sm ghost" data-add="shot">截图导入</button><button class="run sm ghost" data-add="bulk">批量导入</button>`) + `
+  $('#holdings').innerHTML = head('holdings', '我的持仓', '录入代码与股数,自动拉取行情和分红方案', `<button class="run sm" data-add="auto">+ 添加持仓</button><button class="run sm ghost" data-add="shot">截图导入</button>`) + `
     <div id="hDemo"></div>
     <div class="box" style="padding:16px 14px">
       <div class="sec-h" style="padding-left:4px">持仓明细<span class="r" id="hSum"></span></div>
@@ -1177,42 +1217,55 @@ function buildHoldings() {
       <div class="list" id="accList"></div>
     </div>`;
   $('#holdDlgs').innerHTML = `
-    <dialog class="xb-dlg" id="dlgOne">
+    <dialog class="xb-dlg" id="dlgAdd">
       <div class="dlg-head"><b id="hfTitle">添加持仓</b><button type="button" class="dlg-x" data-close title="关闭">×</button></div>
-      <div class="seg" id="hfMk">${Object.keys(MK).map(k => `<button type="button" class="seg-btn${k === formMk ? ' active' : ''}" data-mk="${k}">${MK[k].n}</button>`).join('')}</div>
-      <label>证券代码</label><input type="text" id="hfCode" placeholder="${CODE_PH.A}" autocomplete="off" />
-      <div class="row"><div><label>持股数量</label><input type="number" id="hfShares" min="0" step="1" placeholder="股 / 份" inputmode="numeric" /></div>
-        <div><label>成本价 <small id="hfCur">(¥)</small></label><input type="number" id="hfCost" min="0" step="0.001" placeholder="每股成本" inputmode="decimal" /></div></div>
-      <div class="row"><div><label>建仓日期</label><input type="date" id="hfBuy" /></div>
-        <div><label>所属账户</label><select id="hfAcc"></select></div></div>
-      <p class="hint">建仓日期默认是今天;老仓位请改成实际买入日,之后除息的分红才计入「已到账」,A股也按它计算红利税(满 1 年免税)。</p>
-      <div class="status" id="hfStatus"></div>
-      <div class="dlg-foot"><button type="button" class="run ghost" data-close>取消</button><button type="button" class="run" id="hfSave">添加持仓</button></div>
-    </dialog>
-    <dialog class="xb-dlg wide" id="dlgShot">
-      <div class="dlg-head"><b>截图导入</b><button type="button" class="dlg-x" data-close title="关闭">×</button></div>
-      <p class="dlg-msg">东财、同花顺、富途、雪球、券商 App 的持仓页截图都可以,识别结果先给你核对,确认后才导入。</p>
-      <div class="eng-bar" id="shotEng"></div>
-      <div class="drop" id="shotDrop">
-        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
-        <b>点击选择截图,或拖入 / ⌘ Ctrl + V 粘贴</b>
-        <span>可一次多张</span>
-        <input type="file" id="shotFile" accept="image/*" multiple hidden />
+      <div class="seg add-mode" id="addMode">
+        <button type="button" class="seg-btn" data-m="one"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>手动录入</button>
+        <button type="button" class="seg-btn" data-m="shot"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>截图识别</button>
+        <button type="button" class="seg-btn" data-m="bulk"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>批量粘贴</button>
       </div>
-      <div class="thumbs" id="shotThumbs"></div>
-      <div class="status" id="shotStatus"></div>
-      <div id="shotResult"></div>
-      <div class="dlg-foot" id="shotFoot"><button type="button" class="run ghost" id="shotClear" hidden>清空</button><button type="button" class="run" id="shotGo" disabled>开始识别</button></div>
-    </dialog>
-    <dialog class="xb-dlg" id="dlgBulk">
-      <div class="dlg-head"><b>批量导入</b><button type="button" class="dlg-x" data-close title="关闭">×</button></div>
-      <p class="dlg-msg">一行一只:市场,代码,股数,成本价,建仓日期(可选,不填按今天)</p>
-      <textarea id="bulkTxt" style="margin-top:14px" placeholder="A,600519,100,1500,2024-01-05&#10;ETF,510880,20000,2.9&#10;港股,00700,200,320&#10;美股,KO,50,60"></textarea>
-      <label>导入到账户</label><select id="bulkAcc"></select>
-      <div class="status" id="bulkStatus"></div>
-      <div class="dlg-foot"><button type="button" class="run ghost" data-close>取消</button><button type="button" class="run" id="bulkGo">开始导入</button></div>
+      <div class="add-pane" data-p="one">
+        <div class="seg" id="hfMk">${Object.keys(MK).map(k => `<button type="button" class="seg-btn${k === formMk ? ' active' : ''}" data-mk="${k}">${MK[k].n}</button>`).join('')}</div>
+        <label>证券代码 / 名称</label><input type="text" id="hfCode" placeholder="代码、名称或拼音,如 600519 / 茅台 / gzmt" autocomplete="off" enterkeyhint="search" />
+        <div class="peek" id="hfPeek"></div>
+        <div class="row"><div><label>持股数量</label><input type="number" id="hfShares" min="0" step="1" placeholder="股 / 份" inputmode="numeric" enterkeyhint="next" /></div>
+          <div><label>成本价 <small id="hfCur">(¥)</small></label><input type="number" id="hfCost" min="0" step="0.001" placeholder="不填按现价" inputmode="decimal" enterkeyhint="done" /></div></div>
+        <div class="row"><div><label>建仓日期</label><input type="date" id="hfBuy" /></div>
+          <div><label>所属账户</label><select id="hfAcc"></select></div></div>
+        <p class="hint">建仓日期默认是今天;老仓位请改成实际买入日,之后除息的分红才计入「已到账」,A股也按它计算红利税(满 1 年免税)。</p>
+        <div class="status" id="hfStatus"></div>
+        <div class="dlg-foot"><button type="button" class="run ghost" id="hfAgain"><span class="lg-only">保存并</span>再添一只</button><button type="button" class="run" id="hfSave">添加持仓</button></div>
+      </div>
+      <div class="add-pane" data-p="shot" hidden>
+        <p class="dlg-msg">东财、同花顺、富途、雪球、券商 App 的持仓页截图都可以,识别结果先给你核对,确认后才导入。</p>
+        <div class="eng-bar" id="shotEng"></div>
+        <div class="drop" id="shotDrop">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
+          <b>点击选择截图,或拖入 / ⌘ Ctrl + V 粘贴</b>
+          <span>可一次多张;在页面任何地方粘贴或拖入截图也会直接来到这里</span>
+          <input type="file" id="shotFile" accept="image/*" multiple hidden />
+        </div>
+        <div class="thumbs" id="shotThumbs"></div>
+        <div class="status" id="shotStatus"></div>
+        <div id="shotResult"></div>
+        <div class="dlg-foot" id="shotFoot"><button type="button" class="run ghost" id="shotClear" hidden>清空</button><button type="button" class="run" id="shotGo" disabled>开始识别</button></div>
+      </div>
+      <div class="add-pane" data-p="bulk" hidden>
+        <p class="dlg-msg">一行一只:市场,代码,股数,成本价,建仓日期(后两项可省略)。从 Excel / 表格直接复制也行。</p>
+        <textarea id="bulkTxt" style="margin-top:14px" placeholder="A,600519,100,1500,2024-01-05&#10;ETF,510880,20000,2.9&#10;港股,00700,200,320&#10;美股,KO,50,60"></textarea>
+        <label>导入到账户</label><select id="bulkAcc"></select>
+        <div class="status" id="bulkStatus"></div>
+        <div class="dlg-foot"><button type="button" class="run ghost" data-close>取消</button><button type="button" class="run" id="bulkGo">开始导入</button></div>
+      </div>
     </dialog>`;
-  $('#hfMk').onclick = e => { const b = e.target.closest('[data-mk]'); if (b) setFormMk(b.dataset.mk); };
+  $('#addMode').onclick = e => { const b = e.target.closest('[data-m]'); if (b) { setAddMode(b.dataset.m); rememberMode(b.dataset.m); } };
+  $('#hfAgain').onclick = () => editingId ? $('#dlgAdd').close() : saveHolding(true);
+  $('#hfCode').oninput = () => { pick = null; clearTimeout(peekT); peekT = setTimeout(peekCode, 380); };
+  $('#hfCode').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); const f = $('#hfPeek .pk-it'); if (f && !pick) f.click(); else $('#hfShares').focus(); } };
+  $('#hfShares').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('#hfCost').focus(); } };
+  $('#hfCost').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); saveHolding(); } };
+  $('#hfPeek').onclick = e => { const b = e.target.closest('[data-pk]'); if (b) choosePick(JSON.parse(b.dataset.pk)); };
+  $('#hfMk').onclick = e => { const b = e.target.closest('[data-mk]'); if (b && !b.disabled) { setFormMk(b.dataset.mk); mkTouched = true; if (pick && pick.mk !== b.dataset.mk) { pick = null; peekCode(); } } };
   $('#hfSave').onclick = saveHolding;
   $('#accAdd').onclick = async () => {
     const n = (await xbAsk({ title: '新建账户', input: '账户' + (S.accounts.length + 1), placeholder: '账户名称', ok: '创建', host: $('#holdings') }))?.trim();
@@ -1275,7 +1328,7 @@ function initShot() {
   drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); addShotFiles(e.dataTransfer.files); };
   $('#shotThumbs').onclick = e => { const b = e.target.closest('[data-rm]'); if (b) { shotImgs = shotImgs.filter(x => x.id !== b.dataset.rm); renderThumbs(); } };
   $('#shotGo').onclick = runShot;
-  $('#shotClear').onclick = () => { shotImgs = []; shotRows = []; renderThumbs(); $('#shotResult').innerHTML = ''; setStatus($('#shotStatus'), ''); };
+  $('#shotClear').onclick = () => { shotImgs = []; shotRows = []; renderThumbs(); $('#shotResult').innerHTML = ''; setStatus($('#shotStatus'), ''); fitAdd(); };
   renderShotEngine();
 }
 function renderShotEngine() {
@@ -1477,6 +1530,7 @@ function fillShotRow(r) {
 function renderShotTable() {
   const accOpts = S.accounts.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join('');
   const n = shotRows.filter(r => r.on && r.ok).length;
+  fitAdd();
   $('#shotResult').innerHTML = !shotRows.length ? '' : `
     <div class="tbl-wrap" style="margin-top:14px"><table class="shot-tbl"><thead><tr><th style="width:30px"></th><th>截图中识别到</th><th>匹配证券</th><th>现价</th><th>持股数量</th><th>成本价</th><th>建仓日期</th></tr></thead><tbody>
     ${shotRows.map(r => `<tr class="${r.ok ? '' : 'bad'}" data-r="${r.id}">
@@ -1532,14 +1586,13 @@ async function importShot() {
   }
   save(); renderAll();
   shotRows = []; shotImgs = []; renderThumbs(); $('#shotResult').innerHTML = ''; setStatus($('#shotStatus'), '');
-  $('#dlgShot').close(); switchTab('holdings');
+  $('#dlgAdd').close(); rememberMode('shot');
   toast(`已导入:新增 ${add} 只${upd ? `,更新 ${upd} 只` : ''}`);
   refresh(false);
 }
 function setFormMk(mk) {
   formMk = mk;
   $$('#hfMk .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.mk === mk));
-  $('#hfCode').placeholder = CODE_PH[mk];
   $('#hfCur').textContent = `(${CUR_SIGN[MK[mk].cur]})`;
 }
 function resetForm() {
@@ -1548,7 +1601,9 @@ function resetForm() {
   $('#hfBuy').value = TODAY;
   $('#hfCode').disabled = false;
   $$('#hfMk .seg-btn').forEach(b => b.disabled = false);
-  $('#hfTitle').textContent = '添加持仓'; $('#hfSave').textContent = '添加持仓';
+  $('#hfTitle').textContent = '添加持仓'; $('#hfSave').textContent = '添加持仓'; $('#hfAgain').innerHTML = '<span class="lg-only">保存并</span>再添一只';
+  $('#hfCost').placeholder = '不填按现价';
+  pick = null; mkTouched = false; $('#hfPeek').innerHTML = '';
   setStatus($('#hfStatus'), '');
 }
 function editHolding(h) {
@@ -1557,8 +1612,10 @@ function editHolding(h) {
   $('#hfShares').value = h.shares; $('#hfCost').value = h.cost; $('#hfBuy').value = h.buy || ''; $('#hfAcc').value = h.acc;
   $$('#hfMk .seg-btn').forEach(b => b.disabled = b.dataset.mk !== h.mk);
   $('#hfTitle').textContent = '编辑持仓 · ' + (h.name || h.code); $('#hfSave').textContent = '保存修改';
+  $('#hfAgain').textContent = '取消'; $('#hfPeek').innerHTML = '';
   setStatus($('#hfStatus'), '');
-  $('#dlgOne').showModal();
+  $('#addMode').hidden = true; setAddMode('one');
+  if (!$('#dlgAdd').open) $('#dlgAdd').showModal();
 }
 async function ensureData(mk, code) {
   const k = mk + ':' + code;
@@ -1569,29 +1626,36 @@ async function ensureData(mk, code) {
   saveCache();
   return { q: C.quotes[k], divErr };
 }
-async function saveHolding() {
+async function saveHolding(again) {
+  if (again instanceof Event) again = false;
   const st = $('#hfStatus'), btn = $('#hfSave');
   const shares = +$('#hfShares').value, cost = +$('#hfCost').value, buy = $('#hfBuy').value, acc = $('#hfAcc').value;
   if (editingId) {
     const h = S.holdings.find(x => x.id === editingId);
     if (!(shares > 0)) return setStatus(st, '请填写持股数量');
     Object.assign(h, { shares, cost: cost || 0, buy: buy || TODAY, acc });
-    save(); renderAll(); $('#dlgOne').close();
+    save(); renderAll(); $('#dlgAdd').close();
     return toast(`已更新 ${h.name || h.code}`);
   }
-  const mk = formMk, raw = $('#hfCode').value.trim();
-  if (!raw) return setStatus(st, '请填写证券代码');
-  if (!(shares > 0)) return setStatus(st, '请填写持股数量');
-  const code = normCode(mk, raw);
+  const raw = $('#hfCode').value.trim();
+  if (!raw) return setStatus(st, '请填写证券代码或名称');
+  if (!pick && /[\u4e00-\u9fa5]/.test(raw)) return setStatus(st, '请在输入框下方的候选里点选一只');
+  if (!(shares > 0)) { $('#hfShares').focus(); return setStatus(st, '请填写持股数量'); }
+  const mk = pick ? pick.mk : formMk, code = pick ? pick.code : normCode(mk, raw);
   btn.disabled = true; setStatus(st, '');
   st.className = 'status'; st.textContent = '正在查询行情与分红…';
   const r = await ensureData(mk, code);
   btn.disabled = false;
   if (r.err) return setStatus(st, r.err);
   const h = { id: uid(), acc, mk, code, name: r.q.name, shares, cost: cost || r.q.price, buy: buy || TODAY };
-  S.holdings.push(h); save(); renderAll(); $('#dlgOne').close();
+  S.holdings.push(h); save(); renderAll(); rememberMode('one');
   const v = viewOf(h);
   toast(`已添加 ${h.name} · 预计年息 ${money(v.annual)}${r.divErr ? '(' + r.divErr + ')' : ''}`, !r.divErr);
+  if (!again) return $('#dlgAdd').close();
+  const keep = { buy: $('#hfBuy').value, acc: $('#hfAcc').value };
+  resetForm(); setFormMk(mk); $('#hfBuy').value = keep.buy; $('#hfAcc').value = keep.acc;
+  st.className = 'status ok'; st.textContent = `✓ 已添加 ${h.name},继续录入下一只(账户和建仓日期已保留)`;
+  $('#hfCode').focus();
 }
 async function bulkImport() {
   const st = $('#bulkStatus'), lines = $('#bulkTxt').value.split('\n').map(l => l.trim()).filter(Boolean);
@@ -1613,7 +1677,7 @@ async function bulkImport() {
   $('#bulkGo').disabled = false;
   save(); renderAll();
   if (bad.length) return setStatus(st, `成功导入 ${ok} 只,${bad.length} 行未识别:${bad.join(' / ')}`);
-  $('#bulkTxt').value = ''; setStatus(st, ''); $('#dlgBulk').close();
+  $('#bulkTxt').value = ''; setStatus(st, ''); $('#dlgAdd').close(); rememberMode('bulk');
   toast(`成功导入 ${ok} 只持仓`);
 }
 function renderHoldings(s) {
@@ -1817,7 +1881,7 @@ function renderProfile(mk, code, q, list) {
       <div class="tbl-wrap" style="max-height:460px;overflow:auto">${list.length ? `<table><thead><tr><th>报告期</th><th>方案</th><th>每股(${CUR_SIGN[list[0].cur]})</th><th>登记日</th><th>除息日</th><th>派息日</th><th>进度</th></tr></thead><tbody>
         ${list.map(e => `<tr><td>${esc(e.period)}</td><td style="white-space:normal;min-width:160px">${esc(e.plan)}</td><td>${CUR_SIGN[e.cur]}${e.ps.toFixed(4)}</td><td>${e.rec || '—'}</td><td>${e.ex || '—'}</td><td>${e.pay ? e.pay + (e.est ? ' (估)' : '') : '—'}</td>
           <td>${e.ex ? (e.ex <= TODAY ? '<span class="badge ok">已实施</span>' : '<span class="badge on">待除息</span>') : `<span class="badge plan">${esc(e.prog || '预案')}</span>`}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">没有查到现金分红记录</div>'}</div></div>`;
-  $('#pfAdd').onclick = () => { goAdd('one'); setFormMk(mk); $('#hfCode').value = code; $('#hfCost').value = q.price; if (!isPhone()) $('#hfShares').focus(); };
+  $('#pfAdd').onclick = () => { goAdd('one'); $('#hfCode').value = code; choosePick({ mk, code, name: q.name }); };
 }
 
 /* ---------- 展望未来 ---------- */
@@ -2272,11 +2336,56 @@ function fillAccSel(sel) {
   el.innerHTML = S.accounts.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join('');
   el.value = cur && S.accounts.some(a => a.id === cur) ? cur : (S.acc !== 'all' ? S.acc : S.accounts[0].id);
 }
+let addMode = 'one', pick = null, mkTouched = false, peekT, peekSeq = 0;
+const rememberMode = m => { try { localStorage.setItem('xbAddMode', m); } catch {} };
 function goAdd(type) {
-  if (type === 'shot') { renderShotEngine(); if (!$('#dlgShot').open) $('#dlgShot').showModal(); return; }
-  if (type === 'bulk') { setStatus($('#bulkStatus'), ''); $('#dlgBulk').showModal(); return; }
-  resetForm(); $('#dlgOne').showModal();
-  if (!isPhone()) $('#hfCode').focus();
+  const dlg = $('#dlgAdd');
+  const m = type && type !== 'auto' ? type
+    : (localStorage.getItem('xbAddMode') || (S.holdings.some(h => !h.demo) ? 'one' : 'shot'));
+  if (!dlg.open || editingId) resetForm();
+  $('#addMode').hidden = false;
+  setAddMode(m);
+  if (!dlg.open) dlg.showModal();
+  if (m === 'one' && !isPhone()) $('#hfCode').focus();
+}
+function setAddMode(m) {
+  addMode = m;
+  $$('#addMode .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.m === m));
+  $$('#dlgAdd .add-pane').forEach(p => p.hidden = p.dataset.p !== m);
+  if (m === 'shot') renderShotEngine();
+  if (m === 'bulk') setStatus($('#bulkStatus'), '');
+  fitAdd();
+}
+const fitAdd = () => $('#dlgAdd')?.classList.toggle('wide', addMode === 'shot' && shotRows.length > 0);
+const MK_SHORT = { A: 'A股', F: 'ETF', HK: '港股', US: '美股' };
+async function peekCode() {
+  const raw = $('#hfCode').value.trim(), pk = $('#hfPeek'), seq = ++peekSeq;
+  if (editingId || !raw) { pk.innerHTML = ''; return; }
+  if (!mkTouched && /^\d{5,6}$/.test(raw)) setFormMk(guessMk(raw));
+  if (raw.length < 2 && !/^\d/.test(raw)) { pk.innerHTML = ''; return; }
+  pk.innerHTML = '<span class="pk-tip">搜索中…</span>';
+  let list = [];
+  try { list = await suggest(raw); } catch {}
+  if (seq !== peekSeq) return;
+  const up = raw.toUpperCase().replace(/^(SH|SZ|HK)/, '');
+  const exact = list.find(x => x.code.toUpperCase() === up && (!mkTouched || x.mk === formMk));
+  if (exact) return choosePick(exact, true);
+  if (!list.length) { pk.innerHTML = `<span class="pk-tip">没搜到「${esc(raw)}」${/^[\dA-Z.]+$/i.test(raw) ? ',会按上面选的市场当作代码查询' : ',换个关键词试试'}</span>`; return; }
+  pk.innerHTML = list.slice(0, 5).map(x => `<button type="button" class="pk-it" data-pk='${esc(JSON.stringify(x))}'><b>${esc(x.name)}</b><small>${esc(x.code)} · ${MK_SHORT[x.mk]}</small></button>`).join('');
+}
+async function choosePick(x, auto) {
+  pick = { mk: x.mk, code: normCode(x.mk, x.code), name: x.name };
+  setFormMk(pick.mk);
+  if (!auto || /[^\dA-Z.]/i.test($('#hfCode').value)) $('#hfCode').value = pick.code;
+  const pk = $('#hfPeek'), seq = ++peekSeq, k = pick.mk + ':' + pick.code;
+  pk.innerHTML = `<span class="pk-ok">✓ ${esc(pick.name)} <small>${esc(pick.code)} · ${MK_SHORT[pick.mk]}</small></span>`;
+  if (!auto) $('#hfShares').focus();
+  try { if (!C.quotes[k]) await fetchQuotes([k]); } catch {}
+  const q = C.quotes[k];
+  if (seq !== peekSeq || !q) return;
+  const cur = CUR_SIGN[MK[pick.mk].cur];
+  pk.querySelector('.pk-ok')?.insertAdjacentHTML('beforeend', ` <small>现价 ${cur}${q.price}</small>`);
+  $('#hfCost').placeholder = `不填按现价 ${q.price}`;
 }
 function clearDemo() {
   S.holdings = S.holdings.filter(h => !h.demo);
@@ -2303,7 +2412,16 @@ document.addEventListener('paste', e => {
   const imgs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/'));
   if (!imgs.length) return;
   e.preventDefault();
-  if (!$('#dlgShot').open) goAdd('shot');
+  goAdd('shot');
+  addShotFiles(imgs);
+});
+document.addEventListener('dragover', e => { if ([...(e.dataTransfer?.items || [])].some(i => i.type.startsWith('image/'))) e.preventDefault(); });
+document.addEventListener('drop', e => {
+  if (e.defaultPrevented) return;
+  const imgs = [...(e.dataTransfer?.files || [])].filter(f => f.type.startsWith('image/'));
+  if (!imgs.length) return;
+  e.preventDefault();
+  goAdd('shot');
   addShotFiles(imgs);
 });
 $('#btnRefresh').onclick = () => refresh(true);
