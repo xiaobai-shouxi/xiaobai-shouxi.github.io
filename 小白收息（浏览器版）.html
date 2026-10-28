@@ -422,8 +422,36 @@
   .dlg-msg { margin: 0; font-size: 14px; line-height: 1.75; color: var(--muted); white-space: pre-line; }
   .dlg-input { width: 100%; margin-top: 14px; }
   #holdDlgs { --c: 79,140,255; }
-  #dlgAdd { width: min(520px, calc(100vw - 32px)); transition: width .3s ease; }
-  #dlgAdd.wide { width: min(1100px, calc(100vw - 32px)); }
+  #dlgAdd { width: min(560px, calc(100vw - 32px)); }
+  .sr-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .sr { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--border-soft); background: rgba(255,255,255,.035); transition: opacity .15s ease; }
+  .sr > input[type=checkbox] { margin-top: 2px; }
+  .sr.bad { border-color: rgba(248,113,113,.28); background: rgba(248,113,113,.05); }
+  .sr.off:not(.bad) { opacity: .5; }
+  .sr-main { flex: 1; min-width: 0; }
+  .sr-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .sr-top b { font-size: 14px; }
+  .sr-sub { font-size: 12px; color: var(--muted); }
+  .sr.bad .sr-sub { color: var(--err); }
+  .sr-edit { margin-left: auto; font-size: 12px; }
+  .sr-raw { font-size: 11.5px; color: var(--muted-2); margin-top: 2px; }
+  .sr-fix { display: flex; gap: 8px; margin-top: 8px; }
+  .sr-fix select { width: 96px; flex: none; }
+  .sr-fix input { flex: 1; min-width: 0; }
+  .sr-alt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: var(--muted-2); }
+  .sr-alt .chip { padding: 2px 9px; font-size: 11.5px; }
+  .sr-nums { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 8px; margin-top: 10px; }
+  .sr-nums label { margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--muted-2); font-weight: 400; }
+  .sr .sr-fix select, .sr input:not([type=checkbox]) { padding: 7px 10px; font-size: 13px; border-radius: 9px; }
+  .sr-junk { margin-top: 10px; font-size: 12.5px; color: var(--muted-2); }
+  .sr-junk summary { cursor: pointer; width: fit-content; }
+  .sr-opts { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 16px; }
+  .sr-opts select { width: auto; min-width: 140px; }
+  @media (max-width: 640px) {
+    .sr { padding: 11px 12px; gap: 10px; }
+    .sr-nums { grid-template-columns: 1fr 1fr; }
+    .sr-nums label:last-child { grid-column: span 2; }
+  }
   .add-mode { margin-bottom: 18px; background: rgba(255,255,255,.04); }
   .add-mode[hidden] { display: none; }
   .add-mode .seg-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 6px; }
@@ -457,7 +485,7 @@
     .start-card b { margin: 0; }
     .start-card span { flex-basis: 100%; padding-left: 50px; margin-top: -4px; }
     .add-mode .seg-btn { font-size: 12.5px; gap: 4px; }
-    #dlgAdd, #dlgAdd.wide { width: 100%; }
+    #dlgAdd { width: 100%; }
     .lg-only { display: none; }
   }
   .eng-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 14px 0 12px; }
@@ -511,6 +539,11 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 22px 16px; border-radius: 14px; cursor: pointer; text-align: center;
     border: 1.5px dashed rgba(var(--c),.45); background: rgba(var(--c),.05); transition: background .15s ease, border-color .15s ease;
   }
+  .drop b em { font-style: normal; }
+  .drop .d-mini, .drop.mini .d-full, .drop.mini span, .drop.mini svg { display: none; }
+  .drop.mini .d-mini { display: inline; }
+  .drop.mini { padding: 9px 12px; flex-direction: row; }
+  .drop.mini b { font-size: 13px; color: rgb(var(--c)); font-weight: 600; }
   .drop:hover, .drop.over { background: rgba(var(--c),.12); border-color: rgb(var(--c)); }
   .drop svg { width: 26px; height: 26px; fill: none; stroke: rgb(var(--c)); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .drop b { font-size: 14px; }
@@ -519,16 +552,9 @@
   .thumbs:not(:empty) { margin-top: 12px; }
   .thumb { position: relative; width: 74px; height: 96px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: center top / cover no-repeat var(--card); }
   .thumb button { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; border: none; background: rgba(0,0,0,.65); color: #fff; cursor: pointer; font-size: 12px; line-height: 1; }
-  .shot-tbl input, .shot-tbl select { padding: 6px 9px; font-size: 13px; border-radius: 8px; }
-  .shot-tbl input[type=checkbox] { padding: 0; border-radius: 6px; }
-  .shot-tbl th, .shot-tbl td { padding-left: 6px; padding-right: 6px; }
-  .shot-tbl td { vertical-align: middle; }
-  .shot-tbl th:nth-child(-n+3), .shot-tbl td:nth-child(-n+3) { text-align: left; }
-  .shot-tbl tr.bad td { background: rgba(248,113,113,.06); }
-  .shot-tbl .alt { display: block; margin-top: 4px; }
-  .shot-tbl .alt .chip { padding: 1px 8px; font-size: 11px; }
   .eng { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
   .eng i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+  .eng em { font-style: normal; color: var(--muted-2); }
   .eng.ai i { background: #a78bfa; box-shadow: 0 0 6px #a78bfa; }
   .notice {
     --c: 250,204,21; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 16px; border-radius: 14px;
@@ -1241,7 +1267,7 @@ function buildHoldings() {
         <div class="eng-bar" id="shotEng"></div>
         <div class="drop" id="shotDrop">
           <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
-          <b>点击选择截图,或拖入 / ⌘ Ctrl + V 粘贴</b>
+          <b><em class="d-full">点击选择截图,或拖入 / ⌘ Ctrl + V 粘贴</em><em class="d-mini">+ 继续添加截图</em></b>
           <span>可一次多张;在页面任何地方粘贴或拖入截图也会直接来到这里</span>
           <input type="file" id="shotFile" accept="image/*" multiple hidden />
         </div>
@@ -1316,7 +1342,7 @@ const AI_PRESETS = {
   claude: { n: 'Claude', type: 'anthropic', base: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-5', keyUrl: 'https://console.anthropic.com/settings/keys' },
   custom: { n: '自定义(OpenAI 兼容接口)', type: 'openai', base: '', model: '' },
 };
-let shotImgs = [], shotRows = [];
+let shotImgs = [], shotRows = [], shotStale = false;
 const useAI = () => !!(S.ai && S.ai.key && S.ai.base && S.ai.model);
 
 function initShot() {
@@ -1326,16 +1352,16 @@ function initShot() {
   drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
   drop.ondragleave = () => drop.classList.remove('over');
   drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); addShotFiles(e.dataTransfer.files); };
-  $('#shotThumbs').onclick = e => { const b = e.target.closest('[data-rm]'); if (b) { shotImgs = shotImgs.filter(x => x.id !== b.dataset.rm); renderThumbs(); } };
-  $('#shotGo').onclick = runShot;
-  $('#shotClear').onclick = () => { shotImgs = []; shotRows = []; renderThumbs(); $('#shotResult').innerHTML = ''; setStatus($('#shotStatus'), ''); fitAdd(); };
+  $('#shotThumbs').onclick = e => { const b = e.target.closest('[data-rm]'); if (b) { shotImgs = shotImgs.filter(x => x.id !== b.dataset.rm); if (shotRows.length) shotStale = true; renderThumbs(); } };
+  $('#shotGo').onclick = () => $('#shotGo').dataset.act === 'import' ? importShot() : runShot();
+  $('#shotClear').onclick = () => { shotImgs = []; shotRows = []; shotStale = false; renderThumbs(); $('#shotResult').innerHTML = ''; setStatus($('#shotStatus'), ''); };
   renderShotEngine();
 }
 function renderShotEngine() {
   const el = $('#shotEng'); if (!el) return;
   el.innerHTML = useAI()
     ? `<span class="eng ai"><i></i>AI 识别 · ${esc(S.ai.model)}</span><button type="button" class="link-btn" data-ai>AI 识别设置 ›</button>`
-    : `<span class="eng"><i></i>本地识别 · 免费,截图不出本机</span><button type="button" class="link-btn" data-ai>配置 AI 识别更准 ›</button>`;
+    : `<span class="eng"><i></i>本地识别 · 免费,截图不出本机<em id="engSt">${esc(engShort(ocrNote))}</em></span><button type="button" class="link-btn" data-ai>配置 AI 识别更准 ›</button>`;
 }
 function compressImg(file) {
   return new Promise((resolve, reject) => {
@@ -1355,45 +1381,137 @@ async function addShotFiles(files) {
   for (const f of [...files].filter(f => f.type.startsWith('image/'))) {
     try { shotImgs.push({ id: uid(), url: await compressImg(f) }); } catch {}
   }
+  if (shotRows.length) shotStale = true;
   renderThumbs();
 }
 function renderThumbs() {
   $('#shotThumbs').innerHTML = shotImgs.map(x => `<div class="thumb" style="background-image:url(${x.url})"><button data-rm="${x.id}" title="移除">×</button></div>`).join('');
-  $('#shotGo').disabled = !shotImgs.length;
-  $('#shotClear').hidden = !shotImgs.length && !shotRows.length;
-  $('#shotGo').textContent = shotImgs.length ? `开始识别 ${shotImgs.length} 张` : '开始识别';
+  $('#shotDrop').classList.toggle('mini', shotImgs.length > 0);
+  syncShotFoot();
+}
+function syncShotFoot(busy) {
+  const go = $('#shotGo'), clr = $('#shotClear');
+  const ready = shotRows.length > 0 && !shotStale, n = shotRows.filter(r => r.on && r.ok).length;
+  go.dataset.act = ready ? 'import' : 'run';
+  if (busy) { go.disabled = true; go.textContent = busy; }
+  else if (ready) { go.disabled = !n; go.textContent = n ? `导入 ${n} 只持仓` : '请勾选要导入的持仓'; }
+  else { go.disabled = !shotImgs.length; go.textContent = shotRows.length ? `重新识别 ${shotImgs.length} 张` : shotImgs.length ? `开始识别 ${shotImgs.length} 张` : '开始识别'; }
+  clr.hidden = !shotImgs.length && !shotRows.length;
+  clr.textContent = ready ? '清空重来' : '清空';
 }
 
-/* 本地识别:Tesseract.js 识别文字,再按行切分出 名称/代码/数字。
-   引擎和语言包随站点一起发布在 ocr/ 目录;本地双击打开时依次尝试站点和 jsDelivr 各镜像,某条线路超时就换下一条 */
+/* 本地识别:Tesseract.js(Tesseract OCR 的 WebAssembly 版)在浏览器里识别文字,再按行切分出 名称/代码/数字。
+   引擎核心和中文识别数据(共约 5.4MB)自己下载以显示进度,下完存进 Tesseract 自带的 IndexedDB 缓存(keyval-store),
+   识别数据按它的键名存放,引擎启动时直接读缓存;之后打开不再下载;
+   每个文件依次尝试站点和 jsDelivr 各镜像,某条线路 15 秒没有任何数据才换下一条 */
 function ocrSources() {
   const own = /^https?:$/.test(location.protocol) ? [new URL('ocr', location.href).href] : [];
   const gh = 'xiaobai-shouxi/xiaobai-shouxi.github.io@main/ocr';
   return [...new Set([...own, 'https://xiaobai-shouxi.github.io/ocr', ...['fastly', 'gcore', 'cdn', 'testingcf'].map(d => `https://${d}.jsdelivr.net/gh/${gh}`)])];
 }
 const withTimeout = (p, ms, msg) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(msg)), ms))]);
-let ocrWorker = null, ocrProg = () => {};
+const OCR_CACHE = 'xb-ocr-5.1.1';
+function ocrDb(mode, fn) {
+  return new Promise((res, rej) => {
+    const o = indexedDB.open('keyval-store');
+    o.onupgradeneeded = () => o.result.createObjectStore('keyval');
+    o.onerror = () => rej(o.error);
+    o.onsuccess = () => {
+      const tx = o.result.transaction('keyval', mode), q = fn(tx.objectStore('keyval'));
+      tx.oncomplete = () => { o.result.close(); res(q.result); };
+      tx.onerror = () => rej(tx.error);
+    };
+  });
+}
+const ocrCacheGet = k => ocrDb('readonly', s => s.get(k)).catch(() => null);
+const ocrCachePut = (k, v) => ocrDb('readwrite', s => s.put(v, k)).catch(() => {});
+async function fetchProgress(url, onBytes) {
+  const ctl = new AbortController(); let timer;
+  const kick = () => { clearTimeout(timer); timer = setTimeout(() => ctl.abort(), 15000); };
+  kick();
+  try {
+    const r = await fetch(url, { signal: ctl.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.body?.getReader) { const b = new Uint8Array(await r.arrayBuffer()); onBytes(b.length); return b; }
+    const rd = r.body.getReader(), parts = []; let got = 0;
+    for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; kick(); onBytes(got); }
+    const out = new Uint8Array(got); let o = 0;
+    for (const p of parts) { out.set(p, o); o += p.length; }
+    return out;
+  } catch (e) { throw new Error(e?.name === 'AbortError' ? '15 秒没有收到数据' : (e?.message || String(e))); }
+  finally { clearTimeout(timer); }
+}
+async function fetchOcrFile(name, onBytes) {
+  const errs = [];
+  for (const base of ocrSources()) {
+    try { return await fetchProgress(`${base}/${name}`, onBytes); }
+    catch (e) { errs.push(`${new URL(base).host}:${e.message}`); onBytes(0); }
+  }
+  throw new Error(errs.join(';'));
+}
+const wasmSimd = () => { try { return WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11])); } catch { return false; } };
+let ocrInit = null, ocrWorker = null, ocrProg = () => {}, ocrNote = '';
+const engShort = msg => msg ? ' · ' + msg.split('\n')[0].replace('首次使用,正在下载识别组件', '首次下载') : '';
+function setOcrNote(msg) {
+  ocrNote = msg; ocrProg(msg);
+  const el = $('#engSt'); if (el) el.textContent = engShort(msg);
+}
+function prepareOcr() {
+  if (!ocrInit) ocrInit = initOcr().then(w => { ocrWorker = w; setOcrNote('已就绪'); return w; }, e => { ocrInit = null; setOcrNote(''); throw e; });
+  return ocrInit;
+}
+async function initOcr() {
+  if (typeof WebAssembly !== 'object' || typeof Worker !== 'function') throw new Error('当前浏览器不支持本地识别(缺少 WebAssembly)。请升级系统或浏览器,或点「配置 AI 识别」改用 AI 识别');
+  const srcs = ocrSources();
+  let base = null; const errs = [];
+  for (const b of srcs) {
+    try { if (!window.Tesseract) await withTimeout(loadScript(b + '/tesseract.min.js'), 20000, '加载超时'); base = b; break; }
+    catch (e) { errs.push(`${new URL(b).host}:${e?.message || e}`); }
+  }
+  if (!base) throw new Error('本地识别引擎加载失败,通常是当前网络访问不了识别资源。可以换个网络(如手机热点)重试,或点「配置 AI 识别」改用 AI 识别。\n详情:' + errs.join(';'));
+  const simd = wasmSimd(), coreName = simd ? 'tesseract-core-simd-lstm.wasm.js' : 'tesseract-core-lstm.wasm.js';
+  const files = [['chi_sim.traineddata.gz', 1718768, OCR_CACHE + '/chi_sim.traineddata'], [coreName, simd ? 3938657 : 3938277, OCR_CACHE + '/' + coreName]];
+  const total = files.reduce((a, x) => a + x[1], 0), got = files.map(() => 0);
+  let cachedAll = true;
+  const report = () => {
+    const g = got.reduce((a, b) => a + b, 0);
+    if (!cachedAll) setOcrNote(`首次使用,正在下载识别组件 ${(g / 1048576).toFixed(1)} / ${(total / 1048576).toFixed(1)} MB\n只需下载这一次,之后打开秒开`);
+  };
+  let data;
+  try {
+    data = await Promise.all(files.map(async ([name, size, key], i) => {
+      const hit = await ocrCacheGet(key);
+      if (hit) { got[i] = size; return hit; }
+      cachedAll = false; report();
+      const d = await fetchOcrFile(name, n => { got[i] = Math.min(n, size); report(); });
+      ocrCachePut(key, d);
+      return d;
+    }));
+  } catch (e) {
+    throw new Error('识别组件下载失败,通常是当前网络访问不了识别资源。可以换个网络(如手机热点)重试,或点「配置 AI 识别」改用 AI 识别。\n详情:' + e.message);
+  }
+  setOcrNote('正在启动识别引擎…');
+  // 初始化失败时 createWorker 不会 reject,只回调 errorHandler,这里把它转成异常
+  const start = (corePath, ms) => withTimeout(new Promise((res, rej) => {
+    Tesseract.createWorker('chi_sim', 1, {
+      workerPath: base + '/worker.min.js', langPath: base, cachePath: OCR_CACHE, corePath,
+      logger: m => { if (m.status === 'recognizing text') ocrProg(`正在识别文字 ${Math.round(m.progress * 100)}%`); },
+      errorHandler: e => rej(new Error(String(e))),
+    }).then(res, rej);
+  }), ms, '引擎启动超时');
+  const coreUrl = URL.createObjectURL(new Blob([data[1]], { type: 'text/javascript' }));
+  try {
+    return await start(coreUrl + '#.js', 60000);
+  } catch (e) {
+    // 少数环境(如本地双击打开)不允许 worker 加载 blob 地址,退回直接从线路加载引擎核心
+    return await start(base, 120000);
+  } finally { URL.revokeObjectURL(coreUrl); }
+}
 async function getOcrWorker(onProg) {
   ocrProg = onProg;
   if (ocrWorker) return ocrWorker;
-  if (typeof WebAssembly !== 'object' || typeof Worker !== 'function') throw new Error('当前浏览器不支持本地识别(缺少 WebAssembly)。请升级系统或浏览器,或点「配置 AI 识别」改用 AI 识别');
-  const errs = [];
-  for (const base of ocrSources()) {
-    const host = new URL(base).host;
-    try {
-      if (!window.Tesseract) { onProg(`正在加载识别引擎(${host})…`); await loadScript(base + '/tesseract.min.js'); }
-      onProg(`正在加载识别数据(约 8MB,只需加载一次)…`);
-      ocrWorker = await withTimeout(Tesseract.createWorker(['chi_sim', 'eng'], 1, {
-        workerPath: base + '/worker.min.js', corePath: base, langPath: base,
-        logger: m => {
-          if (m.status === 'recognizing text') ocrProg(`正在识别文字 ${Math.round(m.progress * 100)}%`);
-          else if (/loading/.test(m.status)) ocrProg(`正在加载识别数据 ${Math.round((m.progress || 0) * 100)}%(${host})`);
-        },
-      }), 90000, '加载超时');
-      return ocrWorker;
-    } catch (e) { errs.push(`${host}:${e?.message || e}`); }
-  }
-  throw new Error('本地识别引擎加载失败,通常是当前网络访问不了识别资源。可以换个网络(如手机热点)重试,或点「配置 AI 识别」改用 AI 识别。\n详情:' + errs.join(';'));
+  onProg(ocrNote && ocrNote !== '已就绪' ? ocrNote : '正在准备识别引擎…');
+  return prepareOcr();
 }
 async function ocrRecognize(onProg) {
   const worker = await getOcrWorker(onProg);
@@ -1401,7 +1519,7 @@ async function ocrRecognize(onProg) {
   for (let i = 0; i < shotImgs.length; i++) {
     onProg(`正在识别第 ${i + 1}/${shotImgs.length} 张…`);
     try { items.push(...parseOcr((await worker.recognize(shotImgs[i].url)).data.text)); }
-    catch (e) { ocrWorker = null; worker.terminate().catch(() => {}); throw new Error('识别过程出错:' + (e?.message || e) + '。图片太大或设备内存不足时会出现,可截小一点再试'); }
+    catch (e) { ocrWorker = null; ocrInit = null; worker.terminate().catch(() => {}); throw new Error('识别过程出错:' + (e?.message || e) + '。图片太大或设备内存不足时会出现,可截小一点再试'); }
   }
   return items;
 }
@@ -1436,6 +1554,14 @@ function pickNums(nums, price, mk) {
   if (price > 0) for (const n of ints) if (nums.some(m => m !== n && near(m.v, n.v * price, 0.05))) { shares = n.v; break; }
   if (!shares) shares = ((mk === 'A' || mk === 'F') ? ints.find(n => n.v % 100 === 0) : null)?.v || ints[0]?.v || 0;
   const decs = nums.filter(n => n.s.includes('.') && n.v > 0 && (!price || (n.v > price * 0.2 && n.v < price * 5)));
+  // 截图里的现价能和「市值 = 股数 × 现价」对上,成本能和「盈亏 = (现价 - 成本) × 股数」对上;截图时的现价未必等于实时价
+  const shotPrice = shares ? decs.find(d => nums.some(m => m !== d && near(m.v, shares * d.v, 0.003))) : null;
+  if (shotPrice) {
+    const rest = decs.filter(d => d.v !== shotPrice.v && !near(d.v, shares * shotPrice.v, 0.003));
+    const byPnl = rest.find(c => nums.some(m => Math.abs(Math.abs(m.v) - Math.abs(shotPrice.v - c.v) * shares) <= Math.max(1, Math.abs(m.v) * 0.003)));
+    const cost = (byPnl || rest.find(n => /\.\d{3,4}$/.test(n.s)) || rest[0] || {}).v || 0;
+    if (cost) return { shares, cost };
+  }
   const notPrice = decs.filter(n => !near(n.v, price, 0.001));
   const pool = notPrice.length ? notPrice : decs;
   const three = pool.filter(n => /\.\d{3,4}$/.test(n.s));
@@ -1487,13 +1613,13 @@ async function suggest(name) {
 const guessMk = code => /^\d{6}$/.test(code) ? (/^(5|1[5-9])/.test(code) ? 'F' : 'A') : /^\d{5}$/.test(code) ? 'HK' : 'US';
 
 async function runShot() {
-  const st = $('#shotStatus'), btn = $('#shotGo');
+  const st = $('#shotStatus');
   const prog = m => { st.className = 'status'; st.textContent = m; };
-  btn.disabled = true; $('#shotResult').innerHTML = '';
+  syncShotFoot('识别中…'); $('#shotResult').innerHTML = '';
   let items = [], local = !useAI();
   try { items = local ? await ocrRecognize(prog) : await aiRecognize(prog); }
-  catch (e) { btn.disabled = false; return setStatus(st, (e && e.message) || String(e || '识别失败')); }
-  if (!items.length) { btn.disabled = false; return setStatus(st, local ? '没识别出持仓。建议截取持仓列表区域,或在设置里配置 AI 识别' : 'AI 没有在截图里找到持仓'); }
+  catch (e) { shotRows = []; syncShotFoot(); return setStatus(st, (e && e.message) || String(e || '识别失败')); }
+  if (!items.length) { shotRows = []; syncShotFoot(); return setStatus(st, local ? '没识别出持仓。建议截取持仓列表区域,或在设置里配置 AI 识别' : 'AI 没有在截图里找到持仓'); }
   prog(`识别到 ${items.length} 条,正在匹配证券代码…`);
   const seen = new Set();
   shotRows = (await Promise.all(items.map(async it => {
@@ -1517,57 +1643,72 @@ async function runShot() {
     if (hit) { r.mk = hit.mk; r.code = hit.code; }
   });
   shotRows.forEach(r => fillShotRow(r));
-  btn.disabled = false; $('#shotClear').hidden = false;
-  setStatus(st, `识别完成:${shotRows.filter(r => r.ok).length}/${shotRows.length} 条已匹配。请核对股数和成本,标红的行需要手动修正`, true);
+  shotStale = false;
+  const okN = shotRows.filter(r => r.ok).length;
+  setStatus(st, okN ? `识别出 ${okN} 只持仓,核对一下股数和成本,没问题就点下方「导入」` : '没有匹配到持仓,可以在下方手动补代码,或换一张更清晰的截图', !!okN);
   renderShotTable();
 }
 function fillShotRow(r) {
   const q = r.code ? C.quotes[r.mk + ':' + r.code] : null;
   r.q = q || null;
   if (q && r.nums && !r.picked) { const p = pickNums(r.nums, q.price, r.mk); r.shares = r.shares || p.shares; r.cost = r.cost || p.cost; r.picked = true; }
+  const was = r.ok;
   r.ok = !!q && r.shares > 0;
+  if (r.ok && !was) r.on = true;
+  if (!r.ok) r.on = false;
+}
+function shotRowHtml(r) {
+  const cur = CUR_SIGN[MK[r.mk].cur], alts = r.cands.filter(c => !(c.mk === r.mk && c.code === r.code)).slice(0, 3);
+  const fix = r.edit || !r.q;
+  return `<div class="sr${r.ok ? '' : ' bad'}${r.on ? '' : ' off'}" data-r="${r.id}">
+    <input type="checkbox" data-f="on" ${r.on ? 'checked' : ''} ${r.ok ? '' : 'disabled'} title="${r.ok ? '导入这一只' : '补全后才能导入'}" />
+    <div class="sr-main">
+      <div class="sr-top"><b>${esc(r.q ? r.q.name : r.raw)}</b>
+        <span class="sr-sub">${r.q ? `${esc(r.code)} · ${MK_SHORT[r.mk]} · 现价 ${cur}${fmt(r.q.price, r.q.price < 10 ? 3 : 2)}` : '没匹配到证券,请补代码'}</span>
+        ${r.q ? `<button type="button" class="link-btn sr-edit" data-edit>${r.edit ? '收起' : '改代码'}</button>` : ''}</div>
+      ${r.q && r.raw && r.raw !== r.q.name ? `<div class="sr-raw">截图里识别为「${esc(r.raw)}」</div>` : ''}
+      ${fix ? `<div class="sr-fix"><select data-f="mk">${Object.keys(MK).map(k => `<option value="${k}" ${k === r.mk ? 'selected' : ''}>${MK[k].n}</option>`).join('')}</select><input type="text" data-f="code" value="${esc(r.code)}" placeholder="代码" /></div>` : ''}
+      ${fix && alts.length ? `<div class="sr-alt">${r.q ? '不是它?' : '可能是:'}${alts.map(c => `<button type="button" class="chip" data-alt="${c.mk}:${c.code}">${MK_SHORT[c.mk]} ${esc(c.code)} ${esc(c.name)}</button>`).join('')}</div>` : ''}
+      ${r.q ? `<div class="sr-nums">
+        <label><span>持股</span><input type="number" data-f="shares" value="${r.shares || ''}" min="0" inputmode="numeric" placeholder="必填" /></label>
+        <label><span>成本 ${cur}</span><input type="number" data-f="cost" value="${r.cost || ''}" min="0" step="0.001" inputmode="decimal" placeholder="${r.q.price}" /></label>
+        <label><span>建仓日</span><input type="date" data-f="buy" value="${r.buy || ''}" /></label>
+      </div>` : ''}
+    </div>
+  </div>`;
 }
 function renderShotTable() {
   const accOpts = S.accounts.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join('');
-  const n = shotRows.filter(r => r.on && r.ok).length;
-  fitAdd();
+  const main = shotRows.filter(r => r.q || r.edit), junk = shotRows.filter(r => !r.q && !r.edit);
   $('#shotResult').innerHTML = !shotRows.length ? '' : `
-    <div class="tbl-wrap" style="margin-top:14px"><table class="shot-tbl"><thead><tr><th style="width:30px"></th><th>截图中识别到</th><th>匹配证券</th><th>现价</th><th>持股数量</th><th>成本价</th><th>建仓日期</th></tr></thead><tbody>
-    ${shotRows.map(r => `<tr class="${r.ok ? '' : 'bad'}" data-r="${r.id}">
-      <td><input type="checkbox" data-f="on" ${r.on ? 'checked' : ''} ${r.ok ? '' : 'disabled'} /></td>
-      <td><div class="nm">${esc(r.raw)}</div>${r.ok ? '' : `<div class="cd" style="color:var(--err)">${r.q ? '请填写股数' : '没匹配到证券,请改代码'}</div>`}</td>
-      <td style="text-align:left"><div class="row" style="gap:6px;flex-wrap:nowrap"><select data-f="mk" style="width:76px;flex:none">${Object.keys(MK).map(k => `<option value="${k}" ${k === r.mk ? 'selected' : ''}>${MK[k].n}</option>`).join('')}</select>
-        <input type="text" data-f="code" value="${esc(r.code)}" placeholder="代码" style="width:90px;flex:none" /><span class="sm" style="white-space:nowrap">${r.q ? esc(r.q.name) : ''}</span></div>
-        ${r.cands.length > 1 ? `<span class="alt">${r.cands.filter(c => !(c.mk === r.mk && c.code === r.code)).slice(0, 3).map(c => `<button class="chip" data-alt="${c.mk}:${c.code}">${MK[c.mk].n} ${esc(c.code)} ${esc(c.name)}</button>`).join(' ')}</span>` : ''}</td>
-      <td>${r.q ? CUR_SIGN[MK[r.mk].cur] + fmt(r.q.price, r.q.price < 10 ? 3 : 2) : '—'}</td>
-      <td><input type="number" data-f="shares" value="${r.shares || ''}" min="0" style="width:88px" /></td>
-      <td><input type="number" data-f="cost" value="${r.cost || ''}" min="0" step="0.001" style="width:88px" placeholder="${r.q ? r.q.price : ''}" /></td>
-      <td><input type="date" data-f="buy" value="${r.buy || ''}" style="width:132px" /></td>
-    </tr>`).join('')}</tbody></table></div>
-    <p class="hint">建仓日期不填就按今天(导入日)计算;老仓位建议填实际买入日,历史分红和 A股红利税才算得准。</p>
-    <div class="row" style="margin-top:14px;flex-wrap:wrap;gap:12px">
-      <div style="flex:0 0 180px"><select id="shotAcc">${accOpts}</select></div>
-      <label class="switch" style="flex:1 1 220px"><input type="checkbox" id="shotOverwrite" checked />同账户已有同代码时,用截图数据覆盖</label>
-      <button class="run sm" id="shotImport" style="flex:0 0 auto" ${n ? '' : 'disabled'}>导入选中的 ${n} 只</button>
-    </div>`;
+    <div class="sr-list">${main.map(shotRowHtml).join('')}</div>
+    ${junk.length ? `<details class="sr-junk"${main.length ? '' : ' open'}><summary>另有 ${junk.length} 行没认出来(多半是页面上的文字),需要的话点开补代码</summary><div class="sr-list">${junk.map(shotRowHtml).join('')}</div></details>` : ''}
+    <div class="sr-opts">
+      <select id="shotAcc" title="导入到哪个账户">${accOpts}</select>
+      <label class="switch"><input type="checkbox" id="shotOverwrite" checked />已有同代码时用截图数据覆盖</label>
+    </div>
+    <p class="hint">建仓日不填就按今天(导入日)算;老仓位建议填实际买入日,历史分红和 A股红利税才算得准。</p>`;
   if ($('#shotAcc')) $('#shotAcc').value = S.acc !== 'all' ? S.acc : (S.accounts.find(a => !S.holdings.some(h => h.acc === a.id && h.demo)) || S.accounts[0]).id;
-  const tb = $('#shotResult tbody'); if (!tb) return;
-  tb.onchange = async e => {
-    const tr = e.target.closest('[data-r]'), r = shotRows.find(x => x.id === tr.dataset.r), f = e.target.dataset.f;
-    if (f === 'on') { r.on = e.target.checked; return renderShotTable(); }
+  syncShotFoot();
+  const box = $('#shotResult');
+  box.onchange = async e => {
+    const row = e.target.closest('[data-r]'); if (!row) return;
+    const r = shotRows.find(x => x.id === row.dataset.r), f = e.target.dataset.f;
+    if (f === 'on') { r.on = e.target.checked; row.classList.toggle('off', !r.on); return syncShotFoot(); }
     if (f === 'buy') { r.buy = e.target.value; return; }
-    if (f === 'shares' || f === 'cost') { r[f] = +e.target.value || 0; fillShotRow(r); return renderShotTable(); }
+    if (f === 'shares' || f === 'cost') { r[f] = +e.target.value || 0; const was = r.ok; fillShotRow(r); if (was !== r.ok) renderShotTable(); else syncShotFoot(); return; }
     if (f === 'mk' || f === 'code') {
-      r.mk = tr.querySelector('[data-f=mk]').value; r.code = normCode(r.mk, tr.querySelector('[data-f=code]').value);
-      await reShotRow(r);
+      r.mk = row.querySelector('[data-f=mk]').value; r.code = normCode(r.mk, row.querySelector('[data-f=code]').value);
+      r.edit = true; await reShotRow(r);
     }
   };
-  tb.onclick = async e => {
+  box.onclick = async e => {
+    const ed = e.target.closest('[data-edit]');
+    if (ed) { const r = shotRows.find(x => x.id === ed.closest('[data-r]').dataset.r); r.edit = !r.edit; return renderShotTable(); }
     const b = e.target.closest('[data-alt]'); if (!b) return;
     const r = shotRows.find(x => x.id === b.closest('[data-r]').dataset.r);
-    [r.mk, r.code] = b.dataset.alt.split(':'); await reShotRow(r);
+    [r.mk, r.code] = b.dataset.alt.split(':'); r.edit = false; await reShotRow(r);
   };
-  $('#shotImport').onclick = importShot;
 }
 async function reShotRow(r) {
   r.picked = false;
@@ -1577,7 +1718,8 @@ async function reShotRow(r) {
 }
 async function importShot() {
   const rows = shotRows.filter(r => r.on && r.ok), acc = $('#shotAcc').value, over = $('#shotOverwrite').checked;
-  const btn = $('#shotImport'); btn.disabled = true;
+  if (!rows.length) return;
+  syncShotFoot('正在导入…');
   let add = 0, upd = 0;
   for (const r of rows) {
     const ex = over && S.holdings.find(h => h.acc === acc && h.mk === r.mk && h.code === r.code && !h.demo);
@@ -1585,7 +1727,7 @@ async function importShot() {
     else { S.holdings.push({ id: uid(), acc, mk: r.mk, code: r.code, name: r.q.name, shares: r.shares, cost: r.cost || r.q.price, buy: r.buy || TODAY }); add++; }
   }
   save(); renderAll();
-  shotRows = []; shotImgs = []; renderThumbs(); $('#shotResult').innerHTML = ''; setStatus($('#shotStatus'), '');
+  shotRows = []; shotImgs = []; shotStale = false; renderThumbs(); $('#shotResult').innerHTML = ''; setStatus($('#shotStatus'), '');
   $('#dlgAdd').close(); rememberMode('shot');
   toast(`已导入:新增 ${add} 只${upd ? `,更新 ${upd} 只` : ''}`);
   refresh(false);
@@ -2352,11 +2494,9 @@ function setAddMode(m) {
   addMode = m;
   $$('#addMode .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.m === m));
   $$('#dlgAdd .add-pane').forEach(p => p.hidden = p.dataset.p !== m);
-  if (m === 'shot') renderShotEngine();
+  if (m === 'shot') { renderShotEngine(); if (!useAI()) prepareOcr().catch(() => {}); }
   if (m === 'bulk') setStatus($('#bulkStatus'), '');
-  fitAdd();
 }
-const fitAdd = () => $('#dlgAdd')?.classList.toggle('wide', addMode === 'shot' && shotRows.length > 0);
 const MK_SHORT = { A: 'A股', F: 'ETF', HK: '港股', US: '美股' };
 async function peekCode() {
   const raw = $('#hfCode').value.trim(), pk = $('#hfPeek'), seq = ++peekSeq;
