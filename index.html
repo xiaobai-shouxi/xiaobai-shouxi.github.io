@@ -469,11 +469,17 @@
   .ov-empty b { font-size: 16px; margin-bottom: 8px; }
   .ov-empty .chips { justify-content: center; gap: 10px; margin-top: 20px; }
   /* 跨境估值 */
+  .ef-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin: -10px 0 12px; }
+  .ef-bar .hint { margin: 0; }
+  .ef-sort { align-items: center; gap: 6px; }
+  .ef-sort > span { font-size: 12px; color: var(--muted-2); margin-right: 2px; }
+  .ef-sort .chip { padding: 4px 11px; font-size: 12px; }
   .ef-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(138px, 1fr); gap: 10px; overflow-x: auto; padding: 2px 2px 8px; margin: 0 -2px; scrollbar-width: thin; }
   .ef-card { position: relative; text-align: left; padding: 11px 13px 10px; border-radius: 13px; border: 1px solid var(--border-soft); background: var(--card-2); color: var(--text); font: inherit; cursor: pointer; transition: border-color .15s ease, background .15s ease; min-width: 0; }
   .ef-card:hover { border-color: var(--border); }
   .ef-card.active { border-color: rgba(var(--c),.7); background: linear-gradient(160deg, rgba(var(--c),.16), rgba(var(--c),.03)); box-shadow: 0 6px 18px rgba(var(--c),.12); }
   .ef-card .c { font-size: 11.5px; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+  .ef-card .ef-amt { color: var(--muted); font-weight: 600; padding-right: 7px; }
   .ef-card .n { font-size: 13px; font-weight: 650; margin: 1px 0 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ef-card .v { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; font-variant-numeric: tabular-nums; }
   .ef-card .v b { font-size: 15px; font-weight: 750; }
@@ -515,7 +521,7 @@
   .ef-tool .switch { font-size: 12.5px; color: var(--muted); gap: 7px; white-space: nowrap; }
   @media (max-width: 920px) { .ef-kpis { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 640px) {
-    .ef-strip { grid-auto-columns: 128px; }
+    .ef-strip { grid-auto-columns: 132px; }
     .ef-card .x { opacity: 1; }
     .ef-kpis { gap: 8px; }
     .ef-kpis .stat { padding: 12px; }
@@ -2603,6 +2609,8 @@ function fm(path, code) {
   fmChain = run.catch(() => {}).then(() => wait(400));
   return run;
 }
+const ETF_SORTS = [['def', '默认'], ['prem', '溢价'], ['chg', '估算涨跌'], ['amt', '成交额']];
+const etfAmt = v => v >= 1e8 ? (v / 1e8).toFixed(2) + '亿' : (v / 1e4).toFixed(0) + '万';
 const etfShort = n => String(n || '').replace(/ETF/, '·').replace(/·$/, '');
 const etfExch = c => /^5/.test(c) ? '上海证券交易所' : '深圳证券交易所';
 function etfProxy(f) {
@@ -2662,7 +2670,7 @@ async function etfQuotes() {
   for (let i = 0; i < syms.length; i += 60) await loadScript('https://qt.gtimg.cn/q=' + syms.slice(i, i + 60).join(',') + '&_=' + Date.now(), 'gbk');
   E.list.forEach(c => {
     const a = String(window['v_' + tqSym('F', c)] || '').split('~');
-    if (+a[3] > 0) EL.etf[c] = { price: +a[3], prev: +a[4], chg: +a[32] / 100, name: a[1] };
+    if (+a[3] > 0) EL.etf[c] = { price: +a[3], prev: +a[4], chg: +a[32] / 100, amt: +a[37] * 1e4 || 0, name: a[1] };
   });
   us.forEach(s => {
     const [p, b] = s.split('.'), raw = b ? window['v_us' + p]?.[b] : window['v_us' + s];
@@ -2707,7 +2715,7 @@ async function etfBases() {
 
 function etfCalc(code) {
   const f = EC.f[code] || {}, D = f.navD, et = EL.etf[code];
-  const o = { code, f, name: f.name || et?.name || code, price: et?.price, mchg: et?.chg, rows: [], ok: 0, n: 0, est: null };
+  const o = { code, f, name: f.name || et?.name || code, price: et?.price, mchg: et?.chg, amt: et?.amt, rows: [], ok: 0, n: 0, est: null };
   const rows = etfRows(code);
   o.n = rows.length;
   if (!(f.nav > 0) || !D || !EL.t) return o;
@@ -2758,7 +2766,6 @@ function buildEtf() {
         <button data-ef="reset">恢复自动权重</button><hr/>
         <button data-ef="csv-in">导入 CSV 持仓</button>
         <button data-ef="csv-out">导出估值快照</button><hr/>
-        <button data-ef="sort">${E.sort === 'prem' ? '按默认顺序排列' : '按溢价从高到低排列'}</button>
         <button data-ef="help">计算说明</button>
       </div></details>
     </div>`) + `<div id="efBody"></div><input type="file" id="efCsv" accept=".csv,text/csv,text/plain" hidden />`;
@@ -2770,6 +2777,12 @@ function buildEtf() {
     if (e.target.closest('[data-efx]')) return etfRemove(e.target.closest('[data-efx]').dataset.efx);
     if (card) { E.cur = card.dataset.efc; eSave(); renderEtf(); return; }
     if (e.target.closest('[data-efadd]')) return etfAdd();
+    const so = e.target.closest('[data-efs]');
+    if (so) {
+      const k = so.dataset.efs;
+      if (E.sort === k && k !== 'def') E.dir = -(E.dir || -1); else { E.sort = k; E.dir = -1; }
+      eSave(); return renderEtf();
+    }
     const m = e.target.closest('[data-ef]');
     if (m) { e.target.closest('details').open = false; etfMenu(m.dataset.ef); }
   });
@@ -2806,7 +2819,12 @@ function renderEtf() {
   if (body.contains(document.activeElement) && document.activeElement.matches('input')) return;
   if (!E.list.includes(E.cur)) E.cur = E.list[0];
   const all = E.list.map(etfCalc);
-  const strip = E.sort === 'prem' ? [...all].sort((a, b) => (b.prem ?? -9) - (a.prem ?? -9)) : all;
+  const sv = x => E.sort === 'prem' ? x.prem : E.sort === 'chg' ? (x.est ? x.chg : null) : E.sort === 'amt' ? x.amt : null;
+  const strip = E.sort === 'def' ? all : [...all].sort((a, b) => {
+    const va = sv(a), vb = sv(b);
+    return va == null ? 1 : vb == null ? -1 : (E.dir || -1) < 0 ? vb - va : va - vb;
+  });
+  const sortBar = ETF_SORTS.map(([k, n]) => `<button class="chip${E.sort === k ? ' active' : ''}" data-efs="${k}">${n}${E.sort === k && k !== 'def' ? ((E.dir || -1) < 0 ? ' ↓' : ' ↑') : ''}</button>`).join('');
   const o = all.find(x => x.code === E.cur) || all[0];
   const t = EL.t ? new Date(EL.t) : null;
   const okN = all.filter(x => x.est).length;
@@ -2815,7 +2833,8 @@ function renderEtf() {
       ${E.list.length > 1 ? `<span class="x" data-efx="${x.code}" title="移出监控">×</span>` : ''}
       <div class="c">${x.code}</div><div class="n">${esc(etfShort(x.name))}</div>
       <div class="v"><b class="num ${cls(x.chg)}">${x.est ? nf(x.est, 4) : '—'}</b><span class="c ${cls(x.chg)}">${x.est ? sgn(x.chg) : '加载中…'}</span></div>
-      <div class="v" style="margin-top:6px"><span class="c">溢价</span>${x.prem != null ? `<span class="pm ${pmLv(x.prem)}">${sgn(x.prem)}</span>` : '<span class="c">—</span>'}</div>
+      <div class="v" style="margin-top:6px"><span class="c">${x.prem == null ? '溢价 —' : x.prem >= 0 ? '溢价' : '折价'}</span>${x.prem != null ? `<span class="pm ${pmLv(x.prem)}">${sgn(x.prem)}</span>` : ''}</div>
+      <div class="v" style="margin-top:4px"><span class="c">成交额</span><span class="c ef-amt">${x.amt ? etfAmt(x.amt) : '—'}</span></div>
     </button>`).join('') + `<button class="ef-card add" data-efadd>+ 添加 ETF</button>`;
   if (!o) { body.innerHTML = `<div class="ef-strip">${cards}</div>`; return; }
   const f = o.f, ov = E.ov[o.code];
@@ -2852,7 +2871,7 @@ function renderEtf() {
       ${o.rows.length || o.rest ? `<div class="tbl-wrap"><table class="ef-tbl"><thead><tr><th>成分股</th><th>权重 %</th><th class="lg">基准价 USD</th><th class="lg">最新价 USD</th><th>涨跌</th><th>贡献 pp</th><th class="lg">报价时间</th></tr></thead>
       <tbody>${o.rows.map(tr).join('')}${rest}</tbody></table></div>` : `<div class="empty">${etfBusy ? '正在加载持仓…' : '暂时拿不到持仓清单,可稍后点「更多 → 更新持仓清单」,或导入 CSV'}</div>`}
     </div>`;
-  body.innerHTML = `<div class="hint" id="efSt" style="margin:-12px 0 12px">${esc(st)}</div><div class="ef-strip">${cards}</div>${info}${kpis}${table}
+  body.innerHTML = `<div class="ef-bar"><span class="hint" id="efSt">${esc(st)}</span><div class="chips ef-sort"><span>排序</span>${sortBar}</div></div><div class="ef-strip">${cards}</div>${info}${kpis}${table}
     <div class="hint">估算仅供参考:前十大持仓来自最新季报,其余部分按同指数美股 ETF 走势代理;汇率用实时 USD/CNY,与基金实际使用的估值汇率略有差异。溢价 <span class="pm l1">&lt;2%</span> <span class="pm l2">2–5%</span> <span class="pm l3">&gt;5%</span></div>`;
 }
 
@@ -2889,11 +2908,6 @@ async function etfMenu(k) {
   if (k === 'hold') { EL.t = 0; toast('正在重新拉取持仓清单…'); return etfRefresh('hold'); }
   if (k === 'reset') { delete E.ov[c]; eSave(); toast('已恢复为季报持仓与自动仓位'); return renderEtf(); }
   if (k === 'csv-in') return $('#efCsv').click();
-  if (k === 'sort') {
-    E.sort = E.sort === 'prem' ? 'def' : 'prem'; eSave();
-    $('[data-ef="sort"]').textContent = E.sort === 'prem' ? '按默认顺序排列' : '按溢价从高到低排列';
-    return renderEtf();
-  }
   if (k === 'exp') {
     const v = await xbAsk({ title: '调整股票仓位', msg: '基金净值中投向美股的比例。默认取「100% − 季报现金占比」,前十大以外的部分按同指数 ETF 走势估算。', input: etfExp(c).toFixed(2), ok: '保存', host: $('#etf') });
     const n = parseFloat(v);
