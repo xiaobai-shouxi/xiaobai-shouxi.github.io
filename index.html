@@ -2891,7 +2891,7 @@ function poolCalc(k) {
       o.yrs = hist.length / 52;
       if (hist.length >= 50) {
         o.yp = hist.filter(v => v < o.yld).length / hist.length;
-        o.y75 = quant(hist, .75); o.yMin = Math.min(...hist); o.yMax = Math.max(...hist);
+        o.y50 = quant(hist, .5); o.y70 = quant(hist, .7); o.yMin = Math.min(...hist); o.yMax = Math.max(...hist);
       }
     }
     /* 股价分位:近 3 年有多少时间比现在贵 */
@@ -2905,7 +2905,10 @@ function poolCalc(k) {
       const mult = (d, c) => { const r = at(d), b = r && base(r); return b > 0 ? c / b : null; };
       const vh = px.filter(([d]) => d >= from5).map(([d, c]) => mult(d, c)).filter(v => v > 0);
       const now = mult(TODAY, q.price);
-      if (now && vh.length >= 100) { o.vName = pb ? '市净率' : '市盈率'; o.vNow = now; o.vp = vh.filter(v => v > now).length / vh.length; o.vMin = Math.min(...vh); o.vMax = Math.max(...vh); }
+      if (now && vh.length >= 100) {
+        o.vName = pb ? '市净率' : '市盈率'; o.vNow = now; o.vp = vh.filter(v => v > now).length / vh.length; o.vMin = Math.min(...vh); o.vMax = Math.max(...vh);
+        o.vBase = q.price / now; o.v50 = quant(vh, .5); o.v30 = quant(vh, .3);
+      }
     }
     /* 综合位置:股息率 40% + 估值 35% + 股价 25%,缺哪项就按剩下的重新分配 */
     const parts = [[o.yp, .4], [o.vp, .35], [o.pp, .25]].filter(([v]) => v != null);
@@ -2923,16 +2926,26 @@ function poolCalc(k) {
       o.ma52 = avg(cs.slice(-52));
       const ma13 = avg(cs.slice(-13)), ma13p = avg(cs.slice(-17, -4));
       const low13 = Math.min(...cs.slice(-14, -1)), hi52 = Math.max(...cs.slice(-52));
-      o.dd = q.price / hi52 - 1;
+      o.dd = q.price / hi52 - 1; o.hi52 = hi52; o.lo52 = Math.min(...cs.slice(-52));
+      o.low4 = Math.min(...cs.slice(-5)); o.r4 = q.price / cs[cs.length - 5] - 1;
       o.trend = q.price >= o.ma52 ? 'up' : ma13 < ma13p && q.price <= low13 * 1.03 ? 'fall' : 'weak';
     }
   }
-  /* 参考价 = 近 12 月分红 ÷ 目标股息率;第一笔再留「半年波动」的安全边际(5%–15%),第二笔再低一档 */
-  const ty = p.target > 0 ? p.target / 100 : o.y75;
-  if (ty && o.dps > 0) {
-    o.ty = ty; o.ref = o.dps / ty;
-    o.m = Math.min(.15, Math.max(.05, (o.vol || .2) / 2));
-    o.b1 = o.ref * (1 - o.m); o.b2 = o.ref * (1 - 2 * o.m);
+  /* 长线定区间:合理价取「分红 ÷ 近 5 年股息率中位数」和「每股收益(银行保险用净资产)× 近 5 年估值中位数」中较低的,且不超过近一年最高价;
+     便宜价取「分红 ÷ 70% 分位股息率(或自定目标)」和「× 估值 30% 分位」中较低的。分红涨得快的公司历史股息率偏低,只用股息率会把价格算得离谱;
+     短线定买点:第一笔取「近 4 周低点」和「现价回调半个月度波动」中较低的,再夹在 [便宜价, 合理价] 之间,
+     所以价格在合理区间时,第一笔就在一个月内正常波动能碰到的位置;第二笔 = 便宜价与第一笔再回调一个月度波动中较低的 */
+  const ty = p.target > 0 ? p.target / 100 : o.y70;
+  if (ty && o.dps > 0 && o.y50) {
+    o.ty = ty;
+    o.Fy = o.dps / o.y50; o.Ly = o.dps / ty;
+    if (o.v50) { o.Fv = o.vBase * o.v50; o.Lv = o.vBase * o.v30; }
+    o.F = Math.min(o.Fy, o.Fv ?? Infinity, Math.max(o.hi52 ?? Infinity, q.price));
+    o.sm = (o.vol || .2) * Math.sqrt(4 / 52);
+    o.L = Math.min(o.Ly, o.Lv ?? Infinity, o.F * (1 - o.sm));
+    const sup = Math.min(o.low4 ?? q.price, q.price * (1 - o.sm / 2));
+    o.b1 = Math.min(o.F, Math.max(o.L, sup));
+    o.b2 = Math.min(o.L, o.b1 * (1 - o.sm));
     o.gap = q.price / o.b1 - 1;
   }
   /* 体检:连续分红 / 分红增长 / 派息率 / 现金流含金量 / ROE */
@@ -2979,7 +2992,7 @@ function poolEnter() {
 function buildPool() {
   $('#pool').innerHTML = head('pool', '红利股票池', `精选 ${POOL_DEF.length} 只 A股红利龙头,综合基本面、估值、股价和趋势,告诉你什么时候可以分批买`, `
     <select id="plTarget" title="买入价按什么股息率倒推" style="width:auto;padding:8px 34px 8px 12px;font-size:13px">
-      <option value="0">参考价:自身 75% 分位</option>${[4, 4.5, 5, 5.5, 6].map(v => `<option value="${v}">参考价:股息率 ${v}%</option>`).join('')}
+      <option value="0">便宜价:自身 70% 分位</option>${[4, 4.5, 5, 5.5, 6].map(v => `<option value="${v}">便宜价:股息率 ${v}%</option>`).join('')}
     </select>
     <button class="run sm" id="plGo">刷新</button>`) + `<div id="plBody"></div>`;
   $('#plTarget').value = String(poolCfg().target || 0);
@@ -3002,7 +3015,7 @@ function buildPool() {
    综合位置偏高 → 等回落;没到第一笔价 → 等待(差 5% 以内算接近);到了但还在下跌 → 等止跌;适中位置 → 接近;
    否则到第一笔价可建仓,到第二笔价可加仓 */
 const SIG = {
-  load: ['加载中', 'n'], risk: ['先别买', 'r'], low: ['不适合收息', 'n'], short: ['只观察', 'n'], high: ['偏贵·等回落', 'o'],
+  load: ['加载中', 'n'], risk: ['先别买', 'r'], low: ['不适合收息', 'n'], short: ['只观察', 'n'], high: ['偏贵·等回落', 'o'], hot: ['短线过热·等回踩', 'o'],
   wait: ['未到买入价', 'n'], near: ['接近·可关注', 'y'], fall: ['下跌中·等止跌', 'o'], buy1: ['可分批建仓', 'g'], buy2: ['可分批加仓', 'g'],
 };
 function poolSignal(o) {
@@ -3014,11 +3027,16 @@ function poolSignal(o) {
   if (o.yld < .04) return S2('low', `股息率 ${pct(o.yld)} 不到 4%,拿来收息性价比不高`);
   if (o.yrs < 3 || o.cons < 5) return S2('short', '有效历史不足 3 年或连续分红不足 5 年,规律还不可靠');
   if (o.lv >= 3) return S2('high', `综合位置${POOL_LV[o.lv][1]},现在买等于追高,等回落`);
-  if (o.gap > 0) return o.gap <= .05 ? S2('near', `离第一笔买入价还差 ${(o.gap * 100).toFixed(1)}%,可以先加关注`) : S2('wait', `离第一笔买入价还差 ${(o.gap * 100).toFixed(1)}%`);
-  if (o.trend === 'fall') return S2('fall', '价格已到,但股价还在创近期新低、跌势没停,等止跌再分批买');
-  if (o.lv === 2) return S2('near', '股息率到位,但估值和股价只是适中,再等等更稳');
-  if (o.q.price <= o.b2 && (o.pp ?? 0) >= .5) return S2('buy2', '已到第二笔买入价,可以分批加仓');
-  return S2('buy1', o.q.price <= o.b2 ? '股息率已到第二笔价,但股价仍在近 3 年偏高位置,先只买第一笔' : '已到第一笔买入价,可以分批建仓');
+  const P = o.q.price, hotLine = Math.max(.08, o.sm * 1.5);
+  if (o.r4 > hotLine) return S2('hot', `近 4 周涨了 ${fp(o.r4)},超过正常波动,别追,等回踩到第一笔价 ${o.b1.toFixed(2)} 附近`);
+  if (o.gap > 0) {
+    const t = P > o.F ? `高于长线合理价 ${o.F.toFixed(2)},等回落到第一笔价 ${o.b1.toFixed(2)}(还差 ${(o.gap * 100).toFixed(1)}%)`
+      : `在长线合理区间,等回踩到第一笔价 ${o.b1.toFixed(2)}(还差 ${(o.gap * 100).toFixed(1)}%,一个月内正常波动就可能碰到)`;
+    return S2(o.gap <= .03 ? 'near' : 'wait', t);
+  }
+  if (o.trend === 'fall') return S2('fall', '价格已到,但股价还在创近期新低、跌势没停,等连续几周不再创新低再买');
+  if (P <= o.b2 && (o.pp ?? 0) >= .5 && o.lv <= 1) return S2('buy2', '已到第二笔价,进入长线便宜区间,可以分批加仓');
+  return S2('buy1', P <= o.L ? '进入长线便宜区间,可以分批建仓' : '在长线合理区间、回踩到短线支撑,可以先买第一笔(小仓位)');
 }
 const poolPick = o => o.sig?.k === 'buy1' || o.sig?.k === 'buy2';
 const poolWatch = o => ['near', 'fall'].includes(o.sig?.k);
@@ -3036,10 +3054,13 @@ function poolWhy(o) {
   return out;
 }
 const priceTip = o => [
-  `参考价 ${o.ref.toFixed(2)} = 近 12 月每股分红 ${o.dps.toFixed(3)} ÷ 目标股息率 ${pct(o.ty)}${poolCfg().target ? '' : '(近 5 年只有 25% 的时间比这更高)'}`,
-  `年化波动约 ${o.vol ? fp(o.vol) : '20%(估)'},安全边际取一半 ${fp(o.m)}`,
-  `第一笔 ≤ ${o.b1.toFixed(2)}(参考价 × ${(1 - o.m).toFixed(2)})`,
-  `第二笔 ≤ ${o.b2.toFixed(2)}(参考价 × ${(1 - 2 * o.m).toFixed(2)})`,
+  `【长线 · 近 5 年】`,
+  `合理价 ${o.F.toFixed(2)}:取较低者 —— 分红 ${o.dps.toFixed(3)} ÷ 股息率中位数 ${pct(o.y50)} = ${o.Fy.toFixed(2)}${o.Fv ? `;${o.vName}中位数 ${o.v50.toFixed(2)} × ${o.vName === '市净率' ? '每股净资产' : '每股收益'} ${o.vBase.toFixed(2)} = ${o.Fv.toFixed(2)}` : ''}${o.hi52 && o.F === Math.max(o.hi52, o.q.price) ? `;且不超过一年高点 ${o.hi52.toFixed(2)}` : ''}`,
+  `便宜价 ${o.L.toFixed(2)}:取较低者 —— 分红 ÷ ${poolCfg().target ? '目标股息率' : '70% 分位股息率'} ${pct(o.ty)} = ${o.Ly.toFixed(2)}${o.Lv ? `;${o.vName} 30% 分位 ${o.v30.toFixed(2)} × ${o.vBase.toFixed(2)} = ${o.Lv.toFixed(2)}` : ''}`,
+  `【中线 · 近 1 年】区间 ${o.lo52?.toFixed(2)} ~ ${o.hi52?.toFixed(2)},距高点 ${sgn(o.dd, 0)}`,
+  `【短线 · 近 1 个月】近 4 周低点 ${o.low4?.toFixed(2)},4 周涨跌 ${sgn(o.r4, 1)},一个月正常波动约 ±${fp(o.sm)}`,
+  `第一笔 ${o.b1.toFixed(2)}:短线支撑位(近 4 周低点 / 现价回调半个月度波动),夹在便宜价和合理价之间`,
+  `第二笔 ${o.b2.toFixed(2)}:便宜价和「第一笔再回调一个月度波动」中较低的`,
 ].join('\n');
 const posTip = o => [
   `综合位置:比近几年 ${fp(o.pct)} 的时间便宜`,
@@ -3051,7 +3072,7 @@ function renderPool() {
   const body = $('#plBody'); if (!body) return;
   const p = poolCfg(), all = poolKeys().map(poolCalc), ready = all.some(o => o.lv != null);
   if (!['all', 'pick', 'watch', 'star'].includes(p.f) && !/^lv\d$/.test(p.f)) p.f = 'all';
-  const rank = { buy2: 0, buy1: 1, fall: 2, near: 3, wait: 4, high: 5, short: 6, low: 7, risk: 8, load: 9 };
+  const rank = { buy2: 0, buy1: 1, near: 2, fall: 3, hot: 4, wait: 5, high: 6, short: 7, low: 8, risk: 9, load: 10 };
   const pickAll = all.filter(poolPick).sort((a, b) => rank[a.sig.k] - rank[b.sig.k] || a.gap - b.gap), picks = pickAll.slice(0, 6);
   const watch = all.filter(poolWatch).sort((a, b) => a.gap - b.gap).slice(0, 3);
   const cnt = i => all.filter(o => o.lv === i).length;
@@ -3106,14 +3127,14 @@ function renderPool() {
   body.innerHTML = pickBox + filters + `<div class="box">
       <div class="sec-h">${fname} ${rows.length} 只
         <small>${poolMsg ? esc(poolMsg) : t ? `更新于 ${pad(t.getHours())}:${pad(t.getMinutes())} · 鼠标停在数字上看算法 · 点任意一行看分红档案` : ''}</small></div>
-      ${rows.length ? `<div class="tbl-wrap"><table class="pl-tbl"><thead><tr><th></th><th>名称</th><th class="lg">现价</th>${th('yld', '股息率')}${th('pos', '综合位置', 'ct', '股息率 40% + 估值 35% + 股价 25% 的历史分位')}<th class="lg ct">趋势</th>${th('hp', '体检', 'lg ct')}${th('gap', '买入价', 'lg', '第一笔 = 参考价 × (1 − 安全边际),安全边际按自身波动取 5%–15%')}${th('sig', '信号')}</tr></thead>
+      ${rows.length ? `<div class="tbl-wrap"><table class="pl-tbl"><thead><tr><th></th><th>名称</th><th class="lg">现价</th>${th('yld', '股息率')}${th('pos', '综合位置', 'ct', '股息率 40% + 估值 35% + 股价 25% 的历史分位')}<th class="lg ct">趋势</th>${th('hp', '体检', 'lg ct')}${th('gap', '买入价', 'lg', '长线定区间(合理价 ~ 便宜价),短线定买点(近 4 周支撑 / 一个月正常波动),鼠标停在数字上看算式')}${th('sig', '信号')}</tr></thead>
         <tbody>${rows.map(tr).join('')}</tbody></table></div>` : `<div class="empty">${p.f === 'star' ? '还没有关注的股票,点名称前的 ☆ 加关注' : '这一档暂时没有股票'}</div>`}
     </div>
     <div class="hint pl-legend">
       <span><b>综合位置</b>:三个指标各自和历史比,数字是「比多少比例的时间便宜」。股息率(近 5 年)占 40%,估值(银行保险看市净率,其他看市盈率,近 5 年)占 35%,股价(近 3 年)占 25%</span>
       <span><b>趋势</b>:股价在 52 周均线(年线)上方算正常;在年线下方、而且还在创近 13 周新低,算「下跌中」,这时便宜也先别接</span>
       <span><b>体检</b>:连续分红 / 分红增长 / 派息率 / 现金流 / ROE / 利润趋势 <span class="pl-dots"><i class="g"></i><i class="y"></i><i class="r"></i><i class="n"></i></span> 好 · 一般 · 有风险 · 不适用。有一项红灯就判「先别买」</span>
-      <span><b>买入价</b>:参考价 = 近 12 月每股分红 ÷ 目标股息率(默认自身近 5 年 75% 分位);第一笔再打一个安全边际(年化波动的一半,5%–15%),第二笔再打一次</span>
+      <span><b>买入价</b>:长线定区间——合理价同时看「分红 ÷ 近 5 年股息率中位数」和「每股收益(银行保险用净资产)× 近 5 年估值中位数」取较低的,便宜价同理取 70% 分位股息率 / 30% 分位估值;短线定买点——第一笔取近 4 周低点或现价回调半个月度波动,并夹在便宜价和合理价之间,在合理区间时一个月内正常波动就可能碰到;第二笔是便宜价或再回调一个月度波动。近 4 周涨幅超过正常波动时提示「短线过热」,不追高</span>
       <span>以上全部由规则自动计算,只帮你缩小范围、管住手,不构成投资建议</span>
     </div>`;
 }
