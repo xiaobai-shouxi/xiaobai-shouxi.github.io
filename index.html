@@ -526,12 +526,28 @@
   .pl-c-f .sm { font-size: 11.5px; color: var(--muted-2); }
   .pl-c-f .sm.ok { color: var(--ok); }
   .pl-pick { margin-bottom: 14px; }
+  .pl-sig { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; line-height: 18px; white-space: nowrap; color: var(--muted); background: rgba(255,255,255,.06); }
+  .pl-sig.g { color: #6ee7b7; background: rgba(52,211,153,.16); }
+  .pl-sig.y { color: #fde047; background: rgba(250,204,21,.14); }
+  .pl-sig.o { color: #fdba74; background: rgba(251,146,60,.15); }
+  .pl-sig.r { color: #fca5a5; background: rgba(248,113,113,.16); }
+  .pl-sub { display: block; margin-top: 4px; font-size: 10.5px; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+  .pl-trd { display: block; font-size: 12px; font-weight: 600; }
+  .pl-trd.g { color: #6ee7b7; } .pl-trd.y { color: #fde047; } .pl-trd.r { color: #fca5a5; }
+  .pl-why li.no::before { content: "✗"; color: #f87171; }
+  .pl-why li.no { color: var(--muted-2); }
+  .pl-c-num .sm2 { display: block; font-size: 11px; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+  .pl-card .pl-lv { display: inline-block; margin-bottom: 6px; }
+  .pl-c-f { align-items: flex-start; }
+  .pl-c-f .sm { text-align: right; line-height: 1.5; }
+  .pl-rule { margin-top: 12px; padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.6; color: var(--muted); background: rgba(250,204,21,.06); border: 1px dashed rgba(250,204,21,.3); }
   .pl-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
   .pl-legend .pl-dots i { width: 8px; height: 8px; }
   @media (max-width: 640px) {
     .pl-tbl .lg { display: none; }
-    .pl-pos { width: 76px; }
-    .pl-tbl .pl-ends { display: none; }
+    .pl-pos { width: 64px; }
+    .pl-tbl .pl-ends, .pl-tbl .pl-sub { display: none; }
+    .pl-tbl .pl-sig { white-space: normal; max-width: 74px; padding: 2px 6px; font-size: 11px; line-height: 15px; text-align: center; }
     .pl-tbl td:first-child, .pl-tbl th:first-child { width: 16px; padding-left: 0; }
     .pl-star { font-size: 14px; padding: 0; }
     .pl-buy b { font-size: 12.5px; }
@@ -2727,7 +2743,11 @@ const PL_CKEY = 'xb-pool-cache';
 let PC;
 try { PC = Object.assign({ k: {}, f: {} }, JSON.parse(localStorage.getItem(PL_CKEY) || '{}')); } catch { PC = { k: {}, f: {} }; }
 const pcSave = () => { try { localStorage.setItem(PL_CKEY, JSON.stringify(PC)); } catch {} };
-const poolCfg = () => (S.pool = Object.assign({ add: [], rm: [], star: [], target: 0, f: 'all', sort: 'pos', dir: -1 }, S.pool));
+const poolCfg = () => {
+  S.pool = Object.assign({ star: [], target: 0, f: 'all', sort: 'sig', dir: -1 }, S.pool);
+  if (S.pool.sv !== 2) Object.assign(S.pool, { sv: 2, sort: 'sig', dir: -1 });
+  return S.pool;
+};
 let poolBusy = false, poolMsg = '', poolT = 0;
 
 const poolKeys = () => POOL_DEF.map(x => x.k);
@@ -2760,9 +2780,13 @@ async function poolKline(k, n) {
 }
 async function poolFin(code) {
   const sec = code + (/^[69]/.test(code) ? '.SH' : /^[48]/.test(code) ? '.BJ' : '.SZ');
-  const r = await jsonp(`https://datacenter.eastmoney.com/securities/api/data/get?type=RPT_F10_FINANCE_MAINFINADATA&sty=APP_F10_MAINFINADATA&filter=(SECUCODE%3D%22${sec}%22)(REPORT_TYPE%3D%22%E5%B9%B4%E6%8A%A5%22)&p=1&ps=1&sr=-1&st=REPORT_DATE`);
-  const x = r?.result?.data?.[0];
-  return x ? { y: dd(x.REPORT_DATE).slice(0, 4), eps: x.EPSJB, cf: x.MGJYXJJE, roe: x.ROEJQ, debt: x.ZCFZL, fin: /银行|保险|证券/.test(x.ORG_TYPE || '') } : null;
+  const r = await jsonp(`https://datacenter.eastmoney.com/securities/api/data/get?type=RPT_F10_FINANCE_MAINFINADATA&sty=APP_F10_MAINFINADATA&filter=(SECUCODE%3D%22${sec}%22)(REPORT_TYPE%3D%22%E5%B9%B4%E6%8A%A5%22)&p=1&ps=6&sr=-1&st=REPORT_DATE`);
+  const rows = r?.result?.data || [], x = rows[0];
+  if (!x) return null;
+  return {
+    y: dd(x.REPORT_DATE).slice(0, 4), eps: x.EPSJB, cf: x.MGJYXJJE, roe: x.ROEJQ, debt: x.ZCFZL, fin: /银行|保险|证券/.test(x.ORG_TYPE || ''),
+    ys: rows.map(z => ({ y: dd(z.REPORT_DATE).slice(0, 4), eps: z.EPSJB, bps: z.BPS, n: dd(z.NOTICE_DATE) || addDays(dd(z.REPORT_DATE), 120) })).reverse(),
+  };
 }
 /* 并发 2、每个请求间隔 150ms;连续失败 3 次视为接口在限流,本轮停止,避免 IP 被封 */
 async function poolRun(list, fn) {
@@ -2789,7 +2813,7 @@ async function poolRefresh(manual) {
   const needQ = !qt || ((aOpen() || now - qt > 12 * 36e5) && now - qt > 6e4);
   const needD = keys.filter(k => (!C.divs[k] || now - C.divs[k].t > PL_TTL.d) && ok(k, 'd'));
   const needK = keys.filter(k => (!PC.k[k] || now - PC.k[k].t > PL_TTL.k) && ok(k, 'k'));
-  const needF = keys.filter(k => (!PC.f[k] || now - PC.f[k].t > PL_TTL.f) && ok(k, 'f'));
+  const needF = keys.filter(k => (!PC.f[k] || now - PC.f[k].t > PL_TTL.f || (PC.f[k].v && !PC.f[k].v.ys)) && ok(k, 'f'));
   if (!manual && now - (PC.cool || 0) < 10 * 6e4) return renderPool();
   if (!needQ && !needD.length && !needK.length && !needF.length) { if (manual) toast(aOpen() ? '数据已是最新' : '数据已是最新 · 现在不是交易时间'); poolT = now; return renderPool(); }
   poolBusy = true;
@@ -2849,29 +2873,85 @@ function poolCalc(k) {
   o.dpsPrev = ttmAt(addDays(TODAY, -365));
   o.dg = o.dpsPrev > 0 ? o.dps / o.dpsPrev - 1 : null;
   o.yld = q.price > 0 ? o.dps / q.price : 0;
-  if (kl && o.dps > 0) {
+  if (kl && kl.length) {
+    /* 周线是不复权价;除权周单周跌超 30% 基本是送转股造成的断层(行情大涨大跌不算),断层之前的价格不可比 */
+    let cut = kl[0][0];
+    for (let i = 1; i < kl.length; i++) {
+      const d = kl[i][0];
+      if (kl[i][1] / kl[i - 1][1] - 1 < -.3 && evs.some(([ex]) => ex > addDays(d, -10) && ex <= addDays(d, 3))) cut = d;
+    }
     const from5 = addDays(TODAY, -365 * 5), listed = kl[0][0];
-    const from = listed > addDays(from5, -30) ? [from5, addDays(listed, 365)].sort()[1] : from5;
-    const hist = kl.filter(([d]) => d >= from).map(([d, c]) => ttmAt(d) / c).filter(v => v > 0);
-    o.yrs = hist.length / 52;
-    if (hist.length >= 50) {
-      o.pct = hist.filter(v => v < o.yld).length / hist.length;
+    let from = listed > addDays(from5, -30) ? [from5, addDays(listed, 365)].sort()[1] : from5;
+    if (cut !== kl[0][0]) from = [from, addDays(cut, 365)].sort()[1];
+    const px = kl.filter(([d]) => d >= cut);
+    const cs = [...px.map(x => x[1]).slice(0, -1), q.price];
+    /* 股息率分位 */
+    if (o.dps > 0) {
+      const hist = kl.filter(([d]) => d >= from).map(([d, c]) => ttmAt(d) / c).filter(v => v > 0);
+      o.yrs = hist.length / 52;
+      if (hist.length >= 50) {
+        o.yp = hist.filter(v => v < o.yld).length / hist.length;
+        o.y75 = quant(hist, .75); o.yMin = Math.min(...hist); o.yMax = Math.max(...hist);
+      }
+    }
+    /* 股价分位:近 3 年有多少时间比现在贵 */
+    const p3 = px.filter(([d]) => d >= addDays(TODAY, -365 * 3)).map(x => x[1]);
+    if (p3.length >= 50) { o.pp = p3.filter(c => c > q.price).length / p3.length; o.pMin = Math.min(...p3); o.pMax = Math.max(...p3); }
+    /* 估值分位:银行保险看市净率,其他看市盈率;每周用当时已公布的最近一份年报 */
+    const ys = fin?.ys || [];
+    if (ys.length >= 2) {
+      const pb = fin.fin, base = r => pb ? r.bps : r.eps;
+      const at = d => { let r = null; for (const z of ys) if (z.n <= d) r = z; return r; };
+      const mult = (d, c) => { const r = at(d), b = r && base(r); return b > 0 ? c / b : null; };
+      const vh = px.filter(([d]) => d >= from5).map(([d, c]) => mult(d, c)).filter(v => v > 0);
+      const now = mult(TODAY, q.price);
+      if (now && vh.length >= 100) { o.vName = pb ? '市净率' : '市盈率'; o.vNow = now; o.vp = vh.filter(v => v > now).length / vh.length; o.vMin = Math.min(...vh); o.vMax = Math.max(...vh); }
+    }
+    /* 综合位置:股息率 40% + 估值 35% + 股价 25%,缺哪项就按剩下的重新分配 */
+    const parts = [[o.yp, .4], [o.vp, .35], [o.pp, .25]].filter(([v]) => v != null);
+    if (o.yp != null && parts.length >= 2) {
+      const w = parts.reduce((a, [, x]) => a + x, 0);
+      o.pct = parts.reduce((a, [v, x]) => a + v * x, 0) / w;
       o.lv = lvOf(o.pct);
-      o.y75 = quant(hist, .75); o.yMin = Math.min(...hist); o.yMax = Math.max(...hist); o.n = hist.length;
+    }
+    /* 波动与趋势 */
+    if (cs.length >= 60) {
+      const r52 = cs.slice(-53).map((c, i, a) => i ? Math.log(c / a[i - 1]) : null).slice(1);
+      const mu = r52.reduce((a, b) => a + b, 0) / r52.length;
+      o.vol = Math.sqrt(r52.reduce((a, b) => a + (b - mu) ** 2, 0) / (r52.length - 1) * 52);
+      const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+      o.ma52 = avg(cs.slice(-52));
+      const ma13 = avg(cs.slice(-13)), ma13p = avg(cs.slice(-17, -4));
+      const low13 = Math.min(...cs.slice(-14, -1)), hi52 = Math.max(...cs.slice(-52));
+      o.dd = q.price / hi52 - 1;
+      o.trend = q.price >= o.ma52 ? 'up' : ma13 < ma13p && q.price <= low13 * 1.03 ? 'fall' : 'weak';
     }
   }
+  /* 参考价 = 近 12 月分红 ÷ 目标股息率;第一笔再留「半年波动」的安全边际(5%–15%),第二笔再低一档 */
   const ty = p.target > 0 ? p.target / 100 : o.y75;
-  if (ty && o.dps > 0) { o.ty = ty; o.buy = o.dps / ty; o.gap = q.price / o.buy - 1; }
+  if (ty && o.dps > 0) {
+    o.ty = ty; o.ref = o.dps / ty;
+    o.m = Math.min(.15, Math.max(.05, (o.vol || .2) / 2));
+    o.b1 = o.ref * (1 - o.m); o.b2 = o.ref * (1 - 2 * o.m);
+    o.gap = q.price / o.b1 - 1;
+  }
   /* 体检:连续分红 / 分红增长 / 派息率 / 现金流含金量 / ROE */
-  const byY = {};
-  evs.forEach(([ex, v]) => byY[ex.slice(0, 4)] = (byY[ex.slice(0, 4)] || 0) + v);
+  /* 按财年汇总(2025中报 + 2025年报 都算 2025 年),已公告未除息的预案也算进它所属的财年 */
+  const byY = {}, finals = new Set();
+  list.filter(e => e.ps > 0).forEach(e => {
+    const m = String(e.period || '').match(/^(\d{4})(.*)$/), y = m ? +m[1] : +(e.ex || '').slice(0, 4);
+    if (!y) return;
+    byY[y] = (byY[y] || 0) + e.ps * fx(e.cur) / fx(cur);
+    if (!m || /年报|年度/.test(m[2])) finals.add(y);
+  });
+  const yMax = Math.max(0, ...Object.keys(byY).map(Number));
   let cons = 0;
-  for (let y = byY[YEAR] ? YEAR : YEAR - 1; byY[y] > 0; y--) cons++;
+  if (yMax >= YEAR - 2) for (let y = yMax; byY[y] > 0; y--) cons++;
   o.cons = cons;
   const dot = (n, s, t) => o.dots.push({ n, s, t });
-  dot('连续分红', cons >= 8 ? 'g' : cons >= 4 ? 'y' : 'r', `连续 ${cons} 年分红`);
-  const d1 = byY[YEAR - 1], d5 = byY[YEAR - 5];
-  if (d1 > 0 && d5 > 0) { const g = Math.pow(d1 / d5, 1 / 4) - 1; dot('分红增长', g >= .03 ? 'g' : g >= -.03 ? 'y' : 'r', `近 4 年每股分红年均 ${g >= 0 ? '+' : ''}${(g * 100).toFixed(1)}%`); }
+  dot('连续分红', cons >= 8 ? 'g' : cons >= 4 ? 'y' : 'r', `连续 ${cons} 个财年分红`);
+  const fy = Math.max(0, ...[...finals].filter(y => y < YEAR)), d1 = byY[fy], d5 = byY[fy - 4];
+  if (d1 > 0 && d5 > 0) { const g = Math.pow(d1 / d5, 1 / 4) - 1; dot('分红增长', g >= .03 ? 'g' : g >= -.03 ? 'y' : 'r', `${fy - 4}–${fy} 财年每股分红年均 ${g >= 0 ? '+' : ''}${(g * 100).toFixed(1)}%(${d5.toFixed(3)} → ${d1.toFixed(3)})`); }
   else dot('分红增长', 'n', '分红年数不足,无法判断');
   if (fin && fin.eps > 0 && byY[fin.y] > 0) { const pr = byY[fin.y] / fin.eps; dot('派息率', pr <= .75 ? 'g' : pr <= 1 ? 'y' : 'r', `${fin.y} 年派息率 ${(pr * 100).toFixed(0)}%${pr > 1 ? ',分红超过利润' : ''}`); }
   else if (fin && fin.eps <= 0) dot('派息率', 'r', `${fin.y} 年亏损`);
@@ -2880,8 +2960,14 @@ function poolCalc(k) {
   else dot('现金流', 'n', fin?.fin ? '金融企业不适用' : mk === 'A' ? '暂无年报数据' : '仅支持 A股');
   if (fin && fin.roe != null) dot('ROE', fin.roe >= 10 ? 'g' : fin.roe >= 6 ? 'y' : 'r', `${fin.y} 年 ROE ${(+fin.roe).toFixed(1)}%`);
   else dot('ROE', 'n', mk === 'A' ? '暂无年报数据' : '仅支持 A股');
+  const ey = (fin?.ys || []).filter(z => z.eps != null), e0 = ey[ey.length - 1], e3 = ey[ey.length - 4];
+  if (e0 && e3 && e3.eps > 0) {
+    const g = e0.eps > 0 ? Math.pow(e0.eps / e3.eps, 1 / 3) - 1 : -1;
+    dot('利润趋势', g >= 0 ? 'g' : g >= -.08 ? 'y' : 'r', e0.eps > 0 ? `近 3 年每股收益年均 ${g >= 0 ? '+' : ''}${(g * 100).toFixed(1)}%(${e3.y} 年 ${(+e3.eps).toFixed(2)} → ${e0.y} 年 ${(+e0.eps).toFixed(2)})` : `${e0.y} 年亏损`);
+  } else dot('利润趋势', 'n', mk === 'A' ? '年报不足 4 年' : '仅支持 A股');
   o.score = o.dots.reduce((a, d) => a + ({ g: 2, y: 1, r: -2, n: 0 }[d.s]), 0);
   o.warn = o.dots.find(d => d.s === 'r');
+  o.sig = poolSignal(o);
   return o;
 }
 
@@ -2891,9 +2977,9 @@ function poolEnter() {
   if (!poolT || Date.now() - poolT > 5 * 6e4) poolRefresh();
 }
 function buildPool() {
-  $('#pool').innerHTML = head('pool', '红利股票池', `精选 ${POOL_DEF.length} 只 A股红利龙头,自动挑出「体检过关 + 价格偏低」的,每天更新`, `
+  $('#pool').innerHTML = head('pool', '红利股票池', `精选 ${POOL_DEF.length} 只 A股红利龙头,综合基本面、估值、股价和趋势,告诉你什么时候可以分批买`, `
     <select id="plTarget" title="买入价按什么股息率倒推" style="width:auto;padding:8px 34px 8px 12px;font-size:13px">
-      <option value="0">买入价:自身 75% 分位</option>${[4, 4.5, 5, 5.5, 6].map(v => `<option value="${v}">买入价:股息率 ${v}%</option>`).join('')}
+      <option value="0">参考价:自身 75% 分位</option>${[4, 4.5, 5, 5.5, 6].map(v => `<option value="${v}">参考价:股息率 ${v}%</option>`).join('')}
     </select>
     <button class="run sm" id="plGo">刷新</button>`) + `<div id="plBody"></div>`;
   $('#plTarget').value = String(poolCfg().target || 0);
@@ -2911,79 +2997,124 @@ function buildPool() {
     if (row) { const [mk, code] = row.dataset.k.split(':'); openProfile(mk, code); }
   });
 }
-/* 优选:价格偏低以下 + 比买入价再低 5%(安全边际)+ 股息率 ≥ 4% + 分红没比上年缩水 5% 以上 + 体检无红灯 + 连续分红 ≥ 5 年 + 有效历史 ≥ 3 年 */
-const PICK = { gap: -.05, yld: .04, dg: -.05 };
-const poolPick = o => o.lv != null && o.lv <= 1 && !o.warn && o.cons >= 5 && o.yrs >= 3
-  && o.gap != null && o.gap <= PICK.gap && o.yld >= PICK.yld && o.dg != null && o.dg >= PICK.dg;
-function poolWhy(o) {
-  const good = o.dots.filter(d => d.s === 'g').map(d => d.n);
-  return [`股息率 ${pct(o.yld)},比近 5 年 ${(o.pct * 100).toFixed(0)}% 的时间都高`,
-    o.gap <= PICK.gap ? `比买入价还低 ${(-o.gap * 100).toFixed(0)}%,有安全边际` : '',
-    o.dg != null ? (o.dg >= .03 ? `近 12 月分红比上年 +${(o.dg * 100).toFixed(0)}%` : o.dg >= -.03 ? '近 12 月分红和上年持平' : `近 12 月分红比上年 ${(o.dg * 100).toFixed(0)}%`) : '',
-    `连续 ${o.cons} 年分红`, good.length >= 4 ? '体检全部过关' : good.length ? good.filter(n => n !== '连续分红').slice(0, 2).join('、') + '良好' : ''].filter(Boolean);
+/* 买入信号,按顺序一票否决:
+   基本面有红灯 / 分红比上年缩水 5% 以上 → 先别买;股息率 < 4% → 不适合收息;历史不足 3 年或连续分红不足 5 年 → 只观察;
+   综合位置偏高 → 等回落;没到第一笔价 → 等待(差 5% 以内算接近);到了但还在下跌 → 等止跌;适中位置 → 接近;
+   否则到第一笔价可建仓,到第二笔价可加仓 */
+const SIG = {
+  load: ['加载中', 'n'], risk: ['先别买', 'r'], low: ['不适合收息', 'n'], short: ['只观察', 'n'], high: ['偏贵·等回落', 'o'],
+  wait: ['未到买入价', 'n'], near: ['接近·可关注', 'y'], fall: ['下跌中·等止跌', 'o'], buy1: ['可分批建仓', 'g'], buy2: ['可分批加仓', 'g'],
+};
+function poolSignal(o) {
+  const S2 = (k, t) => ({ k, n: SIG[k][0], s: SIG[k][1], t });
+  if (o.lv == null || o.b1 == null) return S2('load', o.dps > 0 || !o.q ? '数据还没加载完' : '近 12 月没有分红');
+  const bad = o.dots.filter(d => d.s === 'r').map(d => d.n);
+  if (o.dg != null && o.dg < -.05) bad.push(`分红比上年 ${(o.dg * 100).toFixed(0)}%`);
+  if (bad.length) return S2('risk', `基本面有风险:${bad.join('、')}。股息率再高也可能是「价值陷阱」,先别买`);
+  if (o.yld < .04) return S2('low', `股息率 ${pct(o.yld)} 不到 4%,拿来收息性价比不高`);
+  if (o.yrs < 3 || o.cons < 5) return S2('short', '有效历史不足 3 年或连续分红不足 5 年,规律还不可靠');
+  if (o.lv >= 3) return S2('high', `综合位置${POOL_LV[o.lv][1]},现在买等于追高,等回落`);
+  if (o.gap > 0) return o.gap <= .05 ? S2('near', `离第一笔买入价还差 ${(o.gap * 100).toFixed(1)}%,可以先加关注`) : S2('wait', `离第一笔买入价还差 ${(o.gap * 100).toFixed(1)}%`);
+  if (o.trend === 'fall') return S2('fall', '价格已到,但股价还在创近期新低、跌势没停,等止跌再分批买');
+  if (o.lv === 2) return S2('near', '股息率到位,但估值和股价只是适中,再等等更稳');
+  if (o.q.price <= o.b2 && (o.pp ?? 0) >= .5) return S2('buy2', '已到第二笔买入价,可以分批加仓');
+  return S2('buy1', o.q.price <= o.b2 ? '股息率已到第二笔价,但股价仍在近 3 年偏高位置,先只买第一笔' : '已到第一笔买入价,可以分批建仓');
 }
-const rangeEnds = o => `<span class="pl-ends" title="近 5 年股息率最高 ${pct(o.yMax)}(最便宜)· 最低 ${pct(o.yMin)}(最贵)"><span>${pct(o.yMax, 1)} 便宜</span><span>贵 ${pct(o.yMin, 1)}</span></span>`;
-const buyTip = o => `近 12 月每股分红 ${o.dps.toFixed(3)} ÷ 目标股息率 ${pct(o.ty)}${poolCfg().target ? '' : '(近 5 年只有 25% 的时间股息率比这更高)'} = ${o.buy.toFixed(2)}\n价格不高于它时,股息率就能达到目标`;
+const poolPick = o => o.sig?.k === 'buy1' || o.sig?.k === 'buy2';
+const poolWatch = o => ['near', 'fall'].includes(o.sig?.k);
+const fp = v => (v * 100).toFixed(0) + '%';
+const TREND = { up: ['年线上方', 'g'], weak: ['年线下方·跌势放缓', 'y'], fall: ['下跌中', 'r'] };
+function poolWhy(o) {
+  const out = [];
+  out.push([`股息率 ${pct(o.yld)},比近 5 年 ${fp(o.yp)} 的时间都高`, 1]);
+  if (o.vp != null) out.push([`${o.vName} ${o.vNow.toFixed(o.vNow < 3 ? 2 : 1)},比近 5 年 ${fp(o.vp)} 的时间都便宜`, o.vp >= .5]);
+  if (o.pp != null) out.push([`股价比近 3 年 ${fp(o.pp)} 的时间都低`, o.pp >= .5]);
+  if (o.trend) out.push([o.trend === 'up' ? '股价在年线上方,趋势没走坏' : o.trend === 'weak' ? `股价在年线下方,但跌势已放缓(距一年高点 ${sgn(o.dd, 0)})` : `股价还在下跌(距一年高点 ${sgn(o.dd, 0)})`, o.trend !== 'fall']);
+  if (o.dg != null) out.push([o.dg >= .03 ? `近 12 月分红比上年 +${fp(o.dg)}` : o.dg >= -.03 ? '近 12 月分红和上年持平' : `近 12 月分红比上年 ${sgn(o.dg, 0)}`, o.dg >= -.05]);
+  const bad = o.dots.filter(d => d.s === 'r');
+  out.push([bad.length ? `体检有风险:${bad.map(d => d.n).join('、')}` : o.dots.filter(d => d.s === 'g').length >= 5 ? '体检全部过关' : '体检没有红灯', !bad.length]);
+  return out;
+}
+const priceTip = o => [
+  `参考价 ${o.ref.toFixed(2)} = 近 12 月每股分红 ${o.dps.toFixed(3)} ÷ 目标股息率 ${pct(o.ty)}${poolCfg().target ? '' : '(近 5 年只有 25% 的时间比这更高)'}`,
+  `年化波动约 ${o.vol ? fp(o.vol) : '20%(估)'},安全边际取一半 ${fp(o.m)}`,
+  `第一笔 ≤ ${o.b1.toFixed(2)}(参考价 × ${(1 - o.m).toFixed(2)})`,
+  `第二笔 ≤ ${o.b2.toFixed(2)}(参考价 × ${(1 - 2 * o.m).toFixed(2)})`,
+].join('\n');
+const posTip = o => [
+  `综合位置:比近几年 ${fp(o.pct)} 的时间便宜`,
+  `· 股息率 ${pct(o.yld)}(近 5 年 ${pct(o.yMin)} ~ ${pct(o.yMax)}),分位 ${fp(o.yp)}`,
+  o.vp != null ? `· ${o.vName} ${o.vNow.toFixed(2)}(近 5 年 ${o.vMin.toFixed(2)} ~ ${o.vMax.toFixed(2)}),分位 ${fp(o.vp)}` : '· 估值:年报不足,未计入',
+  o.pp != null ? `· 股价 ${o.q.price}(近 3 年 ${o.pMin} ~ ${o.pMax}),分位 ${fp(o.pp)}` : '· 股价:历史不足,未计入',
+].join('\n');
 function renderPool() {
   const body = $('#plBody'); if (!body) return;
   const p = poolCfg(), all = poolKeys().map(poolCalc), ready = all.some(o => o.lv != null);
-  if (/^(held)$/.test(p.f)) p.f = 'all';
-  const pickAll = all.filter(poolPick).sort((a, b) => a.gap - b.gap || b.score - a.score), picks = pickAll.slice(0, 6);
-  const near = picks.length ? [] : all.filter(o => o.lv != null && !o.warn && o.gap != null && o.yrs >= 3).sort((a, b) => a.gap - b.gap).slice(0, 3);
+  if (!['all', 'pick', 'watch', 'star'].includes(p.f) && !/^lv\d$/.test(p.f)) p.f = 'all';
+  const rank = { buy2: 0, buy1: 1, fall: 2, near: 3, wait: 4, high: 5, short: 6, low: 7, risk: 8, load: 9 };
+  const pickAll = all.filter(poolPick).sort((a, b) => rank[a.sig.k] - rank[b.sig.k] || a.gap - b.gap), picks = pickAll.slice(0, 6);
+  const watch = all.filter(poolWatch).sort((a, b) => a.gap - b.gap).slice(0, 3);
   const cnt = i => all.filter(o => o.lv === i).length;
-  const filt = p.f === 'star' ? all.filter(o => o.star) : p.f === 'pick' ? all.filter(poolPick) : /^lv\d$/.test(p.f) ? all.filter(o => o.lv === +p.f[2] - 1) : all;
-  const val = o => p.sort === 'yld' ? o.yld : p.sort === 'gap' ? (o.gap == null ? null : -o.gap) : p.sort === 'hp' ? o.score : p.sort === 'pos' ? o.pct : null;
+  const filt = p.f === 'star' ? all.filter(o => o.star) : p.f === 'pick' ? all.filter(poolPick) : p.f === 'watch' ? all.filter(poolWatch) : /^lv\d$/.test(p.f) ? all.filter(o => o.lv === +p.f[2] - 1) : all;
+  const val = o => p.sort === 'yld' ? o.yld : p.sort === 'gap' ? (o.gap == null ? null : -o.gap) : p.sort === 'hp' ? o.score : p.sort === 'pos' ? o.pct : p.sort === 'sig' ? -rank[o.sig.k] * 10 - (o.gap || 0) : null;
   const rows = [...filt].sort((a, b) => { const va = val(a), vb = val(b); return va == null ? 1 : vb == null ? -1 : p.dir < 0 ? vb - va : va - vb; });
   const px = v => '¥' + v.toFixed(v < 10 ? 3 : 2);
+  const HELD = { risk: '停止加仓·复查', buy1: '可分批加仓', high: '偏贵·别追加' };
+  const sigTag = o => `<span class="pl-sig ${o.sig.s}" title="${esc(o.sig.t)}">${o.held && HELD[o.sig.k] || o.sig.n}</span>`;
+  const bar = o => `<span class="pl-bar"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>`;
+  const subs = o => `<span class="pl-sub">息 ${fp(o.yp)} · ${o.vp != null ? (o.vName === '市净率' ? 'PB' : 'PE') + ' ' + fp(o.vp) : '估 —'} · 价 ${o.pp != null ? fp(o.pp) : '—'}</span>`;
   const card = o => `<div class="pl-card" data-k="${o.k}">
-      <div class="pl-c-h"><div><div class="nm">${esc(o.name)}${o.held ? '<span class="tg">已持仓</span>' : ''}</div><div class="cd">${esc(o.code)} · ${esc(o.ind)}</div></div>
-        <span class="pl-lv ${POOL_LV[o.lv][0]}">${POOL_LV[o.lv][1]}</span></div>
+      <div class="pl-c-h"><div><div class="nm">${esc(o.name)}${o.held ? '<span class="tg">已持仓</span>' : ''}</div><div class="cd">${esc(o.code)} · ${esc(o.ind)}</div></div>${sigTag(o)}</div>
       <div class="pl-c-num"><div><small>股息率</small><b class="num">${pct(o.yld)}</b></div><div><small>现价</small><b class="num">${px(o.q.price)}</b></div>
-        <div title="${o.buy ? esc(buyTip(o)) : ''}"><small>买入价</small><b class="num">${o.buy ? '≤ ' + px(o.buy) : '—'}</b></div></div>
-      <div><span class="pl-bar"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>${rangeEnds(o)}</div>
-      <ul class="pl-why">${poolWhy(o).map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+        <div title="${esc(priceTip(o))}"><small>第一笔 / 第二笔</small><b class="num">${px(o.b1)}</b><span class="sm2">${px(o.b2)}</span></div></div>
+      <div title="${esc(posTip(o))}"><span class="pl-lv ${POOL_LV[o.lv][0]}">综合${POOL_LV[o.lv][1]}</span>${bar(o)}${subs(o)}</div>
+      <ul class="pl-why">${poolWhy(o).map(([t, ok]) => `<li class="${ok ? '' : 'no'}">${esc(t)}</li>`).join('')}</ul>
       <div class="pl-c-f"><span class="pl-dots" title="${esc(o.dots.map(d => d.n + ':' + d.t).join('\n'))}">${o.dots.map(d => `<i class="${d.s}"></i>`).join('')}</span>
-        <span class="sm ${o.gap <= 0 ? 'ok' : ''}">${o.gap == null ? '' : o.gap <= 0 ? '已到买入价' : `距买入价还差 ${(o.gap * 100).toFixed(1)}%`}</span></div>
+        <span class="sm">${esc(o.sig.t)}</span></div>
     </div>`;
-  const pickBox = !ready ? `<div class="box"><div class="sec-h">今日优选</div><div class="empty">${esc(poolMsg || '正在拉取分红与历史股价…')}</div></div>`
+  const pickBox = !ready ? `<div class="box"><div class="sec-h">今日可买</div><div class="empty">${esc(poolMsg || '正在拉取分红与历史股价…')}</div></div>`
     : `<div class="box pl-pick">
-      <div class="sec-h">今日优选 <small>${picks.length ? `${pickAll.length} 只同时满足:价格偏低 · 比买入价低 5% 以上 · 股息率 ≥ 4% · 分红没缩水 · 体检无红灯${pickAll.length > picks.length ? `,按安全边际展示前 ${picks.length} 只,其余点下方「优选」查看` : ''}` : '眼下没有完全达标的,下面是离买入价最近的,可以先加关注等机会'}</small></div>
-      <div class="pl-cards">${(picks.length ? picks : near).map(card).join('')}</div>
+      <div class="sec-h">今日可买 <small>${picks.length ? `${pickAll.length} 只同时满足:基本面无风险 · 综合位置偏低 · 已到第一笔买入价 · 没在下跌${pickAll.length > picks.length ? `,展示前 ${picks.length} 只` : ''}` : '眼下没有到买入时机的,别急着买。下面是最接近的,可以先加关注'}</small></div>
+      ${picks.length || watch.length ? `<div class="pl-cards">${(picks.length ? picks : watch).map(card).join('')}</div>` : '<div class="empty">也没有接近买入价的,耐心等市场给机会</div>'}
+      <div class="pl-rule">买入纪律:分 2–3 笔买,到第一笔价先买一部分,跌到第二笔价再加;单只股票不超过总资金的 1/5;信号变成「先别买」时停止加仓、重新评估</div>
     </div>`;
   const chip = (f, n, c = '', cls = '') => `<button class="chip ${cls}${p.f === f ? ' active' : ''}" data-plf="${f}">${n}${c !== '' ? `<b>${c}</b>` : ''}</button>`;
   const filters = `<div class="pl-filter">
-      ${chip('all', '全部', all.length)}${chip('pick', '优选', all.filter(poolPick).length)}${chip('star', '★ 关注', all.filter(o => o.star).length)}<span class="sep"></span>
+      ${chip('all', '全部', all.length)}${chip('pick', '可买入', pickAll.length)}${chip('watch', '观察', all.filter(poolWatch).length)}${chip('star', '★ 关注', all.filter(o => o.star).length)}<span class="sep"></span>
       ${POOL_LV.map(([c, n], i) => chip('lv' + (i + 1), n, cnt(i), c)).join('')}
     </div>`;
   const th = (k, n, cls = '', tip = '') => `<th class="${cls}${p.sort === k ? ' on' : ''}" data-ps="${k}"${tip ? ` title="${tip}"` : ''}>${n}${p.sort === k ? (p.dir < 0 ? ' ↓' : ' ↑') : ''}</th>`;
   const tr = o => {
     const q = o.q;
     const pos = o.lv == null ? `<span class="sm">${!q || !C.divs[o.k] ? '加载中…' : o.dps > 0 ? '历史数据不足' : '近 12 月无分红'}</span>`
-      : `<span class="pl-pos" title="当前股息率 ${pct(o.yld)},近 5 年区间 ${pct(o.yMin)} ~ ${pct(o.yMax)},高于 ${(o.pct * 100).toFixed(0)}% 的时间"><span class="pl-lv ${POOL_LV[o.lv][0]}">${POOL_LV[o.lv][1]}</span>
-          <span class="pl-bar"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>${rangeEnds(o)}</span>`;
-    const buy = o.buy ? `<span class="pl-buy" title="${esc(buyTip(o))}"><b class="num">≤ ${px(o.buy)}</b>
-        <span class="sm ${o.gap <= 0 ? 'ok' : ''}">${o.gap <= 0 ? '已低于买入价' : `还差 ${(o.gap * 100).toFixed(1)}%`}</span></span>` : '<span class="sm">—</span>';
+      : `<span class="pl-pos" title="${esc(posTip(o))}"><span class="pl-lv ${POOL_LV[o.lv][0]}">${POOL_LV[o.lv][1]}</span>${bar(o)}${subs(o)}</span>`;
+    const trd = o.trend ? `<span class="pl-trd ${TREND[o.trend][1]}">${TREND[o.trend][0]}</span><span class="sm">距高点 ${sgn(o.dd, 0)} · 波动 ${fp(o.vol)}</span>` : '<span class="sm">—</span>';
+    const buy = o.b1 ? `<span class="pl-buy" title="${esc(priceTip(o))}"><b class="num">${px(o.b1)}</b><span class="sm">第二笔 ${px(o.b2)}</span></span>` : '<span class="sm">—</span>';
     return `<tr data-k="${o.k}">
       <td><button class="pl-star${o.star ? ' on' : ''}" data-pst="${o.k}" title="${o.star ? '取消关注' : '关注'}">${o.star ? '★' : '☆'}</button></td>
       <td><div class="nm">${esc(o.name)}${o.held ? '<span class="tg">已持仓</span>' : ''}</div><div class="cd">${esc(o.code)} · ${esc(o.ind)}</div></td>
       <td class="lg">${q ? `<b class="num">${q.price.toFixed(q.price < 10 ? 3 : 2)}</b><span class="sm ${cls(q.chg)}">${sgn(q.chg)}</span>` : '—'}</td>
       <td><b class="num">${o.yld ? pct(o.yld) : '—'}</b>${o.dps ? `<span class="sm lg">每股 ${o.dps.toFixed(3)}</span>` : ''}</td>
       <td style="text-align:center">${pos}</td>
-      <td class="lg" style="text-align:center"><span class="pl-dots" title="${esc(o.dots.map(d => d.n + ':' + d.t).join('\n'))}">${o.dots.map(d => `<i class="${d.s}"></i>`).join('')}</span>${o.warn ? `<span class="pl-warn">⚠ ${esc(o.warn.n)}</span>` : ''}</td>
-      <td>${buy}</td></tr>`;
+      <td class="lg" style="text-align:center">${trd}</td>
+      <td class="lg" style="text-align:center"><span class="pl-dots" title="${esc(o.dots.map(d => d.n + ':' + d.t).join('\n'))}">${o.dots.map(d => `<i class="${d.s}"></i>`).join('')}</span></td>
+      <td class="lg">${buy}</td>
+      <td>${sigTag(o)}${['wait', 'near'].includes(o.sig.k) && o.gap > 0 ? `<span class="sm">差 ${(o.gap * 100).toFixed(1)}%</span>` : ''}</td></tr>`;
   };
   const t = poolT ? new Date(poolT) : null;
-  const fname = { all: '全部', pick: '优选', star: '关注' }[p.f] || POOL_LV[+p.f[2] - 1][1];
+  const fname = { all: '全部', pick: '可买入', watch: '观察', star: '关注' }[p.f] || POOL_LV[+p.f[2] - 1][1];
   body.innerHTML = pickBox + filters + `<div class="box">
       <div class="sec-h">${fname} ${rows.length} 只
-        <small>${poolMsg ? esc(poolMsg) : t ? `更新于 ${pad(t.getHours())}:${pad(t.getMinutes())} · 点任意一行看分红档案` : ''}</small></div>
-      ${rows.length ? `<div class="tbl-wrap"><table class="pl-tbl"><thead><tr><th></th><th>名称</th><th class="lg">现价</th>${th('yld', '股息率')}${th('pos', '价格位置', 'ct')}${th('hp', '体检', 'lg')}${th('gap', '买入价', '', '近 12 月每股分红 ÷ 目标股息率,鼠标停在数字上看具体算式')}</tr></thead>
+        <small>${poolMsg ? esc(poolMsg) : t ? `更新于 ${pad(t.getHours())}:${pad(t.getMinutes())} · 鼠标停在数字上看算法 · 点任意一行看分红档案` : ''}</small></div>
+      ${rows.length ? `<div class="tbl-wrap"><table class="pl-tbl"><thead><tr><th></th><th>名称</th><th class="lg">现价</th>${th('yld', '股息率')}${th('pos', '综合位置', 'ct', '股息率 40% + 估值 35% + 股价 25% 的历史分位')}<th class="lg ct">趋势</th>${th('hp', '体检', 'lg ct')}${th('gap', '买入价', 'lg', '第一笔 = 参考价 × (1 − 安全边际),安全边际按自身波动取 5%–15%')}${th('sig', '信号')}</tr></thead>
         <tbody>${rows.map(tr).join('')}</tbody></table></div>` : `<div class="empty">${p.f === 'star' ? '还没有关注的股票,点名称前的 ☆ 加关注' : '这一档暂时没有股票'}</div>`}
     </div>
     <div class="hint pl-legend">
-      <span><b>价格位置</b>:当前股息率在这只股票近 5 年周线中的分位,股息率越高越「便宜」;≥80% 低位 · 60–80% 偏低 · 40–60% 适中 · 20–40% 偏高 · &lt;20% 高位</span>
-      <span><b>体检</b>:连续分红 / 分红增长 / 派息率 / 现金流 / ROE <span class="pl-dots"><i class="g"></i><i class="y"></i><i class="r"></i><i class="n"></i></span> 好 · 一般 · 有风险 · 不适用</span>
-      <span><b>买入价</b>:近 12 月每股分红 ÷ 目标股息率(默认取自身近 5 年 75% 分位)。「今日优选」还要求比买入价再低 5%、股息率 ≥ 4%、分红没比上年缩水。股票池和优选由规则自动筛出,只是帮你缩小范围,不构成投资建议</span>
+      <span><b>综合位置</b>:三个指标各自和历史比,数字是「比多少比例的时间便宜」。股息率(近 5 年)占 40%,估值(银行保险看市净率,其他看市盈率,近 5 年)占 35%,股价(近 3 年)占 25%</span>
+      <span><b>趋势</b>:股价在 52 周均线(年线)上方算正常;在年线下方、而且还在创近 13 周新低,算「下跌中」,这时便宜也先别接</span>
+      <span><b>体检</b>:连续分红 / 分红增长 / 派息率 / 现金流 / ROE / 利润趋势 <span class="pl-dots"><i class="g"></i><i class="y"></i><i class="r"></i><i class="n"></i></span> 好 · 一般 · 有风险 · 不适用。有一项红灯就判「先别买」</span>
+      <span><b>买入价</b>:参考价 = 近 12 月每股分红 ÷ 目标股息率(默认自身近 5 年 75% 分位);第一笔再打一个安全边际(年化波动的一半,5%–15%),第二笔再打一次</span>
+      <span>以上全部由规则自动计算,只帮你缩小范围、管住手,不构成投资建议</span>
     </div>`;
 }
 
