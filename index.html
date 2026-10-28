@@ -75,7 +75,6 @@
   .brand-logo:hover .cat-pop { transform: translateY(-3.5px); }
   .brand-logo .cat { transform-origin: 30px 60px; animation: cat-bob 3.6s ease-in-out infinite; }
   .brand-logo .cat-eye { transform-box: fill-box; transform-origin: center; animation: cat-blink 4.8s infinite; }
-  .brand-logo .cat-look { animation: cat-look 7s ease-in-out infinite; }
   .brand-logo .cat-ear { transform-box: fill-box; transform-origin: 50% 90%; animation: cat-ear-l 5.2s ease-in-out infinite; }
   .brand-logo .cat-ear.r { animation-name: cat-ear-r; animation-delay: 1.3s; }
   .brand-logo .cat-bell { transform-box: fill-box; transform-origin: 50% 0; animation: cat-bell 1.2s ease-in-out infinite; }
@@ -86,7 +85,6 @@
   .brand-logo .cat-star.s2 { animation-delay: 1.2s; }
   @keyframes cat-bob { 0%, 100% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-1.4px) rotate(-2.5deg); } 65% { transform: translateY(-.4px) rotate(2deg); } }
   @keyframes cat-blink { 0%, 90%, 96%, 100% { transform: scaleY(1); } 93% { transform: scaleY(.1); } }
-  @keyframes cat-look { 0%, 38%, 82%, 100% { transform: translate(0, 0); } 45%, 75% { transform: translate(1.2px, -.8px); } }
   @keyframes cat-ear-l { 0%, 80%, 100% { transform: rotate(0); } 86% { transform: rotate(-12deg); } 92% { transform: rotate(4deg); } }
   @keyframes cat-ear-r { 0%, 80%, 100% { transform: rotate(0); } 86% { transform: rotate(12deg); } 92% { transform: rotate(-4deg); } }
   @keyframes cat-bell { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
@@ -127,6 +125,7 @@
   [data-tab="calendar"], #calendar { --c: 52,211,153; }
   [data-tab="stats"], #stats { --c: 251,146,60; }
   [data-tab="profile"], #profile { --c: 236,72,153; }
+  [data-tab="etf"], #etf { --c: 45,212,191; }
   [data-tab="future"], #future { --c: 167,139,250; }
   [data-tab="life"], #life { --c: 34,211,238; }
   [data-tab="data"], #data { --c: 148,163,184; }
@@ -456,7 +455,7 @@
   .add-mode[hidden] { display: none; }
   .add-mode .seg-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 6px; }
   .add-mode .seg-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .add-mode .seg-btn.active { background: rgba(255,255,255,.12); color: var(--text); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+  .add-mode .seg-btn.active { background: linear-gradient(180deg, rgba(52,211,153,.24), rgba(52,211,153,.12)); color: #6ee7b7; box-shadow: inset 0 0 0 1px rgba(52,211,153,.42), 0 4px 14px rgba(52,211,153,.14); }
   .peek { display: flex; flex-wrap: wrap; gap: 6px; min-height: 0; margin-top: 8px; font-size: 12.5px; }
   .peek:empty { display: none; }
   .pk-tip { color: var(--muted-2); }
@@ -469,6 +468,67 @@
   .ov-empty { padding: 46px 16px 40px; }
   .ov-empty b { font-size: 16px; margin-bottom: 8px; }
   .ov-empty .chips { justify-content: center; gap: 10px; margin-top: 20px; }
+  /* 跨境估值 */
+  .ef-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(138px, 1fr); gap: 10px; overflow-x: auto; padding: 2px 2px 8px; margin: 0 -2px; scrollbar-width: thin; }
+  .ef-card { position: relative; text-align: left; padding: 11px 13px 10px; border-radius: 13px; border: 1px solid var(--border-soft); background: var(--card-2); color: var(--text); font: inherit; cursor: pointer; transition: border-color .15s ease, background .15s ease; min-width: 0; }
+  .ef-card:hover { border-color: var(--border); }
+  .ef-card.active { border-color: rgba(var(--c),.7); background: linear-gradient(160deg, rgba(var(--c),.16), rgba(var(--c),.03)); box-shadow: 0 6px 18px rgba(var(--c),.12); }
+  .ef-card .c { font-size: 11.5px; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+  .ef-card .n { font-size: 13px; font-weight: 650; margin: 1px 0 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ef-card .v { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; font-variant-numeric: tabular-nums; }
+  .ef-card .v b { font-size: 15px; font-weight: 750; }
+  .ef-card .x { position: absolute; top: 5px; right: 6px; width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(255,255,255,.08); color: var(--muted); font-size: 12px; line-height: 18px; padding: 0; cursor: pointer; opacity: 0; transition: opacity .15s ease; }
+  .ef-card:hover .x { opacity: 1; }
+  .ef-card .x:hover { background: rgba(248,113,113,.25); color: #fff; }
+  .ef-card.add { display: grid; place-items: center; color: var(--muted); border-style: dashed; font-size: 13px; font-weight: 600; }
+  .ef-card.add:hover { color: rgb(var(--c)); border-color: rgba(var(--c),.6); }
+  .pm { display: inline-block; padding: 0 7px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 18px; white-space: nowrap; }
+  .pm.l1 { color: #6ee7b7; background: rgba(52,211,153,.14); }
+  .pm.l2 { color: #fde047; background: rgba(250,204,21,.14); }
+  .pm.l3 { color: #fca5a5; background: rgba(248,113,113,.16); }
+  .ef-info { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; font-size: 12.5px; color: var(--muted-2); }
+  .ef-info b { color: var(--text); font-weight: 600; }
+  .ef-info .fee b { color: rgb(var(--c)); }
+  .ef-info .src { margin-left: auto; }
+  .ef-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .ef-kpis .stat b { font-size: 26px; font-weight: 800; letter-spacing: .3px; margin-top: 4px; }
+  .ef-kpis .stat em b { display: inline; font-size: inherit; font-weight: 650; margin: 0; letter-spacing: 0; }
+  .ef-kpis .stat.key { border-color: rgba(var(--c),.35); background: linear-gradient(160deg, rgba(var(--c),.13), rgba(var(--c),.02)); }
+  .ef-kpis .ok-txt { color: var(--ok); } .ef-kpis .warn-txt { color: var(--gold); }
+  .ef-tbl td .w { width: 72px; padding: 5px 8px; border-radius: 8px; font-size: 13px; text-align: right; }
+  .ef-tbl td .w.ov { border-color: rgba(var(--c),.55); }
+  .ef-tbl tr.rest td { color: var(--muted); font-style: italic; }
+  .ef-tbl tr.miss td { opacity: .45; }
+  .ef-con { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
+  .ef-con i { display: block; width: 54px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.06); overflow: hidden; }
+  .ef-con i s { display: block; height: 100%; border-radius: 3px; background: var(--up); }
+  .ef-con i s.dn { background: var(--down); }
+  .ef-more { position: relative; }
+  .ef-more summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--border-soft); color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; }
+  .ef-more summary::-webkit-details-marker { display: none; }
+  .ef-more summary:hover, .ef-more[open] summary { color: var(--text); border-color: var(--border); }
+  .ef-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 170px; padding: 6px; border-radius: 14px; border: 1px solid var(--glass-border); background: rgba(16,23,40,.92); backdrop-filter: blur(24px); box-shadow: var(--shadow); }
+  .ef-menu button { display: block; width: 100%; text-align: left; padding: 9px 12px; border: 0; border-radius: 9px; background: none; color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+  .ef-menu button:hover { background: rgba(255,255,255,.07); }
+  .ef-menu hr { border: 0; border-top: 1px solid var(--border-soft); margin: 5px 4px; }
+  .ef-tool { display: flex; align-items: center; gap: 8px; }
+  .ef-tool .switch { font-size: 12.5px; color: var(--muted); gap: 7px; white-space: nowrap; }
+  @media (max-width: 920px) { .ef-kpis { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 640px) {
+    .ef-strip { grid-auto-columns: 128px; }
+    .ef-card .x { opacity: 1; }
+    .ef-kpis { gap: 8px; }
+    .ef-kpis .stat { padding: 12px; }
+    .ef-kpis .stat b { font-size: 21px; }
+    .ef-info .src { margin-left: 0; }
+    .ef-tbl .lg { display: none; }
+    .ef-tbl td, .ef-tbl th { padding-left: 6px; padding-right: 6px; }
+    .ef-tbl td .w { width: 58px; padding: 4px 6px; }
+    .ef-tbl td .nm { max-width: 108px; overflow: hidden; text-overflow: ellipsis; }
+    .ef-con i { width: 30px; }
+    .ef-tool { width: 100%; }
+    .ef-tool .run.sm { flex: 1; }
+  }
   .ov-empty small { display: block; margin-top: 14px; font-size: 12px; color: var(--muted-2); opacity: .8; }
   @media (max-width: 640px) {
     .add-mode .seg-btn { font-size: 12.5px; gap: 4px; }
@@ -627,7 +687,7 @@
     .nav .tab.active .tab-icon { background: rgba(var(--c),.18); color: rgb(var(--c)); transform: none; filter: none; }
     .nav .tab-title { font-size: 10.5px; font-weight: 600; color: #7586a6; }
     .nav .tab.active .tab-title { color: var(--text); }
-    .nav .tab[data-tab="profile"], .nav .tab[data-tab="future"], .nav .tab[data-tab="life"], .nav .tab[data-tab="data"] { display: none; }
+    .nav .tab[data-tab="profile"], .nav .tab[data-tab="etf"], .nav .tab[data-tab="future"], .nav .tab[data-tab="life"], .nav .tab[data-tab="data"] { display: none; }
     .nav .tab-more { display: flex; }
 
     .panel { background: none; border: 0; border-radius: 0; padding: 0; box-shadow: none; }
@@ -755,12 +815,8 @@
             <path d="M18.4 35.8 11.4 34.8M18.4 37.6 11.8 38.8M41.6 35.8 48.6 34.8M41.6 37.6 48.2 38.8" stroke="#c3c9dc" stroke-width=".7" stroke-linecap="round"/>
             <ellipse cx="20.6" cy="37.6" rx="2.8" ry="1.6" fill="#ff8fb1" opacity=".55"/>
             <ellipse cx="39.4" cy="37.6" rx="2.8" ry="1.6" fill="#ff8fb1" opacity=".55"/>
-            <g class="cat-look">
-              <ellipse class="cat-eye" cx="24.2" cy="32.2" rx="2.5" ry="3" fill="#1b1b22"/>
-              <ellipse class="cat-eye" cx="35.8" cy="32.2" rx="2.5" ry="3" fill="#1b1b22"/>
-              <circle cx="25.1" cy="31" r=".95" fill="#fff"/>
-              <circle cx="36.7" cy="31" r=".95" fill="#fff"/>
-            </g>
+            <g class="cat-eye"><ellipse cx="24.2" cy="32.2" rx="2.5" ry="3" fill="#1b1b22"/><circle cx="25.1" cy="31" r=".95" fill="#fff"/></g>
+            <g class="cat-eye"><ellipse cx="35.8" cy="32.2" rx="2.5" ry="3" fill="#1b1b22"/><circle cx="36.7" cy="31" r=".95" fill="#fff"/></g>
             <path d="M28.5 35.8h3q-.3 1.4-1.5 1.7-1.2-.3-1.5-1.7Z" fill="#ff8fa8"/>
             <path d="M30 37.5v.9M27.6 38.7q1.2 1.3 2.4 0 1.2 1.3 2.4 0" stroke="#1b1b22" stroke-width=".8" stroke-linecap="round"/>
             <path d="M17.6 41.6Q30 49.4 42.4 41.6L43.2 44.4Q30 53 16.8 44.4Z" fill="#ef4444"/>
@@ -837,6 +893,10 @@
         <span class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg></span>
         <span class="tab-txt"><div class="tab-title">个股分红档案</div><div class="tab-desc">历史分红 · 稳定性评分</div></span>
       </button>
+      <button class="tab" data-tab="etf">
+        <span class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>
+        <span class="tab-txt"><div class="tab-title">跨境估值</div><div class="tab-desc">QDII 实时估值 · 溢价</div></span>
+      </button>
       <button class="tab" data-tab="future">
         <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg></span>
         <span class="tab-txt"><div class="tab-title">展望未来</div><div class="tab-desc">复利模拟收息之路</div></span>
@@ -861,6 +921,7 @@
       <section class="panel" id="calendar"></section>
       <section class="panel" id="stats"></section>
       <section class="panel" id="profile"></section>
+      <section class="panel" id="etf"></section>
       <section class="panel" id="future"></section>
       <section class="panel" id="life"></section>
       <section class="panel" id="data"></section>
@@ -969,8 +1030,10 @@ function jsonp(url, cbParam = 'callback') {
     const s = document.createElement('script');
     const done = () => { clearTimeout(timer); window[cb] = () => {}; s.remove(); };
     const timer = setTimeout(() => { done(); reject(new Error('请求超时')); }, 12000);
-    window[cb] = data => { done(); resolve(data); };
+    let got = false;
+    window[cb] = data => { got = true; done(); resolve(data); };
     s.onerror = () => { done(); reject(new Error('网络错误')); };
+    s.onload = () => { if (!got) { done(); reject(new Error('接口繁忙,稍后再试')); } };
     s.src = url + (url.includes('?') ? '&' : '?') + cbParam + '=' + cb;
     document.head.appendChild(s);
   });
@@ -2426,10 +2489,11 @@ function switchTab(id) {
   $$('.panel').forEach(p => p.classList.toggle('active', p.id === id));
   $('#tabMore').classList.toggle('active', SECONDARY.includes(id));
   history.replaceState(null, '', '#/' + id);
+  if (id === 'etf') etfEnter();
   if (isPhone()) scrollTo({ top: 0, behavior: 'instant' });
   else if (innerWidth <= 920) $('.main').scrollIntoView({ block: 'start' });
 }
-const SECONDARY = ['profile', 'future', 'life', 'data'];
+const SECONDARY = ['profile', 'etf', 'future', 'life', 'data'];
 const isPhone = () => matchMedia('(max-width: 640px)').matches;
 function openMore() {
   $('#sheetTabs').innerHTML = SECONDARY.map(id => {
@@ -2516,6 +2580,340 @@ function clearDemo() {
   S.holdings = S.holdings.filter(h => !h.demo);
   S.ack = []; save(); renderAll();
   goAdd('one');
+}
+
+/* ---------- 跨境估值:QDII ETF 估算净值 = 基准净值 × (1 + Σ权重×股价涨跌) × 汇率变化 ---------- */
+const ETF_KEY = 'xb-etf', ETF_CKEY = 'xb-etf-cache';
+const ETF_DEF = ['513850', '159577', '513870', '159696', '159660', '513390', '513110', '159509', '513500'];
+const etfDefault = () => ({ list: ETF_DEF.slice(), cur: ETF_DEF[0], auto: true, sort: 'def', ov: {} });
+let E, EC;
+try { E = Object.assign(etfDefault(), JSON.parse(localStorage.getItem(ETF_KEY) || '{}')); } catch { E = etfDefault(); }
+try { EC = Object.assign({ f: {}, kl: {}, fx: {} }, JSON.parse(localStorage.getItem(ETF_CKEY) || '{}')); } catch { EC = { f: {}, kl: {}, fx: {} }; }
+const eSave = () => localStorage.setItem(ETF_KEY, JSON.stringify(E));
+const eCache = () => { try { localStorage.setItem(ETF_CKEY, JSON.stringify(EC)); } catch {} };
+const EL = { q: {}, etf: {}, fx: 0, t: 0 };
+let etfBusy = false, etfTimer = null, etfSnapP = null, etfErr = '';
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+const etfSnap = () => etfSnapP ||= loadScript('etf/holdings.js').catch(() => {}).then(() => window.ETF_SNAP?.funds || {});
+let fmChain = Promise.resolve();
+function fm(path, code) {
+  const run = fmChain.then(() => jsonp(`https://fundmobapi.eastmoney.com/${path}.ashx?FCODE=${code}&deviceid=xb&plat=Iphone&product=EFund&version=6.0`))
+    .then(r => { if (!r || r.Datas == null) throw new Error(r?.ErrMsg || '接口无数据'); return r; });
+  fmChain = run.catch(() => {}).then(() => wait(400));
+  return run;
+}
+const etfShort = n => String(n || '').replace(/ETF/, '·').replace(/·$/, '');
+const etfExch = c => /^5/.test(c) ? '上海证券交易所' : '深圳证券交易所';
+function etfProxy(f) {
+  const t = (f.idx || '') + (f.name || '');
+  return /科技|Tech/i.test(t) ? 'QTEC' : /纳斯达克|纳指|Nasdaq/i.test(t) ? 'QQQ' : /美国50|USA 50/i.test(t) ? 'OEF' : 'SPY';
+}
+/* 日期 d 之前最近的季末;季报约在季末后 15 个工作日内披露 */
+const qEnd = d => { const y = +d.slice(0, 4), q = Math.floor((+d.slice(5, 7) - 1) / 3) * 3; return q ? `${y}-${pad(q)}-${q === 3 ? '31' : '30'}` : `${y - 1}-12-31`; };
+const etfRows = c => E.ov[c]?.rows || EC.f[c]?.hold || [];
+const etfExp = c => E.ov[c]?.exp ?? (EC.f[c]?.cash >= 0 ? Math.min(100, 100 - EC.f[c].cash) : 95);
+
+/* 持仓 / 费率 / 仓位:优先实时接口(24 小时缓存),失败用随站点发布的季报快照 */
+async function etfLoadFund(code, force) {
+  const f = EC.f[code] ||= {}, now = Date.now();
+  if (force || !f.nTs || now - f.nTs > 20 * 6e4) {
+    try {
+      const d = (await fm('FundMApi/FundBaseTypeInformation', code)).Datas;
+      f.name = d.SHORTNAME || f.name; f.co = d.JJGS || f.co;
+      if (+d.DWJZ > 0) { f.nav = +d.DWJZ; f.navD = dd(d.FSRQ); }
+      f.nTs = now;
+    } catch (e) { etfErr = '净值接口繁忙'; }
+  }
+  if (!force && f.hTs && now - f.hTs < 24 * 36e5 && f.hold) return;
+  const snap = (await etfSnap())[code];
+  if (snap && (!f.hd || snap.hd >= f.hd)) Object.assign(f, { name: f.name || snap.name, co: f.co || snap.co, idx: snap.idx, fee: snap.fee, hold: snap.hold, hd: snap.hd, cash: snap.cash, src: '季报快照' });
+  if (!force && f.hold && f.hd >= qEnd(addDays(TODAY, -25))) { f.hTs = now; return; }
+  try {
+    const [p, a, d] = [await fm('FundMNewApi/FundMNInverstPosition', code), await fm('FundMNewApi/FundMNAssetAllocationNew', code), await fm('FundMNewApi/FundMNDetailInformation', code)];
+    const hold = (p.Datas.fundStocks || []).map(x => ({ s: x.GPDM, n: x.GPJC, w: +x.JZBL })).filter(x => x.s && x.w > 0);
+    const hd = dd(p.Expansion) || dd(a.Datas[0]?.FSRQ);
+    if (hold.length && (!f.hd || hd >= f.hd)) Object.assign(f, { hold, hd, src: '天天基金' });
+    if (a.Datas[0] && +a.Datas[0].HB >= 0) f.cash = +a.Datas[0].HB;
+    f.idx = String(d.Datas.BENCH || '').replace(/收益率.*$/, '').replace(/[(（].*$/, '') || d.Datas.INDEXNAME || f.idx;
+    f.fee = [parseFloat(d.Datas.MGREXP) || 0, parseFloat(d.Datas.TRUSTEXP) || 0];
+    f.hTs = now;
+  } catch (e) { if (f.hold) f.hTs = now - 20 * 36e5; else etfErr = '持仓接口繁忙'; }
+}
+
+async function tqKline(sym, n) {
+  const v = '__xbk' + (++seq);
+  const url = sym.startsWith('us')
+    ? `https://web.ifzq.gtimg.cn/appstock/app/usfqkline/get?_var=${v}&param=${sym},day,,,${n},qfq`
+    : `https://web.ifzq.gtimg.cn/appstock/app/kline/kline?_var=${v}&param=${sym},day,,,${n}`;
+  await loadScript(url);
+  const r = window[v]; try { delete window[v]; } catch {}
+  const d = r?.data?.[sym] || Object.values(r?.data || {})[0] || {};
+  return (d.qfqday || d.day || []).map(x => [x[0], +x[2]]).filter(x => x[1] > 0);
+}
+const lastOnOrBefore = (map, D) => { let best = null, bd = ''; for (const k in map) if (k <= D && k > bd) { bd = k; best = map[k]; } return best; };
+
+async function etfQuotes() {
+  const us = new Set();
+  E.list.forEach(c => { etfRows(c).forEach(r => us.add(r.s)); us.add(etfProxy(EC.f[c] || {})); });
+  const syms = [...E.list.map(c => tqSym('F', c)), ...[...us].map(s => 'us' + s), 'whUSDCNY'];
+  // 腾讯对 BRK.B 这类代码返回 v_usBRK.B="…",得先备好对象,否则整段脚本报错
+  syms.forEach(s => { const [a, b] = s.split('.'); window['v_' + a] = b ? {} : undefined; });
+  for (let i = 0; i < syms.length; i += 60) await loadScript('https://qt.gtimg.cn/q=' + syms.slice(i, i + 60).join(',') + '&_=' + Date.now(), 'gbk');
+  E.list.forEach(c => {
+    const a = String(window['v_' + tqSym('F', c)] || '').split('~');
+    if (+a[3] > 0) EL.etf[c] = { price: +a[3], prev: +a[4], chg: +a[32] / 100, name: a[1] };
+  });
+  us.forEach(s => {
+    const [p, b] = s.split('.'), raw = b ? window['v_us' + p]?.[b] : window['v_us' + s];
+    const a = String(raw || '').split('~');
+    if (+a[3] > 0) EL.q[s] = { price: +a[3], prev: +a[4], chg: +a[32] / 100, sym: a[2], date: dd(a[30]), time: String(a[30] || '').slice(5, 16) };
+  });
+  const fx = +String(window.v_whUSDCNY || '').split('~')[3];
+  if (fx > 0) EL.fx = fx;
+  EL.t = Date.now();
+}
+
+/* 基准价 = 基金净值日当天的美股收盘价,不能简单用昨收:净值常晚一天公布 */
+function etfBase(s, D) {
+  const q = EL.q[s];
+  if (!q) return null;
+  if (q.date === D) return q.price;
+  const cal = EC.cal?.d || [], i = cal.indexOf(q.date);
+  if ((i > 0 && cal[i - 1] === D) || (i < 0 && cal.at(-1) === D && q.date > D)) return q.prev;
+  return EC.kl[s] ? lastOnOrBefore(EC.kl[s], D) : null;
+}
+async function etfBases() {
+  if (EC.cal?.day !== TODAY) { try { EC.cal = { day: TODAY, d: (await tqKline('usQQQ.OQ', 15)).map(x => x[0]) }; } catch {} }
+  const ds = [...new Set(E.list.map(c => EC.f[c]?.navD).filter(Boolean))];
+  if (ds.some(D => !EC.fx[D])) {
+    try { (await tqKline('whUSDCNY', 30)).forEach(([d, c]) => { if (ds.includes(d) || !EC.fx[d]) EC.fx[d] = c; }); } catch {}
+    ds.forEach(D => { if (!EC.fx[D]) { const v = lastOnOrBefore(EC.fx, D); if (v) EC.fx[D] = v; } });
+  }
+  const miss = new Set();
+  E.list.forEach(c => {
+    const D = EC.f[c]?.navD; if (!D) return;
+    [...etfRows(c).map(r => r.s), etfProxy(EC.f[c])].forEach(s => { if (EL.q[s] && etfBase(s, D) == null) miss.add(s); });
+  });
+  const list = [...miss];
+  for (let i = 0; i < list.length; i += 6) {
+    await Promise.all(list.slice(i, i + 6).map(async s => {
+      try { const k = await tqKline('us' + EL.q[s].sym, 20); EC.kl[s] = Object.fromEntries(k); } catch {}
+    }));
+  }
+  const old = addDays(TODAY, -40);
+  for (const d in EC.fx) if (d < old) delete EC.fx[d];
+}
+
+function etfCalc(code) {
+  const f = EC.f[code] || {}, D = f.navD, et = EL.etf[code];
+  const o = { code, f, name: f.name || et?.name || code, price: et?.price, mchg: et?.chg, rows: [], ok: 0, n: 0, est: null };
+  const rows = etfRows(code);
+  o.n = rows.length;
+  if (!(f.nav > 0) || !D) return o;
+  let sr = 0, W = 0;
+  for (const r of rows) {
+    const q = EL.q[r.s], b = etfBase(r.s, D), ret = q && b ? q.price / b - 1 : null;
+    W += r.w;
+    if (ret !== null) { o.ok++; sr += r.w / 100 * ret; }
+    o.rows.push({ ...r, q, base: b, ret, con: ret === null ? null : r.w / 100 * ret });
+  }
+  o.exp = etfExp(code); o.W = W;
+  const rest = Math.max(0, o.exp - W), px = etfProxy(f), pq = EL.q[px], pb = etfBase(px, D);
+  const pret = pq && pb ? pq.price / pb - 1 : 0;
+  if (rest > 0.01) { o.rest = { s: px, w: rest, q: pq, base: pb, ret: pq && pb ? pret : null, con: rest / 100 * pret }; sr += rest / 100 * pret; }
+  const fb = EC.fx[D], fr = fb && EL.fx ? EL.fx / fb - 1 : 0;
+  o.fxb = fb; o.sr = sr; o.fr = fr;
+  o.est = f.nav * (1 + sr) * (1 + fr);
+  o.chg = o.est / f.nav - 1;
+  o.fp = (1 + sr) * fr;
+  o.prem = o.price ? o.price / o.est - 1 : null;
+  o.full = o.ok === o.n && o.n > 0 && (!o.rest || o.rest.ret !== null) && !!fb && !!EL.fx;
+  return o;
+}
+
+const sgn = (v, dig = 2) => v == null || !isFinite(v) ? '—' : (v >= 0 ? '+' : '') + (v * 100).toFixed(dig) + '%';
+const cls = v => v == null ? '' : v >= 0 ? 'up' : 'down';
+const pmLv = p => p == null ? '' : p < 0.02 ? 'l1' : p < 0.05 ? 'l2' : 'l3';
+const nf = (v, dig) => v > 0 ? (+v).toFixed(dig) : '—';
+
+function etfEnter() {
+  if (!$('#efBody')) buildEtf();
+  renderEtf();
+  if (!EL.t || Date.now() - EL.t > 25e3) etfRefresh();
+  clearInterval(etfTimer);
+  etfTimer = setInterval(() => {
+    if (!E.auto || document.hidden || !$('#etf').classList.contains('active')) return;
+    etfRefresh();
+  }, 30e3);
+}
+function buildEtf() {
+  $('#etf').innerHTML = head('etf', '跨境估值', 'QDII 实时估算净值 · 成分股 × 汇率 · 溢价监控', `
+    <div class="ef-tool">
+      <label class="switch"><input type="checkbox" id="efAuto"${E.auto ? ' checked' : ''}/>自动刷新 30 秒</label>
+      <button class="run sm" id="efGo">立即刷新</button>
+      <details class="ef-more"><summary>更多 ▾</summary><div class="ef-menu">
+        <button data-ef="hold">更新持仓清单</button>
+        <button data-ef="exp">调整股票仓位</button>
+        <button data-ef="reset">恢复自动权重</button><hr/>
+        <button data-ef="csv-in">导入 CSV 持仓</button>
+        <button data-ef="csv-out">导出估值快照</button><hr/>
+        <button data-ef="sort">${E.sort === 'prem' ? '按默认顺序排列' : '按溢价从高到低排列'}</button>
+        <button data-ef="help">计算说明</button>
+      </div></details>
+    </div>`) + `<div id="efBody"></div><input type="file" id="efCsv" accept=".csv,text/csv,text/plain" hidden />`;
+  const el = $('#etf');
+  $('#efAuto').onchange = e => { E.auto = e.target.checked; eSave(); };
+  $('#efGo').onclick = () => etfRefresh(true);
+  el.addEventListener('click', e => {
+    const card = e.target.closest('[data-efc]');
+    if (e.target.closest('[data-efx]')) return etfRemove(e.target.closest('[data-efx]').dataset.efx);
+    if (card) { E.cur = card.dataset.efc; eSave(); renderEtf(); return; }
+    if (e.target.closest('[data-efadd]')) return etfAdd();
+    const m = e.target.closest('[data-ef]');
+    if (m) { e.target.closest('details').open = false; etfMenu(m.dataset.ef); }
+  });
+  el.addEventListener('change', e => {
+    const w = e.target.closest('input[data-efw]');
+    if (!w) return;
+    const rows = etfRows(E.cur).map(r => ({ ...r }));
+    const r = rows.find(x => x.s === w.dataset.efw), v = parseFloat(w.value);
+    if (r && v >= 0) { r.w = v; E.ov[E.cur] = { ...E.ov[E.cur], rows: rows.filter(x => x.w > 0), src: '手动调整' }; eSave(); }
+    w.blur(); renderEtf();
+  });
+  document.addEventListener('click', e => { const d = $('.ef-more[open]'); if (d && !d.contains(e.target)) d.open = false; });
+  $('#efCsv').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) f.text().then(etfImport); };
+}
+
+async function etfRefresh(force) {
+  if (etfBusy) return;
+  etfBusy = true; etfErr = ''; $('#efGo') && ($('#efGo').disabled = true);
+  setEtfSt('正在更新…');
+  try {
+    const order = [E.cur, ...E.list.filter(c => c !== E.cur)];
+    await etfLoadFund(order[0], force === 'hold');
+    await etfQuotes(); await etfBases(); renderEtf();
+    for (const c of order.slice(1)) await etfLoadFund(c, force === 'hold');
+    await etfQuotes(); await etfBases();
+  } catch (e) { etfErr = e.message || '网络错误'; }
+  etfBusy = false; $('#efGo') && ($('#efGo').disabled = false);
+  eCache(); renderEtf();
+}
+function setEtfSt(t) { const s = $('#efSt'); if (s) s.textContent = t; }
+
+function renderEtf() {
+  const body = $('#efBody'); if (!body) return;
+  if (body.contains(document.activeElement) && document.activeElement.matches('input')) return;
+  if (!E.list.includes(E.cur)) E.cur = E.list[0];
+  const all = E.list.map(etfCalc);
+  const strip = E.sort === 'prem' ? [...all].sort((a, b) => (b.prem ?? -9) - (a.prem ?? -9)) : all;
+  const o = all.find(x => x.code === E.cur) || all[0];
+  const t = EL.t ? new Date(EL.t) : null;
+  const okN = all.filter(x => x.est).length;
+  const st = etfBusy ? '正在更新…' : (t ? `最后刷新 ${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())} · 已估值 ${okN}/${all.length}` : '尚未刷新') + (etfErr ? ` · ${etfErr}` : '');
+  const cards = strip.map(x => `<button class="ef-card${x.code === E.cur ? ' active' : ''}" data-efc="${x.code}">
+      ${E.list.length > 1 ? `<span class="x" data-efx="${x.code}" title="移出监控">×</span>` : ''}
+      <div class="c">${x.code}</div><div class="n">${esc(etfShort(x.name))}</div>
+      <div class="v"><b class="num ${cls(x.chg)}">${x.est ? nf(x.est, 4) : '—'}</b><span class="c ${cls(x.chg)}">${x.est ? sgn(x.chg) : '加载中…'}</span></div>
+      <div class="v" style="margin-top:6px"><span class="c">溢价</span>${x.prem != null ? `<span class="pm ${pmLv(x.prem)}">${sgn(x.prem)}</span>` : '<span class="c">—</span>'}</div>
+    </button>`).join('') + `<button class="ef-card add" data-efadd>+ 添加 ETF</button>`;
+  if (!o) { body.innerHTML = `<div class="ef-strip">${cards}</div>`; return; }
+  const f = o.f, ov = E.ov[o.code];
+  const fee = f.fee ? f.fee[0] + f.fee[1] : null;
+  const info = `<div class="box ef-info">
+      <span>基金公司 <b>${esc(f.co || '—')}</b></span><span>跟踪指数 <b>${esc(f.idx || '—')}</b></span><span>上市 <b>${etfExch(o.code)}</b></span>
+      ${f.fee ? `<span class="fee">管理费 <b>${f.fee[0].toFixed(2)}%</b> + 托管费 <b>${f.fee[1].toFixed(2)}%</b> = <b>${fee.toFixed(2)}%/年</b></span>` : ''}
+      <span class="src">持仓 ${f.hd ? f.hd + ' 季报' : '—'} · ${esc(ov?.src || f.src || '—')}</span>
+    </div>`;
+  const fxTxt = EL.fx ? `USD/CNY ${EL.fx.toFixed(4)}` : '汇率加载中';
+  const miss = o.n - o.ok + (o.rest && o.rest.ret === null ? 1 : 0);
+  const kpis = `<div class="ef-kpis" style="margin-top:12px">
+      <div class="stat key"><span>估算参考净值(人民币)</span><b class="num">${o.est ? '¥ ' + o.est.toFixed(4) : '—'}</b>
+        <em>基准 ${nf(f.nav, 4)}(${f.navD ? f.navD.slice(5) : '—'}) · 涨跌额 ${o.est ? (o.est - f.nav >= 0 ? '+' : '') + (o.est - f.nav).toFixed(4) : '—'}</em></div>
+      <div class="stat"><span>估算总涨跌</span><b class="num ${cls(o.chg)}">${sgn(o.chg, 3)}</b>
+        <em>股票 <b class="${cls(o.sr)}">${o.est ? (o.sr >= 0 ? '+' : '') + (o.sr * 100).toFixed(3) : '—'}</b> pp · 汇率 <b class="${cls(o.fp)}">${o.est ? (o.fp >= 0 ? '+' : '') + (o.fp * 100).toFixed(3) : '—'}</b> pp</em></div>
+      <div class="stat"><span>场内价格</span><b class="num">${o.price ? '¥ ' + o.price.toFixed(3) : '—'}</b>
+        <em>${o.prem != null ? `<span class="pm ${pmLv(o.prem)}">${o.prem >= 0 ? '溢价' : '折价'} ${sgn(o.prem, 3).replace('-', '')}</span>` : '等待估值'} · 今日 <b class="${cls(o.mchg)}">${sgn(o.mchg)}</b></em></div>
+      <div class="stat"><span>行情与数据完整性</span><b class="${o.est ? (o.full ? 'ok-txt' : 'warn-txt') : ''}">${!o.est ? '等待数据' : o.full ? '报价完整' : `缺 ${miss} 项报价`}</b>
+        <em>${fxTxt} · 股票仓位 ${o.exp != null ? o.exp.toFixed(2) + '%' : '—'}${ov?.exp != null ? '(手动)' : ''}</em></div>
+    </div>`;
+  const cmax = Math.max(1e-9, ...o.rows.map(r => Math.abs(r.con || 0)), Math.abs(o.rest?.con || 0));
+  const conCell = c => c == null ? '—' : `<span class="ef-con"><i><s class="${c < 0 ? 'dn' : ''}" style="width:${Math.abs(c) / cmax * 100}%"></s></i><b class="${cls(c)}">${(c >= 0 ? '+' : '') + (c * 100).toFixed(3)}</b></span>`;
+  const tr = r => `<tr class="${r.ret === null ? 'miss' : ''}">
+      <td><div class="nm">${esc(r.n || r.s)}</div><div class="cd">${esc(r.s)}</div></td>
+      <td><input class="w${ov?.rows ? ' ov' : ''}" type="number" step="0.01" min="0" value="${r.w}" data-efw="${esc(r.s)}" /></td>
+      <td class="lg">${r.base ? r.base.toFixed(2) : '—'}</td><td class="lg">${r.q ? r.q.price.toFixed(2) : '—'}</td>
+      <td class="${cls(r.ret)}">${sgn(r.ret)}</td><td>${conCell(r.con)}</td><td class="lg"><span class="sm">${r.q?.time || '—'}</span></td></tr>`;
+  const rest = o.rest ? `<tr class="rest${o.rest.ret === null ? ' miss' : ''}"><td><div class="nm">其余成分</div><div class="cd">以 ${o.rest.s} 走势代理</div></td>
+      <td>${o.rest.w.toFixed(2)}</td><td class="lg">${o.rest.base ? o.rest.base.toFixed(2) : '—'}</td><td class="lg">${o.rest.q ? o.rest.q.price.toFixed(2) : '—'}</td>
+      <td class="${cls(o.rest.ret)}">${sgn(o.rest.ret)}</td><td>${conCell(o.rest.ret === null ? null : o.rest.con)}</td><td class="lg"><span class="sm">${o.rest.q?.time || '—'}</span></td></tr>` : '';
+  const table = `<div class="box">
+      <div class="sec-h">成分股贡献 <small>前十大持仓 ${o.W ? o.W.toFixed(2) + '%' : '—'} + 其余 ${o.rest ? o.rest.w.toFixed(2) + '%' : '0%'} · 美股报价约延时 15 分钟</small><span class="r">权重可直接修改</span></div>
+      ${o.rows.length || o.rest ? `<div class="tbl-wrap"><table class="ef-tbl"><thead><tr><th>成分股</th><th>权重 %</th><th class="lg">基准价 USD</th><th class="lg">最新价 USD</th><th>涨跌</th><th>贡献 pp</th><th class="lg">报价时间</th></tr></thead>
+      <tbody>${o.rows.map(tr).join('')}${rest}</tbody></table></div>` : `<div class="empty">${etfBusy ? '正在加载持仓…' : '暂时拿不到持仓清单,可稍后点「更多 → 更新持仓清单」,或导入 CSV'}</div>`}
+    </div>`;
+  body.innerHTML = `<div class="hint" id="efSt" style="margin:-12px 0 12px">${esc(st)}</div><div class="ef-strip">${cards}</div>${info}${kpis}${table}
+    <div class="hint">估算仅供参考:前十大持仓来自最新季报,其余部分按同指数美股 ETF 走势代理;汇率用实时 USD/CNY,与基金实际使用的估值汇率略有差异。溢价 <span class="pm l1">&lt;2%</span> <span class="pm l2">2–5%</span> <span class="pm l3">&gt;5%</span></div>`;
+}
+
+async function etfAdd() {
+  const v = await xbAsk({ title: '添加跨境 ETF', msg: '输入 6 位场内代码,例如 513100 纳指ETF、159941 纳指ETF广发', input: '', placeholder: '6 位代码', ok: '添加', host: $('#etf') });
+  const code = String(v || '').replace(/\D/g, '');
+  if (!code) return;
+  if (code.length !== 6) return toast('代码需要 6 位数字', false);
+  if (E.list.includes(code)) { E.cur = code; eSave(); return renderEtf(); }
+  E.list.push(code); E.cur = code; eSave(); renderEtf();
+  await etfLoadFund(code, true); EL.t = 0; etfRefresh();
+}
+async function etfRemove(code) {
+  if (!(await xbAsk({ title: '移出监控', msg: `不再监控 ${code} ${etfShort(EC.f[code]?.name || '')}?`, ok: '移出', danger: true, host: $('#etf') }))) return;
+  E.list = E.list.filter(c => c !== code); delete E.ov[code];
+  if (E.cur === code) E.cur = E.list[0];
+  eSave(); renderEtf();
+}
+function etfImport(txt) {
+  const rows = txt.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.split(/[,\t;，]/).map(x => x.trim())).map(a => {
+    const s = (a[0] || '').toUpperCase().replace(/^(US|105\.|106\.|107\.)/, '');
+    const w = parseFloat(String(a[1] || '').replace('%', ''));
+    return /^[A-Z][A-Z0-9.\-]{0,9}$/.test(s) && w > 0 ? { s, w, n: a[2] || EC.f[E.cur]?.hold?.find(h => h.s === s)?.n || s } : null;
+  }).filter(Boolean);
+  if (!rows.length) return toast('没识别到持仓。每行格式:代码,权重%[,名称],例如 NVDA,11.68,英伟达', false);
+  const sum = rows.reduce((a, r) => a + r.w, 0);
+  E.ov[E.cur] = { ...E.ov[E.cur], rows, src: `CSV 导入 ${rows.length} 只` };
+  if (sum > (E.ov[E.cur].exp ?? etfExp(E.cur))) E.ov[E.cur].exp = Math.min(100, +sum.toFixed(2));
+  eSave(); toast(`已导入 ${rows.length} 只成分股,合计权重 ${sum.toFixed(2)}%`);
+  etfRefresh();
+}
+async function etfMenu(k) {
+  const c = E.cur;
+  if (k === 'hold') { EL.t = 0; toast('正在重新拉取持仓清单…'); return etfRefresh('hold'); }
+  if (k === 'reset') { delete E.ov[c]; eSave(); toast('已恢复为季报持仓与自动仓位'); return renderEtf(); }
+  if (k === 'csv-in') return $('#efCsv').click();
+  if (k === 'sort') {
+    E.sort = E.sort === 'prem' ? 'def' : 'prem'; eSave();
+    $('[data-ef="sort"]').textContent = E.sort === 'prem' ? '按默认顺序排列' : '按溢价从高到低排列';
+    return renderEtf();
+  }
+  if (k === 'exp') {
+    const v = await xbAsk({ title: '调整股票仓位', msg: '基金净值中投向美股的比例。默认取「100% − 季报现金占比」,前十大以外的部分按同指数 ETF 走势估算。', input: etfExp(c).toFixed(2), ok: '保存', host: $('#etf') });
+    const n = parseFloat(v);
+    if (v === null) return;
+    if (!(n > 0 && n <= 110)) return toast('请输入 0–110 之间的百分比', false);
+    E.ov[c] = { ...E.ov[c], exp: n }; eSave(); return renderEtf();
+  }
+  if (k === 'csv-out') {
+    const o = etfCalc(c);
+    const lines = [['代码', '名称', '权重%', '基准价USD', '最新价USD', '涨跌%', '贡献pp'],
+      ...o.rows.map(r => [r.s, r.n, r.w, r.base ?? '', r.q?.price ?? '', r.ret == null ? '' : (r.ret * 100).toFixed(3), r.con == null ? '' : (r.con * 100).toFixed(4)]),
+      ...(o.rest ? [[o.rest.s, '其余成分(代理)', o.rest.w.toFixed(2), o.rest.base ?? '', o.rest.q?.price ?? '', o.rest.ret == null ? '' : (o.rest.ret * 100).toFixed(3), (o.rest.con * 100).toFixed(4)]] : []),
+      [], ['估算净值', o.est?.toFixed(4) ?? ''], ['基准净值', o.f.nav, o.f.navD], ['场内价格', o.price ?? ''], ['溢价%', o.prem == null ? '' : (o.prem * 100).toFixed(3)], ['USD/CNY', EL.fx, '基准', o.fxb ?? '']];
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\uFEFF' + lines.map(l => l.join(',')).join('\n')], { type: 'text/csv' }));
+    a.download = `${c}-估值-${TODAY}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    return;
+  }
+  if (k === 'help') xbAsk({ title: '计算说明', cancel: null, ok: '知道了', host: $('#etf'),
+    msg: '估算净值 = 基准净值 × (1 + Σ 成分股权重 × 股价涨跌) × (当前汇率 ÷ 基准日汇率)。\n\n· 基准净值:基金最近一次公布的单位净值。\n· 股价涨跌:相对「净值日当天」的美股收盘价,而不是简单的昨收,避免净值晚公布时错一天。\n· 权重:最新季报前十大持仓;其余仓位按同指数美股 ETF(QQQ / SPY / OEF / QTEC)走势代理。\n· 汇率:实时 USD/CNY 对比净值日收盘汇率。\n· 溢价 = 场内价格 ÷ 估算净值 − 1。\n\n管理费、托管费每天从净值里计提,单日影响约 0.002%,不单独扣除。' });
 }
 
 $('#nav').onclick = e => {
