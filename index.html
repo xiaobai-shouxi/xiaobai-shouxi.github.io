@@ -126,6 +126,7 @@
   [data-tab="stats"], #stats { --c: 251,146,60; }
   [data-tab="profile"], #profile { --c: 236,72,153; }
   [data-tab="etf"], #etf { --c: 45,212,191; }
+  [data-tab="pool"], #pool { --c: 163,230,53; }
   [data-tab="future"], #future { --c: 167,139,250; }
   [data-tab="life"], #life { --c: 34,211,238; }
   [data-tab="data"], #data { --c: 148,163,184; }
@@ -468,6 +469,75 @@
   .ov-empty { padding: 46px 16px 40px; }
   .ov-empty b { font-size: 16px; margin-bottom: 8px; }
   .ov-empty .chips { justify-content: center; gap: 10px; margin-top: 20px; }
+  /* 红利股票池 */
+  .pl-filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .pl-filter .chip b { font-weight: 700; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .pl-filter .sep { width: 1px; height: 18px; background: var(--border-soft); margin: 0 2px; }
+  .pl-filter .chip.lv1.active { border-color: rgba(52,211,153,.7); background: rgba(52,211,153,.16); }
+  .pl-filter .chip.lv2.active { border-color: rgba(163,230,53,.7); background: rgba(163,230,53,.14); }
+  .pl-filter .chip.lv3.active { border-color: rgba(250,204,21,.7); background: rgba(250,204,21,.14); }
+  .pl-filter .chip.lv4.active { border-color: rgba(251,146,60,.7); background: rgba(251,146,60,.14); }
+  .pl-filter .chip.lv5.active { border-color: rgba(248,113,113,.7); background: rgba(248,113,113,.14); }
+  .pl-tbl tbody tr { cursor: pointer; }
+  .pl-tbl td:first-child, .pl-tbl th:first-child { width: 22px; padding-right: 0; }
+  .pl-tbl td:nth-child(2), .pl-tbl th:nth-child(2) { text-align: left; }
+  .pl-tbl th[data-ps] { cursor: pointer; user-select: none; }
+  .pl-tbl th.ct { text-align: center; }
+  .pl-tbl th[data-ps]:hover, .pl-tbl th.on { color: var(--text); }
+  .pl-tbl td .nm .tg { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 5px; font-size: 10.5px; line-height: 16px; font-weight: 600; vertical-align: 1px; color: rgb(var(--c)); background: rgba(var(--c),.12); }
+  .pl-star { border: 0; background: none; padding: 0 4px 0 0; cursor: pointer; font-size: 15px; line-height: 1; color: var(--muted-2); }
+  .pl-star.on { color: var(--gold); text-shadow: 0 0 8px rgba(250,204,21,.4); }
+  .pl-pos { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; width: 150px; }
+  .pl-lv { padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 18px; }
+  .pl-lv.lv1 { color: #6ee7b7; background: rgba(52,211,153,.16); }
+  .pl-lv.lv2 { color: #bef264; background: rgba(163,230,53,.14); }
+  .pl-lv.lv3 { color: #fde047; background: rgba(250,204,21,.14); }
+  .pl-lv.lv4 { color: #fdba74; background: rgba(251,146,60,.15); }
+  .pl-lv.lv5 { color: #fca5a5; background: rgba(248,113,113,.16); }
+  .pl-bar { position: relative; width: 100%; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #34d399, #a3e635 30%, #facc15 50%, #fb923c 72%, #f87171); opacity: .85; }
+  .pl-bar i { position: absolute; top: -4px; width: 3px; height: 14px; margin-left: -1.5px; border-radius: 2px; background: #fff; box-shadow: 0 0 0 2px rgba(7,11,22,.85), 0 0 8px rgba(255,255,255,.5); }
+  .pl-ends { display: flex; justify-content: space-between; width: 100%; font-size: 10px; color: var(--muted-2); }
+  .pl-dots { display: inline-flex; gap: 5px; }
+  .pl-dots i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.1); }
+  .pl-dots i.g { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,.5); }
+  .pl-dots i.y { background: #facc15; box-shadow: 0 0 6px rgba(250,204,21,.45); }
+  .pl-dots i.r { background: #f87171; box-shadow: 0 0 6px rgba(248,113,113,.5); }
+  .pl-dots i.n { background: transparent; border: 1.5px solid rgba(255,255,255,.2); }
+  .pl-warn { display: block; font-size: 11px; color: #fca5a5; margin-top: 4px; }
+  .pl-buy b { font-size: 14px; font-weight: 700; }
+  .pl-buy .ok { color: var(--ok); }
+  .pl-x { border: 0; background: none; color: var(--muted-2); cursor: pointer; font-size: 16px; padding: 0 2px; opacity: .6; }
+  .pl-x:hover { color: var(--err); opacity: 1; }
+  .pl-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .pl-card { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--border-soft); background: linear-gradient(180deg, rgba(var(--c),.07), rgba(var(--c),.01)); cursor: pointer; transition: border-color .15s ease, transform .15s ease; }
+  .pl-card:hover { border-color: rgba(var(--c),.45); transform: translateY(-1px); }
+  .pl-c-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .pl-card .nm { font-weight: 700; font-size: 15px; }
+  .pl-card .nm .tg { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 5px; font-size: 10.5px; line-height: 16px; font-weight: 600; vertical-align: 2px; color: rgb(var(--c)); background: rgba(var(--c),.12); }
+  .pl-card .cd { font-size: 11.5px; color: var(--muted-2); margin-top: 2px; }
+  .pl-c-num { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .pl-c-num small { display: block; font-size: 11px; color: var(--muted-2); }
+  .pl-c-num b { font-size: 15px; font-weight: 700; }
+  .pl-c-num div:first-child b { color: rgb(var(--c)); }
+  .pl-why { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 12px; color: var(--muted); }
+  .pl-why li::before { content: "✓"; color: #34d399; margin-right: 6px; font-weight: 700; }
+  .pl-c-f { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .pl-c-f .sm { font-size: 11.5px; color: var(--muted-2); }
+  .pl-c-f .sm.ok { color: var(--ok); }
+  .pl-pick { margin-bottom: 14px; }
+  .pl-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+  .pl-legend .pl-dots i { width: 8px; height: 8px; }
+  @media (max-width: 640px) {
+    .pl-tbl .lg { display: none; }
+    .pl-pos { width: 76px; }
+    .pl-ends { display: none; }
+    .pl-tbl td:first-child, .pl-tbl th:first-child { width: 16px; padding-left: 0; }
+    .pl-star { font-size: 14px; padding: 0; }
+    .pl-buy b { font-size: 12.5px; }
+    .pl-tbl td, .pl-tbl th { padding-left: 6px; padding-right: 6px; }
+    .pl-tbl td .nm { max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+    .pl-tbl td .nm .tg { display: none; }
+  }
   /* 跨境估值 */
   .ef-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin: -10px 0 12px; }
   .ef-bar .hint { margin: 0; }
@@ -483,9 +553,10 @@
   .ef-card .n { font-size: 13px; font-weight: 650; margin: 1px 0 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ef-card .v { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; font-variant-numeric: tabular-nums; }
   .ef-card .v b { font-size: 15px; font-weight: 750; }
-  .ef-card .x { position: absolute; top: 5px; right: 6px; width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(255,255,255,.08); color: var(--muted); font-size: 12px; line-height: 18px; padding: 0; cursor: pointer; opacity: 0; transition: opacity .15s ease; }
+  .ef-card .x { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,.06); color: var(--muted-2); cursor: pointer; opacity: 0; transition: opacity .15s ease, background .15s ease, color .15s ease; }
+  .ef-card .x svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
   .ef-card:hover .x { opacity: 1; }
-  .ef-card .x:hover { background: rgba(248,113,113,.25); color: #fff; }
+  .ef-card .x:hover { background: rgba(248,113,113,.22); color: #fecaca; }
   .ef-card.add { display: grid; place-items: center; color: var(--muted); border-style: dashed; font-size: 13px; font-weight: 600; }
   .ef-card.add:hover { color: rgb(var(--c)); border-color: rgba(var(--c),.6); }
   .pm { display: inline-block; padding: 0 7px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 18px; white-space: nowrap; }
@@ -522,7 +593,7 @@
   @media (max-width: 920px) { .ef-kpis { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 640px) {
     .ef-strip { grid-auto-columns: 132px; }
-    .ef-card .x { opacity: 1; }
+    .ef-card.active .x { opacity: 1; }
     .ef-kpis { gap: 8px; }
     .ef-kpis .stat { padding: 12px; }
     .ef-kpis .stat b { font-size: 21px; }
@@ -605,14 +676,17 @@
   .thumbs:not(:empty) { margin-top: 12px; }
   .thumb { position: relative; width: 74px; height: 96px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: center top / cover no-repeat var(--card); }
   .thumb button { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; border: none; background: rgba(0,0,0,.65); color: #fff; cursor: pointer; font-size: 12px; line-height: 1; }
-  .eng-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .eng-pick { display: grid; gap: 8px; }
   .eng-opt {
-    display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 2px; align-items: center; text-align: left; min-width: 0;
+    display: flex; align-items: center; gap: 12px; text-align: left; min-width: 0;
     padding: 12px 14px; border-radius: 13px; border: 1px solid var(--border-soft); background: var(--card); color: var(--text); font: inherit; cursor: pointer;
     transition: border-color .15s ease, background .15s ease;
   }
   .eng-opt:hover { border-color: var(--border); }
-  .eng-opt .rd { grid-row: span 2; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.3); transition: all .15s ease; }
+  .eng-opt .tx { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+  .eng-cfg { flex: none; border: 1px solid rgba(52,211,153,.4); background: rgba(52,211,153,.08); color: #6ee7b7; font: inherit; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; cursor: pointer; transition: background .15s ease; }
+  .eng-cfg:hover { background: rgba(52,211,153,.18); }
+  .eng-opt .rd { flex: none; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.3); transition: all .15s ease; }
   .eng-opt b { font-size: 14px; font-weight: 700; }
   .eng-opt span { font-size: 11.5px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .eng-opt.on { border-color: rgba(52,211,153,.55); background: linear-gradient(180deg, rgba(52,211,153,.15), rgba(52,211,153,.04)); box-shadow: 0 4px 14px rgba(52,211,153,.1); }
@@ -710,7 +784,7 @@
     .nav .tab.active .tab-icon { background: rgba(var(--c),.18); color: rgb(var(--c)); transform: none; filter: none; }
     .nav .tab-title { font-size: 10.5px; font-weight: 600; color: #7586a6; }
     .nav .tab.active .tab-title { color: var(--text); }
-    .nav .tab[data-tab="profile"], .nav .tab[data-tab="etf"], .nav .tab[data-tab="future"], .nav .tab[data-tab="life"], .nav .tab[data-tab="data"] { display: none; }
+    .nav .tab[data-tab="pool"], .nav .tab[data-tab="profile"], .nav .tab[data-tab="etf"], .nav .tab[data-tab="future"], .nav .tab[data-tab="life"], .nav .tab[data-tab="data"] { display: none; }
     .nav .tab-more { display: flex; }
 
     .panel { background: none; border: 0; border-radius: 0; padding: 0; box-shadow: none; }
@@ -912,6 +986,10 @@
         <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
         <span class="tab-txt"><div class="tab-title">收息统计</div><div class="tab-desc">每一笔到账记录</div></span>
       </button>
+      <button class="tab" data-tab="pool">
+        <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg></span>
+        <span class="tab-txt"><div class="tab-title">红利股票池</div><div class="tab-desc">好公司 · 好位置 · 买入价</div></span>
+      </button>
       <button class="tab" data-tab="profile">
         <span class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg></span>
         <span class="tab-txt"><div class="tab-title">个股分红档案</div><div class="tab-desc">历史分红 · 稳定性评分</div></span>
@@ -943,6 +1021,7 @@
       <section class="panel" id="holdings"></section>
       <section class="panel" id="calendar"></section>
       <section class="panel" id="stats"></section>
+      <section class="panel" id="pool"></section>
       <section class="panel" id="profile"></section>
       <section class="panel" id="etf"></section>
       <section class="panel" id="future"></section>
@@ -1086,7 +1165,7 @@ async function fetchQuotes(keys) {
     const a = String(raw).split('~');
     if (a.length < 40 || !(+a[3] > 0)) return;
     const mk = k.split(':')[0];
-    C.quotes[k] = { name: a[1], price: +a[3], prev: +a[4], chg: +a[32] / 100, pe: +a[39], pb: (mk === 'A' || mk === 'F') ? +a[46] : NaN, t: Date.now() };
+    C.quotes[k] = { name: a[1], price: +a[3], prev: +a[4], chg: +a[32] / 100, pe: +a[39], pb: (mk === 'A' || mk === 'F') ? +a[46] : NaN, sym: a[2], t: Date.now() };
   });
   if (S.settings.fxAuto) {
     const u = +String(window.v_whUSDCNY || '').split('~')[3], h = +String(window.v_whHKDCNY || '').split('~')[3];
@@ -1419,11 +1498,12 @@ const useAI = () => S.ai.mode === 'ai' && aiReady();
 const aiName = () => (AI_PRESETS[S.ai.preset] || AI_PRESETS.custom).n.split(' · ')[0].replace(/\(.*$/, '');
 function engPicker(sm) {
   const m = useAI() ? 'ai' : 'local';
+  const opt = (k, t, sub, extra = '') => `<div class="eng-opt${m === k ? ' on' : ''}" data-eng="${k}" role="radio" tabindex="0" aria-checked="${m === k}">
+      <i class="rd"></i><span class="tx"><b>${t}</b><span>${sub}</span></span>${extra}</div>`;
   return `<div class="eng-pick${sm ? ' sm' : ''}" role="radiogroup">
-    <button type="button" class="eng-opt${m === 'local' ? ' on' : ''}" data-eng="local" role="radio" aria-checked="${m === 'local'}">
-      <i class="rd"></i><b>本地模型</b><span>免费 · 截图不出本机</span></button>
-    <button type="button" class="eng-opt${m === 'ai' ? ' on' : ''}" data-eng="ai" role="radio" aria-checked="${m === 'ai'}">
-      <i class="rd"></i><b>配置模型</b><span>${aiReady() ? esc(aiName()) + ' · 已配置' : '识别更准 · 有免费额度'}</span></button>
+    ${opt('local', '本地模型', '免费 · 截图不出本机')}
+    ${opt('ai', '配置AI模型', aiReady() ? esc(aiName()) + ' · ' + esc(S.ai.model) : '识别更准 · 多家有免费额度',
+      `<button type="button" class="eng-cfg" data-ai>${aiReady() ? '修改配置' : '去配置'} ›</button>`)}
   </div>`;
 }
 function setEngine(m) {
@@ -1431,7 +1511,7 @@ function setEngine(m) {
   if (S.ai.mode === m) return;
   S.ai.mode = m; save(); renderShotEngine(); renderAISum();
   if (m === 'local' && addMode === 'shot' && $('#dlgAdd').open) prepareOcr().catch(() => {});
-  toast(m === 'ai' ? `已切换到配置模型 · ${aiName()}` : '已切换到本地模型');
+  toast(m === 'ai' ? `已切换到AI模型 · ${aiName()}` : '已切换到本地模型');
 }
 
 function initShot() {
@@ -1448,9 +1528,7 @@ function initShot() {
 }
 function renderShotEngine() {
   const el = $('#shotEng'); if (!el) return;
-  el.innerHTML = engPicker(true) + (useAI()
-    ? `<div class="eng-det"><span class="eng ai"><i></i>${esc(aiName())} · ${esc(S.ai.model)}</span><button type="button" class="link-btn" data-ai>修改配置 ›</button></div>`
-    : `<div class="eng-det"><span class="eng"><i></i>本地识别<em class="engSt">${esc(engShort(ocrNote))}</em></span></div>`);
+  el.innerHTML = engPicker(true) + (useAI() ? '' : `<div class="eng-det"><span class="eng"><i></i>本地识别<em class="engSt">${esc(engShort(ocrNote))}</em></span></div>`);
 }
 function compressImg(file) {
   return new Promise((resolve, reject) => {
@@ -2300,10 +2378,9 @@ function buildData() {
 function renderAISum() {
   const el = $('#aiSum'); if (!el) return;
   el.innerHTML = engPicker() + (useAI()
-    ? `<div class="eng-det"><span class="eng ai"><i></i>正在使用 ${esc(aiName())} · ${esc(S.ai.model)}</span><button type="button" class="link-btn" data-ai>修改配置 ›</button></div>
-       <p class="hint">截图会发送给 ${esc(aiName())} 识别,Key 只保存在本机浏览器。</p>`
-    : `<div class="eng-det"><span class="eng"><i></i>正在使用本地识别<em class="engSt">${esc(engShort(ocrNote))}</em></span>${aiReady() ? '' : '<button type="button" class="link-btn" data-ai>配置模型 ›</button>'}</div>
-       <p class="hint">基于 Tesseract,首次使用下载约 5MB 识别组件,之后秒开。券商截图字小、排版复杂时,配置模型识别更准。</p>`);
+    ? `<p class="hint">截图会发送给 ${esc(aiName())} 识别,Key 只保存在本机浏览器。</p>`
+    : `<div class="eng-det"><span class="eng"><i></i>正在使用本地识别<em class="engSt">${esc(engShort(ocrNote))}</em></span></div>
+       <p class="hint">基于 Tesseract,首次使用下载约 5MB 识别组件,之后秒开。券商截图字小、排版复杂时,配置AI模型识别更准。</p>`);
 }
 function openAI() {
   let d = $('#dlgAI');
@@ -2541,10 +2618,11 @@ function switchTab(id) {
   $('#tabMore').classList.toggle('active', SECONDARY.includes(id));
   history.replaceState(null, '', '#/' + id);
   if (id === 'etf') etfEnter();
+  if (id === 'pool') poolEnter();
   if (isPhone()) scrollTo({ top: 0, behavior: 'instant' });
   else if (innerWidth <= 920) $('.main').scrollIntoView({ block: 'start' });
 }
-const SECONDARY = ['profile', 'etf', 'future', 'life', 'data'];
+const SECONDARY = ['pool', 'profile', 'etf', 'future', 'life', 'data'];
 const isPhone = () => matchMedia('(max-width: 640px)').matches;
 function openMore() {
   $('#sheetTabs').innerHTML = SECONDARY.map(id => {
@@ -2631,6 +2709,212 @@ function clearDemo() {
   S.holdings = S.holdings.filter(h => !h.demo);
   S.ack = []; save(); renderAll();
   goAdd('one');
+}
+
+/* ---------- 红利股票池:好公司(体检) + 好位置(股息率在自身近 5 年的分位) + 买入价 ---------- */
+/* 精选 A 股红利股:长期稳定分红、行业龙头,覆盖银行 / 能源 / 公用事业 / 运营商 / 交通 / 消费 */
+const POOL_DEF = [
+  ['600036', '银行'], ['601398', '银行'], ['601288', '银行'], ['601939', '银行'], ['601988', '银行'], ['601328', '银行'], ['601658', '银行'], ['601166', '银行'], ['600919', '银行'], ['601838', '银行'],
+  ['601088', '煤炭'], ['601225', '煤炭'], ['601898', '煤炭'], ['600188', '煤炭'], ['600938', '石油'], ['601857', '石油'], ['600028', '石油'],
+  ['600900', '水电'], ['600025', '水电'], ['600674', '水电'], ['600886', '电力'], ['003816', '核电'],
+  ['600941', '运营商'], ['601728', '运营商'], ['600050', '运营商'],
+  ['601006', '铁路'], ['600377', '高速'], ['600012', '高速'], ['000429', '高速'], ['601668', '建筑'], ['600585', '建材'], ['600461', '水务'],
+  ['601318', '保险'], ['000651', '家电'], ['000333', '家电'], ['600690', '家电'], ['600887', '食品'], ['000895', '食品'], ['600519', '白酒'], ['000858', '白酒'],
+].map(([c, ind]) => ({ k: 'A:' + c, ind }));
+const POOL_LV = [['lv1', '低位'], ['lv2', '偏低'], ['lv3', '适中'], ['lv4', '偏高'], ['lv5', '高位']];
+const PL_CKEY = 'xb-pool-cache';
+let PC;
+try { PC = Object.assign({ k: {}, f: {} }, JSON.parse(localStorage.getItem(PL_CKEY) || '{}')); } catch { PC = { k: {}, f: {} }; }
+const pcSave = () => { try { localStorage.setItem(PL_CKEY, JSON.stringify(PC)); } catch {} };
+const poolCfg = () => (S.pool = Object.assign({ add: [], rm: [], star: [], target: 0, f: 'all', sort: 'pos', dir: -1 }, S.pool));
+let poolBusy = false, poolMsg = '', poolT = 0;
+
+const poolKeys = () => POOL_DEF.map(x => x.k);
+async function poolKline(k) {
+  const [mk, code] = k.split(':'), sym = tqSym(mk, code);
+  for (const host of ['web.ifzq.gtimg.cn/appstock', 'proxy.finance.qq.com/ifzqgtimg/appstock']) {
+    const v = '__xbp' + (++seq);
+    try {
+      await loadScript(`https://${host}/app/fqkline/get?_var=${v}&param=${sym},week,,,270,`);
+      const d = (window[v]?.data?.[sym]?.week || []).map(x => [x[0], +x[2]]).filter(x => x[1] > 0);
+      if (d.length) return d;
+    } catch {} finally { try { delete window[v]; } catch {} }
+  }
+  const cb = '__xbs' + (++seq);
+  const r = await new Promise(res => { window[cb] = res; loadScript(`https://quotes.sina.cn/cn/api/jsonp_v2.php/${cb}/CN_MarketDataService.getKLineData?symbol=${sym}&scale=1200&ma=no&datalen=270`).then(() => res(null), () => res(null)); });
+  try { delete window[cb]; } catch {}
+  return (r || []).map(x => [x.day, +x.close]).filter(x => x[1] > 0);
+}
+async function poolFin(code) {
+  const sec = code + (/^[69]/.test(code) ? '.SH' : /^[48]/.test(code) ? '.BJ' : '.SZ');
+  const r = await jsonp(`https://datacenter.eastmoney.com/securities/api/data/get?type=RPT_F10_FINANCE_MAINFINADATA&sty=APP_F10_MAINFINADATA&filter=(SECUCODE%3D%22${sec}%22)(REPORT_TYPE%3D%22%E5%B9%B4%E6%8A%A5%22)&p=1&ps=1&sr=-1&st=REPORT_DATE`);
+  const x = r?.result?.data?.[0];
+  return x ? { y: dd(x.REPORT_DATE).slice(0, 4), eps: x.EPSJB, cf: x.MGJYXJJE, roe: x.ROEJQ, debt: x.ZCFZL, fin: /银行|保险|证券/.test(x.ORG_TYPE || '') } : null;
+}
+async function poolRun(list, n, fn) {
+  const q = [...list];
+  await Promise.all(Array.from({ length: n }, async () => { while (q.length) { const x = q.shift(); try { await fn(x); } catch {} } }));
+}
+async function poolRefresh(force) {
+  if (poolBusy) return;
+  poolBusy = true;
+  const keys = poolKeys(), now = Date.now();
+  try {
+    poolMsg = '正在更新行情…'; renderPool();
+    for (let i = 0; i < keys.length; i += 40) await fetchQuotes(keys.slice(i, i + 40));
+    const needD = keys.filter(k => force || !C.divs[k] || now - C.divs[k].t > 12 * 36e5);
+    const needK = keys.filter(k => force || !PC.k[k] || now - PC.k[k].t > 20 * 36e5);
+    const needF = keys.filter(k => k.startsWith('A:') && (force || !PC.f[k] || now - PC.f[k].t > 7 * 864e5));
+    let done = 0;
+    const total = needD.length + needK.length + needF.length;
+    const tick = () => { done++; poolMsg = `正在拉取分红与历史股价 ${done}/${total}…`; if (done % 6 === 0) renderPool(); };
+    await poolRun(needD, 3, async k => { const [mk, code] = k.split(':'); try { C.divs[k] = { t: Date.now(), list: await fetchDivs(mk, code) }; } finally { tick(); } });
+    await poolRun(needK, 2, async k => { try { const d = await poolKline(k); if (d.length) PC.k[k] = { t: Date.now(), d }; } finally { tick(); } });
+    await poolRun(needF, 3, async k => { try { PC.f[k] = { t: Date.now(), v: await poolFin(k.split(':')[1]) }; } finally { tick(); } });
+    saveCache(); pcSave(); poolT = Date.now(); poolMsg = '';
+  } catch (e) { poolMsg = '更新失败:' + (e.message || '网络错误'); }
+  poolBusy = false; renderPool();
+}
+
+const lvOf = p => p >= .8 ? 0 : p >= .6 ? 1 : p >= .4 ? 2 : p >= .2 ? 3 : 4;
+const quant = (arr, p) => { const s = [...arr].sort((a, b) => a - b); const i = (s.length - 1) * p, lo = Math.floor(i); return s[lo] + (s[Math.ceil(i)] - s[lo]) * (i - lo); };
+function poolCalc(k) {
+  const [mk, code] = k.split(':'), q = C.quotes[k], list = C.divs[k]?.list, kl = PC.k[k]?.d, fin = PC.f[k]?.v, p = poolCfg();
+  const h = S.holdings.find(x => hkey(x) === k);
+  const o = { k, mk, code, q, name: q?.name || h?.name || code, held: !!h, star: p.star.includes(k), ind: POOL_DEF.find(x => x.k === k)?.ind || '', dots: [] };
+  if (!q || !list) return o;
+  const cur = MK[mk].cur;
+  const evs = list.filter(e => e.ex && e.ps > 0).map(e => [e.ex, e.ps * fx(e.cur) / fx(cur)]).sort((a, b) => a[0].localeCompare(b[0]));
+  const ttmAt = d => { const from = addDays(d, -365); let s = 0; for (const [ex, v] of evs) { if (ex > d) break; if (ex > from) s += v; } return s; };
+  o.dps = ttmAt(TODAY);
+  o.yld = q.price > 0 ? o.dps / q.price : 0;
+  if (kl && o.dps > 0) {
+    const from = addDays(TODAY, -365 * 5);
+    const hist = kl.filter(([d]) => d >= from).map(([d, c]) => ttmAt(d) / c).filter(v => v > 0);
+    if (hist.length >= 50) {
+      o.pct = hist.filter(v => v < o.yld).length / hist.length;
+      o.lv = lvOf(o.pct);
+      o.y75 = quant(hist, .75); o.yMin = Math.min(...hist); o.yMax = Math.max(...hist); o.n = hist.length;
+    }
+  }
+  const ty = p.target > 0 ? p.target / 100 : o.y75;
+  if (ty && o.dps > 0) { o.buy = o.dps / ty; o.gap = q.price / o.buy - 1; }
+  /* 体检:连续分红 / 分红增长 / 派息率 / 现金流含金量 / ROE */
+  const byY = {};
+  evs.forEach(([ex, v]) => byY[ex.slice(0, 4)] = (byY[ex.slice(0, 4)] || 0) + v);
+  let cons = 0;
+  for (let y = byY[YEAR] ? YEAR : YEAR - 1; byY[y] > 0; y--) cons++;
+  o.cons = cons;
+  const dot = (n, s, t) => o.dots.push({ n, s, t });
+  dot('连续分红', cons >= 8 ? 'g' : cons >= 4 ? 'y' : 'r', `连续 ${cons} 年分红`);
+  const d1 = byY[YEAR - 1], d5 = byY[YEAR - 5];
+  if (d1 > 0 && d5 > 0) { const g = Math.pow(d1 / d5, 1 / 4) - 1; dot('分红增长', g >= .03 ? 'g' : g >= -.03 ? 'y' : 'r', `近 4 年每股分红年均 ${g >= 0 ? '+' : ''}${(g * 100).toFixed(1)}%`); }
+  else dot('分红增长', 'n', '分红年数不足,无法判断');
+  if (fin && fin.eps > 0 && byY[fin.y] > 0) { const pr = byY[fin.y] / fin.eps; dot('派息率', pr <= .75 ? 'g' : pr <= 1 ? 'y' : 'r', `${fin.y} 年派息率 ${(pr * 100).toFixed(0)}%${pr > 1 ? ',分红超过利润' : ''}`); }
+  else if (fin && fin.eps <= 0) dot('派息率', 'r', `${fin.y} 年亏损`);
+  else dot('派息率', 'n', mk === 'A' ? '暂无年报数据' : '仅支持 A股');
+  if (fin && !fin.fin && fin.eps > 0 && fin.cf != null) { const r = fin.cf / fin.eps; dot('现金流', r >= 1 ? 'g' : r >= .6 ? 'y' : 'r', `经营现金流 / 利润 = ${r.toFixed(2)}`); }
+  else dot('现金流', 'n', fin?.fin ? '金融企业不适用' : mk === 'A' ? '暂无年报数据' : '仅支持 A股');
+  if (fin && fin.roe != null) dot('ROE', fin.roe >= 10 ? 'g' : fin.roe >= 6 ? 'y' : 'r', `${fin.y} 年 ROE ${(+fin.roe).toFixed(1)}%`);
+  else dot('ROE', 'n', mk === 'A' ? '暂无年报数据' : '仅支持 A股');
+  o.score = o.dots.reduce((a, d) => a + ({ g: 2, y: 1, r: -2, n: 0 }[d.s]), 0);
+  o.warn = o.dots.find(d => d.s === 'r');
+  return o;
+}
+
+function poolEnter() {
+  if (!$('#plBody')) buildPool();
+  renderPool();
+  if (!poolT || Date.now() - poolT > 5 * 6e4) poolRefresh();
+}
+function buildPool() {
+  $('#pool').innerHTML = head('pool', '红利股票池', `精选 ${POOL_DEF.length} 只 A股红利龙头,自动挑出「体检过关 + 价格偏低」的,每天更新`, `
+    <select id="plTarget" title="买入价按什么股息率倒推" style="width:auto;padding:8px 34px 8px 12px;font-size:13px">
+      <option value="0">买入价:自身 75% 分位</option>${[4, 4.5, 5, 5.5, 6].map(v => `<option value="${v}">买入价:股息率 ${v}%</option>`).join('')}
+    </select>
+    <button class="run sm" id="plGo">刷新</button>`) + `<div id="plBody"></div>`;
+  $('#plTarget').value = String(poolCfg().target || 0);
+  $('#plTarget').onchange = e => { S.pool.target = +e.target.value; save(); renderPool(); };
+  $('#plGo').onclick = () => poolRefresh(true);
+  $('#pool').addEventListener('click', e => {
+    const p = poolCfg();
+    const f = e.target.closest('[data-plf]');
+    if (f) { p.f = f.dataset.plf; save(); return renderPool(); }
+    const s = e.target.closest('[data-ps]');
+    if (s) { if (p.sort === s.dataset.ps) p.dir = -p.dir; else { p.sort = s.dataset.ps; p.dir = -1; } save(); return renderPool(); }
+    const st = e.target.closest('[data-pst]');
+    if (st) { const k = st.dataset.pst; p.star = p.star.includes(k) ? p.star.filter(x => x !== k) : [...p.star, k]; save(); return renderPool(); }
+    const row = e.target.closest('[data-k]');
+    if (row) { const [mk, code] = row.dataset.k.split(':'); openProfile(mk, code); }
+  });
+}
+/* 优选:近 5 年股息率分位 ≥ 60%(偏低及以下)、体检无红灯、连续分红 ≥ 5 年 */
+const poolPick = o => o.lv != null && o.lv <= 1 && !o.warn && o.cons >= 5;
+function poolWhy(o) {
+  const good = o.dots.filter(d => d.s === 'g').map(d => d.n);
+  return [`股息率 ${pct(o.yld)},比近 5 年 ${(o.pct * 100).toFixed(0)}% 的时间都高`, `连续 ${o.cons} 年分红`, good.length >= 4 ? '体检全部过关' : good.length ? good.filter(n => n !== '连续分红').slice(0, 2).join('、') + '良好' : ''].filter(Boolean);
+}
+function renderPool() {
+  const body = $('#plBody'); if (!body) return;
+  const p = poolCfg(), all = poolKeys().map(poolCalc), ready = all.some(o => o.lv != null);
+  if (/^(held)$/.test(p.f)) p.f = 'all';
+  const pickAll = all.filter(poolPick), picks = [...pickAll].sort((a, b) => b.pct - a.pct || b.score - a.score).slice(0, 6);
+  const near = picks.length ? [] : all.filter(o => o.lv != null && !o.warn).sort((a, b) => b.pct - a.pct).slice(0, 3);
+  const cnt = i => all.filter(o => o.lv === i).length;
+  const filt = p.f === 'star' ? all.filter(o => o.star) : p.f === 'pick' ? all.filter(poolPick) : /^lv\d$/.test(p.f) ? all.filter(o => o.lv === +p.f[2] - 1) : all;
+  const val = o => p.sort === 'yld' ? o.yld : p.sort === 'gap' ? (o.gap == null ? null : -o.gap) : p.sort === 'hp' ? o.score : p.sort === 'pos' ? o.pct : null;
+  const rows = [...filt].sort((a, b) => { const va = val(a), vb = val(b); return va == null ? 1 : vb == null ? -1 : p.dir < 0 ? vb - va : va - vb; });
+  const px = v => '¥' + v.toFixed(v < 10 ? 3 : 2);
+  const card = o => `<div class="pl-card" data-k="${o.k}">
+      <div class="pl-c-h"><div><div class="nm">${esc(o.name)}${o.held ? '<span class="tg">已持仓</span>' : ''}</div><div class="cd">${esc(o.code)} · ${esc(o.ind)}</div></div>
+        <span class="pl-lv ${POOL_LV[o.lv][0]}">${POOL_LV[o.lv][1]}</span></div>
+      <div class="pl-c-num"><div><small>股息率</small><b class="num">${pct(o.yld)}</b></div><div><small>现价</small><b class="num">${px(o.q.price)}</b></div>
+        <div><small>买入价</small><b class="num">${o.buy ? '≤ ' + px(o.buy) : '—'}</b></div></div>
+      <span class="pl-bar"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>
+      <ul class="pl-why">${poolWhy(o).map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+      <div class="pl-c-f"><span class="pl-dots" title="${esc(o.dots.map(d => d.n + ':' + d.t).join('\n'))}">${o.dots.map(d => `<i class="${d.s}"></i>`).join('')}</span>
+        <span class="sm ${o.gap <= 0 ? 'ok' : ''}">${o.gap == null ? '' : o.gap <= 0 ? '已到买入价' : `距买入价还差 ${(o.gap * 100).toFixed(1)}%`}</span></div>
+    </div>`;
+  const pickBox = !ready ? `<div class="box"><div class="sec-h">今日优选</div><div class="empty">${esc(poolMsg || '正在拉取分红与历史股价…')}</div></div>`
+    : `<div class="box pl-pick">
+      <div class="sec-h">今日优选 <small>${picks.length ? `${pickAll.length} 只同时满足:价格偏低以下 · 体检无红灯 · 连续分红 5 年以上${pickAll.length > picks.length ? `,展示位置最好的 ${picks.length} 只,其余点下方「优选」查看` : ''}` : '眼下没有同时满足「价格偏低 + 体检过关」的,下面是位置相对最好的,可以先加关注等机会'}</small></div>
+      <div class="pl-cards">${(picks.length ? picks : near).map(card).join('')}</div>
+    </div>`;
+  const chip = (f, n, c = '', cls = '') => `<button class="chip ${cls}${p.f === f ? ' active' : ''}" data-plf="${f}">${n}${c !== '' ? `<b>${c}</b>` : ''}</button>`;
+  const filters = `<div class="pl-filter">
+      ${chip('all', '全部', all.length)}${chip('pick', '优选', all.filter(poolPick).length)}${chip('star', '★ 关注', all.filter(o => o.star).length)}<span class="sep"></span>
+      ${POOL_LV.map(([c, n], i) => chip('lv' + (i + 1), n, cnt(i), c)).join('')}
+    </div>`;
+  const th = (k, n, cls = '') => `<th class="${cls}${p.sort === k ? ' on' : ''}" data-ps="${k}">${n}${p.sort === k ? (p.dir < 0 ? ' ↓' : ' ↑') : ''}</th>`;
+  const tr = o => {
+    const q = o.q;
+    const pos = o.lv == null ? `<span class="sm">${!q || !C.divs[o.k] ? '加载中…' : o.dps > 0 ? '历史数据不足' : '近 12 月无分红'}</span>`
+      : `<span class="pl-pos" title="当前股息率 ${pct(o.yld)},近 5 年区间 ${pct(o.yMin)} ~ ${pct(o.yMax)},高于 ${(o.pct * 100).toFixed(0)}% 的时间"><span class="pl-lv ${POOL_LV[o.lv][0]}">${POOL_LV[o.lv][1]}</span>
+          <span class="pl-bar"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span><span class="pl-ends"><span>便宜</span><span>贵</span></span></span>`;
+    const buy = o.buy ? `<span class="pl-buy"><b class="num">≤ ${px(o.buy)}</b>
+        <span class="sm ${o.gap <= 0 ? 'ok' : ''}">${o.gap <= 0 ? '已低于买入价' : `还差 ${(o.gap * 100).toFixed(1)}%`}</span></span>` : '<span class="sm">—</span>';
+    return `<tr data-k="${o.k}">
+      <td><button class="pl-star${o.star ? ' on' : ''}" data-pst="${o.k}" title="${o.star ? '取消关注' : '关注'}">${o.star ? '★' : '☆'}</button></td>
+      <td><div class="nm">${esc(o.name)}${o.held ? '<span class="tg">已持仓</span>' : ''}</div><div class="cd">${esc(o.code)} · ${esc(o.ind)}</div></td>
+      <td class="lg">${q ? `<b class="num">${q.price.toFixed(q.price < 10 ? 3 : 2)}</b><span class="sm ${cls(q.chg)}">${sgn(q.chg)}</span>` : '—'}</td>
+      <td><b class="num">${o.yld ? pct(o.yld) : '—'}</b>${o.dps ? `<span class="sm lg">每股 ${o.dps.toFixed(3)}</span>` : ''}</td>
+      <td style="text-align:center">${pos}</td>
+      <td class="lg" style="text-align:center"><span class="pl-dots" title="${esc(o.dots.map(d => d.n + ':' + d.t).join('\n'))}">${o.dots.map(d => `<i class="${d.s}"></i>`).join('')}</span>${o.warn ? `<span class="pl-warn">⚠ ${esc(o.warn.n)}</span>` : ''}</td>
+      <td>${buy}</td></tr>`;
+  };
+  const t = poolT ? new Date(poolT) : null;
+  const fname = { all: '全部', pick: '优选', star: '关注' }[p.f] || POOL_LV[+p.f[2] - 1][1];
+  body.innerHTML = pickBox + filters + `<div class="box">
+      <div class="sec-h">${fname} ${rows.length} 只
+        <small>${poolMsg ? esc(poolMsg) : t ? `更新于 ${pad(t.getHours())}:${pad(t.getMinutes())} · 点任意一行看分红档案` : ''}</small></div>
+      ${rows.length ? `<div class="tbl-wrap"><table class="pl-tbl"><thead><tr><th></th><th>名称</th><th class="lg">现价</th>${th('yld', '股息率')}${th('pos', '价格位置', 'ct')}${th('hp', '体检', 'lg')}${th('gap', '买入价')}</tr></thead>
+        <tbody>${rows.map(tr).join('')}</tbody></table></div>` : `<div class="empty">${p.f === 'star' ? '还没有关注的股票,点名称前的 ☆ 加关注' : '这一档暂时没有股票'}</div>`}
+    </div>
+    <div class="hint pl-legend">
+      <span><b>价格位置</b>:当前股息率在这只股票近 5 年周线中的分位,股息率越高越「便宜」;≥80% 低位 · 60–80% 偏低 · 40–60% 适中 · 20–40% 偏高 · &lt;20% 高位</span>
+      <span><b>体检</b>:连续分红 / 分红增长 / 派息率 / 现金流 / ROE <span class="pl-dots"><i class="g"></i><i class="y"></i><i class="r"></i><i class="n"></i></span> 好 · 一般 · 有风险 · 不适用</span>
+      <span><b>买入价</b>:近 12 月每股分红 ÷ 目标股息率(默认取自身近 5 年 75% 分位)。股票池和优选由规则自动筛出,只是帮你缩小范围,不构成投资建议</span>
+    </div>`;
 }
 
 /* ---------- 跨境估值:QDII ETF 估算净值 = 基准净值 × (1 + Σ权重×股价涨跌) × 汇率变化 ---------- */
@@ -2875,7 +3159,7 @@ function renderEtf() {
   const okN = all.filter(x => x.est).length;
   const st = etfBusy ? '正在更新…' : (t ? `最后刷新 ${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())} · 已估值 ${okN}/${all.length}` : '尚未刷新') + (etfErr ? ` · ${etfErr}` : '');
   const cards = strip.map(x => `<button class="ef-card${x.code === E.cur ? ' active' : ''}" data-efc="${x.code}">
-      ${E.list.length > 1 ? `<span class="x" data-efx="${x.code}" title="移出监控">×</span>` : ''}
+      ${E.list.length > 1 ? `<span class="x" data-efx="${x.code}" title="移出监控"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></span>` : ''}
       <div class="c">${x.code}</div><div class="n">${esc(etfShort(x.name))}</div>
       <div class="v"><b class="num ${cls(x.chg)}">${x.est ? nf(x.est, 4) : '—'}</b><span class="c ${cls(x.chg)}">${x.est ? sgn(x.chg) : '加载中…'}</span></div>
       <div class="v" style="margin-top:6px"><span class="c">${x.prem == null ? '溢价 —' : x.prem >= 0 ? '溢价' : '折价'}</span>${x.prem != null ? `<span class="pm ${pmLv(x.prem)}">${sgn(x.prem)}</span>` : ''}</div>
@@ -2982,9 +3266,12 @@ $('#nav').onclick = e => {
 $('#moreSheet').onclick = e => {
   if (e.target === e.currentTarget || e.target.closest('[data-go],[data-add]')) $('#moreSheet').close();
 };
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('[data-eng]')) { e.preventDefault(); setEngine(e.target.dataset.eng); }
+});
 document.addEventListener('click', e => {
   const x = e.target.closest('[data-close]'); if (x) x.closest('dialog').close();
-  if (e.target.closest('[data-ai]')) openAI();
+  if (e.target.closest('[data-ai]')) return openAI();
   const en = e.target.closest('[data-eng]'); if (en) setEngine(en.dataset.eng);
   const g = e.target.closest('[data-go]'); if (g) switchTab(g.dataset.go);
   const a = e.target.closest('[data-add]'); if (a) goAdd(a.dataset.add);
