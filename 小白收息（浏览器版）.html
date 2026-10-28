@@ -297,7 +297,20 @@
   .status.ok { color: var(--ok); background: rgba(52,211,153,.1); border: 1px solid rgba(52,211,153,.22); }
   .status.err { color: var(--err); background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.22); }
   .switch { display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; color: var(--text); font-size: 13.5px; }
-  .switch input { width: 18px; height: 18px; accent-color: rgb(var(--c)); }
+  input[type=checkbox] {
+    appearance: none; -webkit-appearance: none; flex: none; width: 18px; height: 18px; margin: 0; border-radius: 6px; cursor: pointer;
+    border: 1.5px solid rgba(255,255,255,.28); background: rgba(255,255,255,.04); display: inline-grid; place-items: center;
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+  }
+  input[type=checkbox]::after {
+    content: ""; width: 10px; height: 10px; transform: scale(0); transition: transform .15s ease;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23062a1d' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4 12.5 9.5 18 20 6'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  input[type=checkbox]:checked { background: linear-gradient(135deg, #34d399, #10b981); border-color: transparent; box-shadow: 0 4px 12px rgba(16,185,129,.3); }
+  input[type=checkbox]:checked::after { transform: scale(1); }
+  input[type=checkbox]:hover:not(:disabled) { border-color: rgba(52,211,153,.7); }
+  input[type=checkbox]:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(52,211,153,.3); }
+  input[type=checkbox]:disabled { opacity: .35; cursor: not-allowed; }
 
   /* 表格与列表 */
   .tbl-wrap { overflow-x: auto; margin: 0 -4px; }
@@ -432,6 +445,24 @@
   #xbToast.err { border-color: rgba(251,191,36,.4); }
   #xbToast.err::before { content: "! "; color: #fbbf24; }
   #xbToast.show { opacity: 1; transform: translate(-50%, 0); }
+  /* 下拉菜单与弹窗同一套液态玻璃,替代系统下拉列表 */
+  #xbMenu {
+    position: fixed; inset: auto; margin: 0; padding: 6px; min-width: 120px; max-height: 320px; overflow-y: auto;
+    border-radius: 16px; border: 1px solid var(--glass-border); color: var(--text);
+    background: rgba(20,27,44,.94); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); box-shadow: var(--glass-shadow);
+  }
+  #xbMenu:popover-open { animation: menu-in .2s cubic-bezier(.2,.9,.3,1.15); }
+  @keyframes menu-in { from { opacity: 0; transform: translateY(-6px) scale(.97); } }
+  @media (prefers-reduced-motion: reduce) { #xbMenu:popover-open { animation: none; } }
+  #xbMenu button {
+    width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 0; border-radius: 10px;
+    background: none; color: var(--text); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; white-space: nowrap;
+  }
+  #xbMenu button span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  #xbMenu button:hover, #xbMenu button:focus-visible { background: rgba(255,255,255,.08); outline: none; }
+  #xbMenu button.on { color: rgb(var(--mc, 79,140,255)); font-weight: 600; background: rgba(var(--mc, 79,140,255),.12); }
+  #xbMenu button.on::after { content: "✓"; font-weight: 800; }
+  #xbMenu button:disabled { opacity: .4; cursor: not-allowed; }
   .arr-top { text-align: center; }
   .arr-coin { font-size: 46px; line-height: 1; animation: coin-bob 1.6s ease-in-out infinite; }
   .arr-top p { margin: 10px 0 2px; color: var(--muted); font-size: 14px; }
@@ -451,6 +482,8 @@
   .thumb { position: relative; width: 74px; height: 96px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: center top / cover no-repeat var(--card); }
   .thumb button { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; border: none; background: rgba(0,0,0,.65); color: #fff; cursor: pointer; font-size: 12px; line-height: 1; }
   .shot-tbl input, .shot-tbl select { padding: 6px 9px; font-size: 13px; border-radius: 8px; }
+  .shot-tbl input[type=checkbox] { padding: 0; border-radius: 6px; }
+  .shot-tbl th, .shot-tbl td { padding-left: 6px; padding-right: 6px; }
   .shot-tbl td { vertical-align: middle; }
   .shot-tbl th:nth-child(-n+3), .shot-tbl td:nth-child(-n+3) { text-align: left; }
   .shot-tbl tr.bad td { background: rgba(248,113,113,.06); }
@@ -1405,9 +1438,9 @@ function renderShotTable() {
         <input type="text" data-f="code" value="${esc(r.code)}" placeholder="代码" style="width:90px;flex:none" /><span class="sm" style="white-space:nowrap">${r.q ? esc(r.q.name) : ''}</span></div>
         ${r.cands.length > 1 ? `<span class="alt">${r.cands.filter(c => !(c.mk === r.mk && c.code === r.code)).slice(0, 3).map(c => `<button class="chip" data-alt="${c.mk}:${c.code}">${MK[c.mk].n} ${esc(c.code)} ${esc(c.name)}</button>`).join(' ')}</span>` : ''}</td>
       <td>${r.q ? CUR_SIGN[MK[r.mk].cur] + fmt(r.q.price, r.q.price < 10 ? 3 : 2) : '—'}</td>
-      <td><input type="number" data-f="shares" value="${r.shares || ''}" min="0" style="width:100px" /></td>
-      <td><input type="number" data-f="cost" value="${r.cost || ''}" min="0" step="0.001" style="width:100px" placeholder="${r.q ? r.q.price : ''}" /></td>
-      <td><input type="date" data-f="buy" value="${r.buy || ''}" style="width:140px" /></td>
+      <td><input type="number" data-f="shares" value="${r.shares || ''}" min="0" style="width:88px" /></td>
+      <td><input type="number" data-f="cost" value="${r.cost || ''}" min="0" step="0.001" style="width:88px" placeholder="${r.q ? r.q.price : ''}" /></td>
+      <td><input type="date" data-f="buy" value="${r.buy || ''}" style="width:132px" /></td>
     </tr>`).join('')}</tbody></table></div>
     <p class="hint">建仓日期不填就按今天(导入日)计算;老仓位建议填实际买入日,历史分红和 A股红利税才算得准。</p>
     <div class="row" style="margin-top:14px;flex-wrap:wrap;gap:12px">
@@ -2008,6 +2041,81 @@ function xbAsk({ title, msg = '', input, placeholder = '', ok = '确定', cancel
     if (hasInput && !isPhone()) inp.select(); else (danger ? no : yes).focus();
   });
 }
+/* ---------- 玻璃下拉:接管所有原生 select 的弹出列表 ---------- */
+(() => {
+  const menu = document.createElement('div');
+  if (!('popover' in menu)) return;
+  menu.id = 'xbMenu'; menu.popover = 'manual'; menu.setAttribute('role', 'listbox');
+  document.body.appendChild(menu);
+  let cur = null;
+  const close = (refocus) => {
+    if (!cur) return;
+    const s = cur; cur = null;
+    try { menu.hidePopover(); } catch {}
+    if (refocus) s.focus({ preventScroll: true });
+  };
+  const open = sel => {
+    if (sel.disabled) return;
+    if (cur === sel) return close(true);
+    close();
+    cur = sel;
+    const host = sel.closest('dialog[open]') || document.body;
+    if (menu.parentNode !== host) host.appendChild(menu);
+    const c = getComputedStyle(sel).getPropertyValue('--c').trim();
+    if (c) menu.style.setProperty('--mc', c); else menu.style.removeProperty('--mc');
+    menu.innerHTML = [...sel.options].map((o, i) =>
+      `<button type="button" role="option" data-i="${i}" class="${o.selected ? 'on' : ''}" ${o.disabled ? 'disabled' : ''}><span>${esc(o.text)}</span></button>`).join('');
+    const r = sel.getBoundingClientRect(), vw = innerWidth, vh = innerHeight;
+    menu.style.minWidth = Math.max(120, r.width) + 'px';
+    menu.style.left = '0px'; menu.style.top = '0px';
+    menu.showPopover();
+    const mw = menu.offsetWidth, mh = menu.offsetHeight;
+    const below = vh - r.bottom - 8, up = below < mh && r.top > below;
+    menu.style.left = Math.max(8, Math.min(r.left, vw - mw - 8)) + 'px';
+    menu.style.top = (up ? Math.max(8, r.top - mh - 6) : Math.min(r.bottom + 6, vh - mh - 8)) + 'px';
+    menu.style.transformOrigin = up ? 'bottom left' : 'top left';
+    (menu.querySelector('.on') || menu.querySelector('button:not(:disabled)'))?.focus({ preventScroll: true });
+    menu.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+  };
+  const pick = i => {
+    const s = cur; if (!s) return;
+    close(true);
+    if (s.selectedIndex !== i) {
+      s.selectedIndex = i;
+      s.dispatchEvent(new Event('input', { bubbles: true }));
+      s.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  };
+  menu.addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b && !b.disabled) pick(+b.dataset.i); });
+  menu.addEventListener('keydown', e => {
+    const bs = [...menu.querySelectorAll('button:not(:disabled)')], k = bs.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); bs[(k + (e.key === 'ArrowDown' ? 1 : -1) + bs.length) % bs.length]?.focus(); }
+    else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); bs[e.key === 'Home' ? 0 : bs.length - 1]?.focus(); }
+    else if (e.key === 'Tab') { e.preventDefault(); close(true); }
+  });
+  // 鼠标/触摸按下时拦掉系统列表,改开玻璃菜单
+  document.addEventListener('mousedown', e => {
+    const s = e.target.closest?.('select');
+    if (s && !s.multiple) { e.preventDefault(); open(s); return; }
+    if (cur && !menu.contains(e.target)) close();
+  }, true);
+  let t0 = null;
+  document.addEventListener('touchstart', e => { const p = e.touches[0]; t0 = p && { x: p.clientX, y: p.clientY }; }, { capture: true, passive: true });
+  document.addEventListener('touchend', e => {
+    const s = e.target.closest?.('select'), p = e.changedTouches[0];
+    if (!s || s.multiple || !e.cancelable) return;
+    e.preventDefault();
+    if (t0 && p && Math.hypot(p.clientX - t0.x, p.clientY - t0.y) < 10) open(s);
+  }, { capture: true, passive: false });
+  document.addEventListener('keydown', e => {
+    if (cur && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); return close(true); }
+    const s = e.target.closest?.('select');
+    if (s && !s.multiple && [' ', 'Enter', 'ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); open(s); }
+  }, true);
+  addEventListener('scroll', e => { if (cur && !menu.contains(e.target)) close(); }, true);
+  addEventListener('resize', () => close());
+})();
+
 let toastTimer;
 function toast(msg, ok = true) {
   let el = $('#xbToast');
