@@ -605,6 +605,23 @@
   .thumbs:not(:empty) { margin-top: 12px; }
   .thumb { position: relative; width: 74px; height: 96px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: center top / cover no-repeat var(--card); }
   .thumb button { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; border: none; background: rgba(0,0,0,.65); color: #fff; cursor: pointer; font-size: 12px; line-height: 1; }
+  .eng-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .eng-opt {
+    display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 2px; align-items: center; text-align: left; min-width: 0;
+    padding: 12px 14px; border-radius: 13px; border: 1px solid var(--border-soft); background: var(--card); color: var(--text); font: inherit; cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .eng-opt:hover { border-color: var(--border); }
+  .eng-opt .rd { grid-row: span 2; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.3); transition: all .15s ease; }
+  .eng-opt b { font-size: 14px; font-weight: 700; }
+  .eng-opt span { font-size: 11.5px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .eng-opt.on { border-color: rgba(52,211,153,.55); background: linear-gradient(180deg, rgba(52,211,153,.15), rgba(52,211,153,.04)); box-shadow: 0 4px 14px rgba(52,211,153,.1); }
+  .eng-opt.on .rd { border-color: #34d399; background: radial-gradient(circle, #34d399 0 3.5px, transparent 4.5px); box-shadow: 0 0 8px rgba(52,211,153,.45); }
+  .eng-opt.on b { color: #6ee7b7; }
+  .eng-pick.sm .eng-opt { padding: 9px 12px; }
+  .eng-pick.sm .eng-opt b { font-size: 13px; }
+  .eng-det { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  #shotEng { display: block; }
   .eng { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
   .eng i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); }
   .eng em { font-style: normal; color: var(--muted-2); }
@@ -1002,14 +1019,14 @@ const DEFAULT = () => ({
   ],
   settings: { afterTax: true, hkTax: 20, usTax: 10, fx: { HKD: 0.85, USD: 6.67 }, fxAuto: true },
   sim: { p: 0, m: 3000, y: 5, gd: 4, gp: 3, n: 20, re: true },
-  ai: { preset: 'silicon', base: 'https://api.siliconflow.cn/v1', model: 'Qwen/Qwen2.5-VL-72B-Instruct', key: '' },
+  ai: { mode: 'local', preset: 'silicon', base: 'https://api.siliconflow.cn/v1', model: 'Qwen/Qwen2.5-VL-72B-Instruct', key: '' },
   ack: [],
 });
 let S, C;
 try { S = Object.assign(DEFAULT(), JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { S = DEFAULT(); }
 try { C = Object.assign({ divs: {}, quotes: {} }, JSON.parse(localStorage.getItem(CKEY) || '{}')); } catch { C = { divs: {}, quotes: {} }; }
 S.settings = Object.assign(DEFAULT().settings, S.settings);
-S.ai = Object.assign(DEFAULT().ai, S.ai);
+S.ai = Object.assign(DEFAULT().ai, { mode: S.ai?.key ? 'ai' : 'local' }, S.ai);
 const save = () => localStorage.setItem(KEY, JSON.stringify(S));
 const saveCache = () => { try { localStorage.setItem(CKEY, JSON.stringify(C)); } catch {} };
 
@@ -1397,7 +1414,25 @@ const AI_PRESETS = {
   custom: { n: '自定义(OpenAI 兼容接口)', type: 'openai', base: '', model: '' },
 };
 let shotImgs = [], shotRows = [], shotStale = false;
-const useAI = () => !!(S.ai && S.ai.key && S.ai.base && S.ai.model);
+const aiReady = () => !!(S.ai && S.ai.key && S.ai.base && S.ai.model);
+const useAI = () => S.ai.mode === 'ai' && aiReady();
+const aiName = () => (AI_PRESETS[S.ai.preset] || AI_PRESETS.custom).n.split(' · ')[0].replace(/\(.*$/, '');
+function engPicker(sm) {
+  const m = useAI() ? 'ai' : 'local';
+  return `<div class="eng-pick${sm ? ' sm' : ''}" role="radiogroup">
+    <button type="button" class="eng-opt${m === 'local' ? ' on' : ''}" data-eng="local" role="radio" aria-checked="${m === 'local'}">
+      <i class="rd"></i><b>本地模型</b><span>免费 · 截图不出本机</span></button>
+    <button type="button" class="eng-opt${m === 'ai' ? ' on' : ''}" data-eng="ai" role="radio" aria-checked="${m === 'ai'}">
+      <i class="rd"></i><b>配置模型</b><span>${aiReady() ? esc(aiName()) + ' · 已配置' : '识别更准 · 有免费额度'}</span></button>
+  </div>`;
+}
+function setEngine(m) {
+  if (m === 'ai' && !aiReady()) return openAI();
+  if (S.ai.mode === m) return;
+  S.ai.mode = m; save(); renderShotEngine(); renderAISum();
+  if (m === 'local' && addMode === 'shot' && $('#dlgAdd').open) prepareOcr().catch(() => {});
+  toast(m === 'ai' ? `已切换到配置模型 · ${aiName()}` : '已切换到本地模型');
+}
 
 function initShot() {
   const drop = $('#shotDrop');
@@ -1413,9 +1448,9 @@ function initShot() {
 }
 function renderShotEngine() {
   const el = $('#shotEng'); if (!el) return;
-  el.innerHTML = useAI()
-    ? `<span class="eng ai"><i></i>AI 识别 · ${esc(S.ai.model)}</span><button type="button" class="link-btn" data-ai>AI 识别设置 ›</button>`
-    : `<span class="eng"><i></i>本地识别 · 免费,截图不出本机<em id="engSt">${esc(engShort(ocrNote))}</em></span><button type="button" class="link-btn" data-ai>配置 AI 识别更准 ›</button>`;
+  el.innerHTML = engPicker(true) + (useAI()
+    ? `<div class="eng-det"><span class="eng ai"><i></i>${esc(aiName())} · ${esc(S.ai.model)}</span><button type="button" class="link-btn" data-ai>修改配置 ›</button></div>`
+    : `<div class="eng-det"><span class="eng"><i></i>本地识别<em class="engSt">${esc(engShort(ocrNote))}</em></span></div>`);
 }
 function compressImg(file) {
   return new Promise((resolve, reject) => {
@@ -1508,7 +1543,7 @@ let ocrInit = null, ocrWorker = null, ocrProg = () => {}, ocrNote = '';
 const engShort = msg => msg ? ' · ' + msg.split('\n')[0].replace('首次使用,正在下载识别组件', '首次下载') : '';
 function setOcrNote(msg) {
   ocrNote = msg; ocrProg(msg);
-  const el = $('#engSt'); if (el) el.textContent = engShort(msg);
+  $$('.engSt').forEach(el => el.textContent = engShort(msg));
 }
 function prepareOcr() {
   if (!ocrInit) ocrInit = initOcr().then(w => { ocrWorker = w; setOcrNote('已就绪'); return w; }, e => { ocrInit = null; setOcrNote(''); throw e; });
@@ -2011,17 +2046,25 @@ function buildProfile() {
 }
 function openProfile(mk, code) {
   switchTab('profile');
-  buildProfile.setMk(mk); $('#pfCode').value = code; queryProfile();
+  scrollTo({ top: 0, behavior: 'instant' });
+  buildProfile.setMk(mk); $('#pfCode').value = code;
+  const k = mk + ':' + code;
+  if (C.quotes[k]) renderProfile(mk, code, C.quotes[k], C.divs[k]?.list || []);
+  queryProfile(!!C.quotes[k]);
 }
-async function queryProfile() {
+let pfSeq = 0;
+async function queryProfile(quiet) {
   const st = $('#pfStatus'), raw = $('#pfCode').value.trim();
   if (!raw) return setStatus(st, '请输入代码');
-  const mk = pfMk, code = normCode(mk, raw), k = mk + ':' + code;
-  st.className = 'status'; st.textContent = '查询中…'; $('#pfGo').disabled = true;
+  const mk = pfMk, code = normCode(mk, raw), k = mk + ':' + code, my = ++pfSeq;
+  if (quiet !== true) {
+    st.className = 'status'; st.textContent = '查询中…';
+    $('#pfOut').innerHTML = `<div class="box"><div class="empty">正在加载 ${esc(C.quotes[k]?.name || code)} 的分红档案…</div></div>`;
+  }
   try { await fetchQuotes([k]); } catch {}
   let list = null;
   try { list = await fetchDivs(mk, code); C.divs[k] = { t: Date.now(), list }; saveCache(); } catch {}
-  $('#pfGo').disabled = false;
+  if (my !== pfSeq) return;
   const q = C.quotes[k];
   if (!q) { $('#pfOut').innerHTML = ''; return setStatus(st, '没查到行情,请检查市场和代码'); }
   if (!list) list = (C.divs[k] && C.divs[k].list) || [];
@@ -2204,7 +2247,7 @@ function buildData() {
           <div class="status" id="dStatus"></div>
         </div>
         <div class="box">
-          <div class="sec-h">AI 截图识别<small>可选 · 不配置则用免费的本地识别</small><span class="r"><button type="button" class="link-btn" data-ai>设置 ›</button></span></div>
+          <div class="sec-h">截图识别引擎<small>截图导入持仓时用哪种方式识别</small></div>
           <div id="aiSum"></div>
         </div>
         <div class="box">
@@ -2256,9 +2299,11 @@ function buildData() {
 /* ---------- AI 识别设置 ---------- */
 function renderAISum() {
   const el = $('#aiSum'); if (!el) return;
-  el.innerHTML = useAI()
-    ? `<span class="eng ai"><i></i>已启用 · ${esc((AI_PRESETS[S.ai.preset] || AI_PRESETS.custom).n.split(' · ')[0])} · ${esc(S.ai.model)}</span>`
-    : `<span class="eng"><i></i>未配置,截图导入使用本地识别</span><p class="hint">配置视觉大模型后识别更准,有几家可以免费用,点「设置」查看。</p>`;
+  el.innerHTML = engPicker() + (useAI()
+    ? `<div class="eng-det"><span class="eng ai"><i></i>正在使用 ${esc(aiName())} · ${esc(S.ai.model)}</span><button type="button" class="link-btn" data-ai>修改配置 ›</button></div>
+       <p class="hint">截图会发送给 ${esc(aiName())} 识别,Key 只保存在本机浏览器。</p>`
+    : `<div class="eng-det"><span class="eng"><i></i>正在使用本地识别<em class="engSt">${esc(engShort(ocrNote))}</em></span>${aiReady() ? '' : '<button type="button" class="link-btn" data-ai>配置模型 ›</button>'}</div>
+       <p class="hint">基于 Tesseract,首次使用下载约 5MB 识别组件,之后秒开。券商截图字小、排版复杂时,配置模型识别更准。</p>`);
 }
 function openAI() {
   let d = $('#dlgAI');
@@ -2294,7 +2339,7 @@ function openAI() {
   const read = () => ({ preset: $('#aiPreset').value, base: $('#aiBase').value.trim(), model: $('#aiModel').value.trim(), key: $('#aiKey').value.trim() });
   setUrl();
   $('#aiPreset').onchange = () => { const p = AI_PRESETS[$('#aiPreset').value]; $('#aiBase').value = p.base; $('#aiModel').value = p.model; setUrl(); setStatus($('#aiStatus'), ''); };
-  $('#aiSave').onclick = () => { S.ai = read(); save(); renderShotEngine(); renderAISum(); d.close(); toast(useAI() ? 'AI 识别已启用' : '已保存,截图导入使用本地识别'); };
+  $('#aiSave').onclick = () => { S.ai = read(); S.ai.mode = aiReady() ? 'ai' : 'local'; save(); renderShotEngine(); renderAISum(); d.close(); toast(useAI() ? 'AI 识别已启用' : '已保存,截图导入使用本地识别'); };
   $('#aiTest').onclick = async () => {
     const c = read(), st = $('#aiStatus'), btn = $('#aiTest');
     if (!c.key || !c.base || !c.model) return setStatus(st, '请先填写接口地址、模型和 Key');
@@ -2303,7 +2348,7 @@ function openAI() {
     catch (e) { setStatus(st, e.message); }
     btn.disabled = false;
   };
-  if ($('#aiClear')) $('#aiClear').onclick = () => { S.ai = { ...read(), key: '' }; save(); renderShotEngine(); renderAISum(); d.close(); toast('已改回本地识别'); };
+  if ($('#aiClear')) $('#aiClear').onclick = () => { S.ai = { ...read(), key: '', mode: 'local' }; save(); renderShotEngine(); renderAISum(); d.close(); toast('已改回本地识别'); };
   d.showModal();
 }
 async function aiPing(c) {
@@ -2940,6 +2985,7 @@ $('#moreSheet').onclick = e => {
 document.addEventListener('click', e => {
   const x = e.target.closest('[data-close]'); if (x) x.closest('dialog').close();
   if (e.target.closest('[data-ai]')) openAI();
+  const en = e.target.closest('[data-eng]'); if (en) setEngine(en.dataset.eng);
   const g = e.target.closest('[data-go]'); if (g) switchTab(g.dataset.go);
   const a = e.target.closest('[data-add]'); if (a) goAdd(a.dataset.add);
   if (e.target.closest('[data-cleardemo]')) clearDemo();
