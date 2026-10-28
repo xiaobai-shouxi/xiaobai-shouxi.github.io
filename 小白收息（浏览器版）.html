@@ -629,9 +629,56 @@
     .xb-dlg[open] { animation: sheet-in .3s cubic-bezier(.2,.9,.3,1); }
     #xbToast { bottom: calc(84px + env(safe-area-inset-bottom)); }
   }
+  /* 启动页:招财猫招手 */
+  #splash {
+    position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+    background: inherit; background-attachment: fixed; padding-bottom: 6vh;
+    transition: opacity .45s ease, visibility .45s;
+  }
+  #splash.out { opacity: 0; visibility: hidden; }
+  #splash.out .sp-cat { transform: scale(1.12); }
+  .sp-cat { width: 140px; height: 140px; display: grid; place-items: center; transition: transform .45s ease; animation: sp-pop .75s cubic-bezier(.2,1.5,.4,1) both; }
+  #splash .brand-logo { width: 60px; height: 60px; border-radius: 18px; border-width: 3px; transform: scale(2.2); }
+  #splash .brand-logo::before { inset: -5px; border-radius: 23px; filter: blur(12px); opacity: .6; }
+  #splash .brand-logo svg { left: -3px; top: -3px; width: 60px; height: 66px; }
+  #splash .cat-arm, #splash .cat-hand { animation-duration: .8s; }
+  .sp-name { margin: 34px 0 0; font-size: 28px; font-weight: 800; letter-spacing: 4px; color: var(--text); animation: sp-up .6s .25s ease both; }
+  .sp-name b { background: linear-gradient(135deg, #fde68a, #facc15 50%, #fb923c); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sp-tag { margin: 10px 0 0; font-size: 13.5px; color: var(--muted); letter-spacing: 2px; animation: sp-up .6s .4s ease both; }
+  .sp-coins { display: flex; gap: 9px; margin-top: 26px; animation: sp-up .6s .55s ease both; }
+  .sp-coins i { width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff7c2, #facc15 45%, #d97706); box-shadow: 0 0 10px rgba(250,204,21,.5); animation: sp-coin 1s ease-in-out infinite; }
+  .sp-coins i:nth-child(2) { animation-delay: .15s; }
+  .sp-coins i:nth-child(3) { animation-delay: .3s; }
+  @keyframes sp-pop { from { opacity: 0; transform: scale(.4) translateY(30px); } }
+  @keyframes sp-up { from { opacity: 0; transform: translateY(12px); } }
+  @keyframes sp-coin { 0%, 100% { transform: translateY(0); opacity: .55; } 40% { transform: translateY(-9px); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { #splash *, #splash *::before, #splash *::after { animation: none !important; } }
 </style>
 </head>
 <body>
+<div id="splash" aria-label="小白收息正在启动">
+  <div class="sp-cat"></div>
+  <p class="sp-name">小白<b>收息</b></p>
+  <p class="sp-tag">躺着收息 · 心里有数</p>
+  <div class="sp-coins"><i></i><i></i><i></i></div>
+</div>
+<script>
+(() => {
+  const seen = sessionStorage.getItem('xbSplash');
+  sessionStorage.setItem('xbSplash', '1');
+  let done;
+  window.splashGone = new Promise(r => done = r);
+  window.hideSplash = () => {
+    const el = document.getElementById('splash');
+    if (!el || el.classList.contains('out')) return;
+    setTimeout(() => {
+      el.classList.add('out');
+      setTimeout(() => { el.remove(); done(); }, 460);
+    }, Math.max(0, (seen ? 400 : 1300) - performance.now()));
+  };
+  setTimeout(window.hideSplash, 4000);
+})();
+</script>
 <div class="wrap">
   <div class="brand">
     <div class="brand-logo">
@@ -704,6 +751,7 @@
       </svg>
       <span class="shine"></span>
     </div>
+    <script>document.querySelector('#splash .sp-cat')?.appendChild(document.querySelector('.brand .brand-logo').cloneNode(true));</script>
     <div>
       <h1>小白收息</h1>
       <p class="sub">A股 · 港股 · 美股 · ETF 分红自动追踪,数据只存在本机浏览器</p>
@@ -2136,7 +2184,7 @@ function checkArrivals(s) {
   const dlg = $('#arrival');
   $('#arrOk').onclick = () => dlg.close();
   dlg.onclose = () => { S.ack = [...S.ack, ...fresh.map(e => e.id)].slice(-600); save(); };
-  if (!dlg.open) dlg.showModal();
+  window.splashGone.then(() => { if (!dlg.open) dlg.showModal(); });
 }
 
 /* ---------- 刷新与渲染 ---------- */
@@ -2265,6 +2313,7 @@ renderAll();
 const h0 = location.hash.replace(/^#\/?/, '');
 if (h0 && $('#' + h0) && $('#' + h0).classList.contains('panel')) switchTab(h0);
 refresh(false);
+hideSplash();
 </script>
 </body>
 </html>
