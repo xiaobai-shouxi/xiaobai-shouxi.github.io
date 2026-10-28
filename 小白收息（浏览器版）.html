@@ -249,7 +249,7 @@
   /* 表单 */
   label { display: block; font-size: 13px; color: var(--muted); margin: 16px 0 8px; font-weight: 500; }
   label:first-child { margin-top: 0; }
-  input[type=text], input[type=number], input[type=date], select, textarea {
+  input[type=text], input[type=number], input[type=date], input[type=password], select, textarea {
     width: 100%; padding: 11px 13px; border-radius: 11px; border: 1px solid var(--border-soft);
     background: var(--card-2); color: var(--text); font-size: 14px; outline: none; font-family: inherit;
     transition: border-color .15s ease, box-shadow .15s ease; color-scheme: dark;
@@ -376,13 +376,62 @@
   .ev-legend { display: flex; gap: 8px; }
 
   /* 弹窗 */
-  dialog.xb-dlg {
-    width: min(420px, calc(100vw - 32px)); padding: 26px; border-radius: 30px; border: 1px solid var(--glass-border); color: var(--text);
+  .xb-dlg {
+    --card-2: rgba(255,255,255,.05); --border-soft: rgba(255,255,255,.09); --border: rgba(255,255,255,.18);
+    width: min(480px, calc(100vw - 32px)); max-width: 100%; max-height: calc(100vh - 48px); overflow: auto; padding: 24px;
+    border-radius: 30px; border: 1px solid var(--glass-border); color: var(--text);
     background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); box-shadow: var(--glass-shadow);
   }
-  dialog.xb-dlg::backdrop { background: rgba(3,6,14,.6); }
-  dialog.xb-dlg[open] { animation: dlg-in .32s cubic-bezier(.2,.9,.3,1.15); }
+  .xb-dlg.wide { width: min(1100px, calc(100vw - 32px)); }
+  #arrival, #xbAsk { width: min(420px, calc(100vw - 32px)); }
+  .xb-dlg[open] { animation: dlg-in .32s cubic-bezier(.2,.9,.3,1.15); }
+  .xb-dlg[open]::backdrop { animation: dlg-fade .25s ease; }
   @keyframes dlg-in { from { opacity: 0; transform: scale(.94); } }
+  @keyframes dlg-fade { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .xb-dlg[open], .xb-dlg[open]::backdrop { animation: none; } }
+  .xb-dlg::backdrop { background: rgba(4,8,18,.55); }
+  .xb-dlg input, .xb-dlg select, .xb-dlg textarea { background-color: rgba(255,255,255,.05); }
+  .xb-dlg .dlg-x { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.11); }
+  .xb-dlg .dlg-foot button.run { border-radius: 999px; }
+  .xb-dlg .dlg-foot button.run.ghost { background: rgba(255,255,255,.06); }
+  .xb-dlg .seg, .xb-dlg .seg-btn { border-radius: 999px; }
+  .xb-dlg .seg-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .xb-dlg .hint, .xb-dlg .chip small { color: var(--muted); }
+  .dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .dlg-head b { font-size: 17px; }
+  .dlg-x { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-soft); background: var(--card-2); color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; }
+  .dlg-x:hover { color: var(--text); border-color: var(--border); }
+  .dlg-x:focus { outline: none; }
+  .dlg-foot { display: flex; gap: 10px; margin-top: 20px; }
+  .dlg-foot button.run { margin: 0; flex: 2; }
+  .dlg-foot button.run.ghost { flex: 1; }
+  .dlg-foot button.run.danger { background: linear-gradient(135deg, #f87171, #ef4444); color: #fff; box-shadow: 0 10px 24px rgba(239,68,68,.3); }
+  .dlg-msg { margin: 0; font-size: 14px; line-height: 1.75; color: var(--muted); white-space: pre-line; }
+  .dlg-input { width: 100%; margin-top: 14px; }
+  #holdDlgs { --c: 79,140,255; }
+  .eng-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 14px 0 12px; }
+  .status { white-space: pre-line; }
+  .free-tip { margin-top: 14px; font-size: 12px; color: var(--muted-2); line-height: 1.7; }
+  .free-tip summary { cursor: pointer; color: var(--muted); width: fit-content; list-style: none; }
+  .free-tip summary::-webkit-details-marker { display: none; }
+  .free-tip summary::before { content: "💡 "; }
+  .free-tip summary::after { content: " ›"; display: inline-block; transition: transform .2s ease; }
+  .free-tip[open] summary::after { transform: rotate(90deg); }
+  .free-tip ul { margin: 8px 0 6px; padding-left: 18px; }
+  .free-tip li b { color: var(--muted); font-weight: 600; }
+  .free-tip code { font-size: 11px; padding: 0 4px; border-radius: 4px; background: rgba(255,255,255,.07); }
+  .free-tip p { margin: 0; }
+  #xbToast {
+    position: fixed; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom)); z-index: 100; max-width: calc(100vw - 40px);
+    padding: 10px 18px; border-radius: 999px; font-size: 13.5px; color: var(--text); pointer-events: none;
+    background: rgba(16,24,42,.92); border: 1px solid rgba(52,211,153,.35); box-shadow: 0 12px 30px rgba(0,0,0,.45);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    opacity: 0; transform: translate(-50%, 12px); transition: opacity .25s ease, transform .25s ease;
+  }
+  #xbToast::before { content: "✓ "; color: var(--ok); font-weight: 700; }
+  #xbToast.err { border-color: rgba(251,191,36,.4); }
+  #xbToast.err::before { content: "! "; color: #fbbf24; }
+  #xbToast.show { opacity: 1; transform: translate(-50%, 0); }
   .arr-top { text-align: center; }
   .arr-coin { font-size: 46px; line-height: 1; animation: coin-bob 1.6s ease-in-out infinite; }
   .arr-top p { margin: 10px 0 2px; color: var(--muted); font-size: 14px; }
@@ -543,6 +592,9 @@
     .box:has(> #hTable) { padding: 12px 0 0; background: none; border: 0; }
 
     .foot { padding-top: 18px; font-size: 11px; }
+    .xb-dlg, .xb-dlg.wide, #arrival, #xbAsk { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 26px 26px 0 0; max-height: 90vh; border-bottom: 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); }
+    .xb-dlg[open] { animation: sheet-in .3s cubic-bezier(.2,.9,.3,1); }
+    #xbToast { bottom: calc(84px + env(safe-area-inset-bottom)); }
   }
 </style>
 </head>
@@ -554,7 +606,7 @@
         <defs>
           <radialGradient id="catFur" cx=".42" cy=".3" r=".75"><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="#dfe4f2"/></radialGradient>
           <radialGradient id="ingotDome" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#fffbeb"/><stop offset=".35" stop-color="#fde047"/><stop offset="1" stop-color="#d97706"/></radialGradient>
-          <clipPath id="catWin"><rect width="60" height="60" rx="18"/></clipPath>
+          <clipPath id="catWin"><rect x="3" y="3" width="54" height="54" rx="15"/></clipPath>
           <clipPath id="catHeadClip"><path d="M30 19C39.6 19 46.5 24.6 46.5 32.4 46.5 40.2 39.6 45.6 30 45.6 20.4 45.6 13.5 40.2 13.5 32.4 13.5 24.6 20.4 19 30 19Z"/></clipPath>
           <linearGradient id="catDeep" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070915" stop-opacity="0"/><stop offset="1" stop-color="#070915" stop-opacity=".5"/></linearGradient>
           <filter id="catSoft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.2"/></filter>
@@ -586,15 +638,11 @@
               <circle cx="30" cy="49.3" r="2.9" fill="url(#ingotDome)" stroke="#b45309" stroke-width=".45"/>
               <path d="M27.4 49.1h5.2M30 49.1v2.2" stroke="#92400e" stroke-width=".55" stroke-linecap="round"/>
             </g>
-            <path d="M20.6 47.4C19.4 50.4 19 53 19.5 55.2" stroke="#d5dbea" stroke-width=".7" stroke-linecap="round"/>
-            <g class="cat-paw">
-              <ellipse cx="22.6" cy="56" rx="4.5" ry="3.5" fill="url(#catFur)" stroke="#d3d9e8" stroke-width=".5"/>
-              <path d="M21.1 57.3v1.3M24.1 57.3v1.3" stroke="#b9c0d6" stroke-width=".7" stroke-linecap="round"/>
-            </g>
             <g class="cat-arm">
-              <path d="M37 56C38.4 49.6 41.4 43.8 44.6 39.6 46.6 38.2 50 38.4 51.6 40 50.2 45 48.6 50.6 47 56Z" fill="url(#catFur)"/>
+              <path d="M36.8 57C38.2 50.2 40.8 44.6 43.8 40.4 46 38.6 50.8 38.6 52.8 40.8 51.4 45.6 49.2 51.2 47.6 57Z" fill="url(#catFur)"/>
               <path d="M41.4 50.4q1.5-.8 2.3-2.5" stroke="#d5dbea" stroke-width=".6" stroke-linecap="round"/>
               <g class="cat-hand">
+                <path d="M44.1 35C43.9 38 44.2 40.6 44.9 42.6 46.8 43.8 50.8 43.8 52.6 42.4 53.2 40.4 53.4 37.6 53.2 35Z" fill="url(#catFur)"/>
                 <circle cx="45.5" cy="30.6" r="1.9" fill="#fff"/>
                 <circle cx="48.6" cy="29.4" r="2" fill="#fff"/>
                 <circle cx="51.7" cy="30.6" r="1.9" fill="#fff"/>
@@ -607,10 +655,19 @@
             </g>
             <ellipse cx="41.4" cy="55.2" rx="5.8" ry="4.3" fill="url(#catFur)"/>
           </g></g>
-          <rect x="0" y="55" width="60" height="6" fill="url(#catDeep)"/>
+          <rect x="0" y="50" width="60" height="7" fill="url(#catDeep)"/>
         </g>
+        <ellipse cx="21.4" cy="63.2" rx="5.4" ry="1.7" fill="#000" opacity=".5" filter="url(#catSoft)"/>
+        <g class="cat-pop"><g class="cat cat-lean">
+          <path d="M16.6 48.6C16.2 52.6 16.6 56 17.4 58.8H25.6C26.2 55.6 26.2 52 25.6 48.4Z" fill="url(#catFur)"/>
+          <path d="M25.5 49.6C25.9 52.6 25.8 55.6 25.3 58.2" stroke="#d5dbea" stroke-width=".7" stroke-linecap="round"/>
+          <g transform="translate(21.4 59.2)"><g class="cat-paw">
+            <path d="M0-5A2.7 2.7 0 0 1 4.1-3.1 2.7 2.7 0 0 1 5.1 1.2 2.7 2.7 0 0 1 2.3 4.6 2.7 2.7 0 0 1-2.3 4.6 2.7 2.7 0 0 1-5.1 1.2 2.7 2.7 0 0 1-4.1-3.1 2.7 2.7 0 0 1 0-5Z" fill="url(#catFur)"/>
+            <path d="M-1.7 1.6v2M1.7 1.6v2" stroke="#b9c0d6" stroke-width=".8" stroke-linecap="round"/>
+          </g></g>
+        </g></g>
         <path class="cat-star" d="M51 4c.4 2.2 1.2 3 3.4 3.4-2.2.4-3 1.2-3.4 3.4-.4-2.2-1.2-3-3.4-3.4 2.2-.4 3-1.2 3.4-3.4Z" fill="#fff"/>
-        <path class="cat-star s2" d="M36.5 51.5c.2 1 .5 1.3 1.5 1.5-1 .2-1.3.5-1.5 1.5-.2-1-.5-1.3-1.5-1.5 1-.2 1.3-.5 1.5-1.5Z" fill="#fff"/>
+        <path class="cat-star s2" d="M9.5 11c.2 1 .5 1.3 1.5 1.5-1 .2-1.3.5-1.5 1.5-.2-1-.5-1.3-1.5-1.5 1-.2 1.3-.5 1.5-1.5Z" fill="#fff"/>
       </svg>
       <span class="shine"></span>
     </div>
@@ -681,6 +738,8 @@
   <div class="foot">数据来自东方财富 / 天天基金 / 腾讯行情的公开接口,仅供记录参考,不构成投资建议 · 所有持仓只保存在本机浏览器</div>
 </div>
 
+<div id="holdDlgs"></div>
+
 <dialog class="xb-dlg sheet" id="moreSheet">
   <div class="sheet-grab"></div>
   <div class="sheet-tabs" id="sheetTabs"></div>
@@ -745,7 +804,7 @@ const DEFAULT = () => ({
   ],
   settings: { afterTax: true, hkTax: 20, usTax: 10, fx: { HKD: 0.85, USD: 6.67 }, fxAuto: true },
   sim: { p: 0, m: 3000, y: 5, gd: 4, gp: 3, n: 20, re: true },
-  ai: { preset: 'zhipu', base: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4v-flash', key: '' },
+  ai: { preset: 'silicon', base: 'https://api.siliconflow.cn/v1', model: 'Qwen/Qwen2.5-VL-72B-Instruct', key: '' },
   ack: [],
 });
 let S, C;
@@ -894,7 +953,7 @@ function viewOf(h) {
     const st = evStatus(ev);
     evs.push({ ...ev, st, h, id: evId(h, ev), amt: ev.ps * fx(ev.cur) * h.shares * taxF(h, ev.pay || TODAY) });
   }
-  const annual = ttm * h.shares * taxF(h, TODAY);
+  const annual = ttm * h.shares * taxF(h, addDays(TODAY, 366));
   return {
     h, q, k, price, mv, cv, pnl: mv - cv, ttm, annual, evs, loaded: !!C.divs[k],
     name: h.name || q.name || h.code,
@@ -1032,62 +1091,66 @@ function buildHoldings() {
       <div class="sec-h" style="padding-left:4px">持仓明细<span class="r" id="hSum"></span></div>
       <div class="tbl-wrap" id="hTable"></div>
     </div>
-    <div class="box" id="shotBox">
-      <div class="sec-h">截图导入<small>东财、同花顺、富途、雪球、券商 App 的持仓页截图</small><span class="r" id="shotEng"></span></div>
+    <div class="box">
+      <div class="sec-h">账户<small>家人账户、长线仓分开管理</small><span class="r"><button class="link-btn" id="accAdd">+ 新建账户</button></span></div>
+      <div class="list" id="accList"></div>
+    </div>`;
+  $('#holdDlgs').innerHTML = `
+    <dialog class="xb-dlg" id="dlgOne">
+      <div class="dlg-head"><b id="hfTitle">添加持仓</b><button type="button" class="dlg-x" data-close title="关闭">×</button></div>
+      <div class="seg" id="hfMk">${Object.keys(MK).map(k => `<button type="button" class="seg-btn${k === formMk ? ' active' : ''}" data-mk="${k}">${MK[k].n}</button>`).join('')}</div>
+      <label>证券代码</label><input type="text" id="hfCode" placeholder="${CODE_PH.A}" autocomplete="off" />
+      <div class="row"><div><label>持股数量</label><input type="number" id="hfShares" min="0" step="1" placeholder="股 / 份" inputmode="numeric" /></div>
+        <div><label>成本价 <small id="hfCur">(¥)</small></label><input type="number" id="hfCost" min="0" step="0.001" placeholder="每股成本" inputmode="decimal" /></div></div>
+      <div class="row"><div><label>建仓日期</label><input type="date" id="hfBuy" /></div>
+        <div><label>所属账户</label><select id="hfAcc"></select></div></div>
+      <p class="hint">建仓日期默认是今天;老仓位请改成实际买入日,之后除息的分红才计入「已到账」,A股也按它计算红利税(满 1 年免税)。</p>
+      <div class="status" id="hfStatus"></div>
+      <div class="dlg-foot"><button type="button" class="run ghost" data-close>取消</button><button type="button" class="run" id="hfSave">添加持仓</button></div>
+    </dialog>
+    <dialog class="xb-dlg wide" id="dlgShot">
+      <div class="dlg-head"><b>截图导入</b><button type="button" class="dlg-x" data-close title="关闭">×</button></div>
+      <p class="dlg-msg">东财、同花顺、富途、雪球、券商 App 的持仓页截图都可以,识别结果先给你核对,确认后才导入。</p>
+      <div class="eng-bar" id="shotEng"></div>
       <div class="drop" id="shotDrop">
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
-        <b>拖入截图、点击选择,或直接 ⌘/Ctrl + V 粘贴</b>
-        <span>可一次多张 · 识别结果先给你核对,确认后才导入</span>
+        <b>点击选择截图,或拖入 / ⌘ Ctrl + V 粘贴</b>
+        <span>可一次多张</span>
         <input type="file" id="shotFile" accept="image/*" multiple hidden />
       </div>
       <div class="thumbs" id="shotThumbs"></div>
-      <div class="chips" style="margin-top:14px"><button class="run sm" id="shotGo" disabled>开始识别</button><button class="run sm ghost" id="shotClear" hidden>清空</button></div>
       <div class="status" id="shotStatus"></div>
       <div id="shotResult"></div>
-    </div>
-    <div class="grid g3" style="margin-top:16px;align-items:start">
-        <div class="box" id="hfBox">
-          <div class="sec-h" id="hfTitle">添加持仓</div>
-          <div class="seg" id="hfMk">${Object.keys(MK).map(k => `<button class="seg-btn${k === formMk ? ' active' : ''}" data-mk="${k}">${MK[k].n}</button>`).join('')}</div>
-          <label>证券代码</label><input type="text" id="hfCode" placeholder="${CODE_PH.A}" autocomplete="off" />
-          <div class="row"><div><label>持股数量</label><input type="number" id="hfShares" min="0" step="1" placeholder="股 / 份" /></div>
-            <div><label>成本价 <small id="hfCur">(¥)</small></label><input type="number" id="hfCost" min="0" step="0.001" placeholder="每股成本" /></div></div>
-          <div class="row"><div><label>建仓日期</label><input type="date" id="hfBuy" /></div>
-            <div><label>所属账户</label><select id="hfAcc"></select></div></div>
-          <p class="hint">建仓日期之后除息的分红才计入「已到账」;留空视为长期持有,历史分红全部计入。A股按持有时长计算红利税(满 1 年免税)。</p>
-          <button class="run" id="hfSave">添加持仓</button>
-          <button class="run ghost" id="hfCancel" hidden style="margin-top:10px">取消编辑</button>
-          <div class="status" id="hfStatus"></div>
-        </div>
-        <div class="box">
-          <div class="sec-h">账户<small>家人账户、长线仓分开管理</small><span class="r"><button class="link-btn" id="accAdd">+ 新建账户</button></span></div>
-          <div class="list" id="accList"></div>
-        </div>
-        <details class="box" id="bulkBox" open>
-          <summary class="sec-h" style="cursor:pointer;margin:0">批量导入<small>替代截图识别,一行一只</small></summary>
-          <textarea id="bulkTxt" style="margin-top:12px" placeholder="市场,代码,股数,成本价,建仓日期(可选)&#10;A,600519,100,1500,2024-01-05&#10;ETF,510880,20000,2.9&#10;港股,00700,200,320&#10;美股,KO,50,60"></textarea>
-          <button class="run" id="bulkGo" style="margin-top:12px">导入到当前所选账户</button>
-          <div class="status" id="bulkStatus"></div>
-        </details>
-    </div>`;
+      <div class="dlg-foot" id="shotFoot"><button type="button" class="run ghost" id="shotClear" hidden>清空</button><button type="button" class="run" id="shotGo" disabled>开始识别</button></div>
+    </dialog>
+    <dialog class="xb-dlg" id="dlgBulk">
+      <div class="dlg-head"><b>批量导入</b><button type="button" class="dlg-x" data-close title="关闭">×</button></div>
+      <p class="dlg-msg">一行一只:市场,代码,股数,成本价,建仓日期(可选,不填按今天)</p>
+      <textarea id="bulkTxt" style="margin-top:14px" placeholder="A,600519,100,1500,2024-01-05&#10;ETF,510880,20000,2.9&#10;港股,00700,200,320&#10;美股,KO,50,60"></textarea>
+      <label>导入到账户</label><select id="bulkAcc"></select>
+      <div class="status" id="bulkStatus"></div>
+      <div class="dlg-foot"><button type="button" class="run ghost" data-close>取消</button><button type="button" class="run" id="bulkGo">开始导入</button></div>
+    </dialog>`;
   $('#hfMk').onclick = e => { const b = e.target.closest('[data-mk]'); if (b) setFormMk(b.dataset.mk); };
   $('#hfSave').onclick = saveHolding;
-  $('#hfCancel').onclick = resetForm;
-  $('#accAdd').onclick = () => {
-    const n = prompt('新账户名称', '账户' + (S.accounts.length + 1));
+  $('#accAdd').onclick = async () => {
+    const n = (await xbAsk({ title: '新建账户', input: '账户' + (S.accounts.length + 1), placeholder: '账户名称', ok: '创建', host: $('#holdings') }))?.trim();
     if (!n) return;
-    const a = { id: uid(), name: n.trim() };
+    const a = { id: uid(), name: n };
     S.accounts.push(a); save(); renderAll();
     $('#hfAcc').value = a.id;
   };
-  $('#accList').onclick = e => {
+  $('#accList').onclick = async e => {
     const b = e.target.closest('[data-acc]'); if (!b) return;
-    const a = S.accounts.find(x => x.id === b.dataset.acc);
-    if (b.dataset.act === 'rename') { const n = prompt('重命名账户', a.name); if (n) { a.name = n.trim(); save(); renderAll(); } }
+    const a = S.accounts.find(x => x.id === b.dataset.acc), host = $('#holdings');
+    if (b.dataset.act === 'rename') {
+      const n = (await xbAsk({ title: '重命名账户', input: a.name, placeholder: '账户名称', ok: '保存', host }))?.trim();
+      if (n) { a.name = n; save(); renderAll(); }
+    }
     if (b.dataset.act === 'del') {
-      if (S.accounts.length <= 1) return alert('至少保留一个账户');
+      if (S.accounts.length <= 1) return xbAsk({ title: '无法删除', msg: '至少要保留一个账户。', ok: '知道了', cancel: null, host });
       const cnt = S.holdings.filter(h => h.acc === a.id).length;
-      if (!confirm(`删除账户「${a.name}」${cnt ? `及其中 ${cnt} 只持仓` : ''}?`)) return;
+      if (!await xbAsk({ title: '删除账户', msg: `确定删除账户「${a.name}」${cnt ? `及其中 ${cnt} 只持仓` : ''}?删除后无法恢复。`, ok: '删除', danger: true, host })) return;
       S.holdings = S.holdings.filter(h => h.acc !== a.id);
       S.accounts = S.accounts.filter(x => x.id !== a.id);
       if (S.acc === a.id) S.acc = 'all';
@@ -1095,10 +1158,12 @@ function buildHoldings() {
     }
     if (b.dataset.act === 'view') { S.acc = a.id; save(); renderAll(); }
   };
-  $('#hTable').onclick = e => {
+  $('#hTable').onclick = async e => {
     const b = e.target.closest('[data-h]'); if (!b) return;
     const h = S.holdings.find(x => x.id === b.dataset.h);
-    if (b.dataset.act === 'del') { if (confirm(`删除持仓「${h.name || h.code}」?`)) { S.holdings = S.holdings.filter(x => x !== h); save(); renderAll(); } }
+    if (b.dataset.act === 'del' && await xbAsk({ title: '删除持仓', msg: `确定删除「${h.name || h.code}」?`, ok: '删除', danger: true, host: $('#holdings') })) {
+      S.holdings = S.holdings.filter(x => x !== h); save(); renderAll(); toast(`已删除 ${h.name || h.code}`);
+    }
     if (b.dataset.act === 'edit') editHolding(h);
     if (b.dataset.act === 'profile') openProfile(h.mk, h.code);
   };
@@ -1108,11 +1173,13 @@ function buildHoldings() {
 
 /* ---------- 截图导入 ---------- */
 const AI_PRESETS = {
-  zhipu: { n: '智谱 GLM-4V-Flash(免费额度)', type: 'openai', base: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4v-flash', raw: true },
-  qwen: { n: '通义千问 VL', type: 'openai', base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-vl-max' },
-  doubao: { n: '豆包视觉', type: 'openai', base: 'https://ark.cn-beijing.volces.com/api/v3', model: 'doubao-1.5-vision-pro-32k-250115' },
-  openai: { n: 'OpenAI', type: 'openai', base: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
-  claude: { n: 'Claude', type: 'anthropic', base: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-5' },
+  silicon: { n: '硅基流动 · 注册送额度', type: 'openai', base: 'https://api.siliconflow.cn/v1', model: 'Qwen/Qwen2.5-VL-72B-Instruct', keyUrl: 'https://cloud.siliconflow.cn/account/ak' },
+  qwen: { n: '通义千问 VL · 阿里百炼', type: 'openai', base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-vl-max', keyUrl: 'https://bailian.console.aliyun.com/?tab=model#/api-key' },
+  gemini: { n: 'Google Gemini · 免费层(需海外网络)', type: 'openai', base: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-2.5-flash', keyUrl: 'https://aistudio.google.com/apikey' },
+  openrouter: { n: 'OpenRouter · :free 模型(需海外网络)', type: 'openai', base: 'https://openrouter.ai/api/v1', model: 'qwen/qwen2.5-vl-72b-instruct:free', keyUrl: 'https://openrouter.ai/keys' },
+  doubao: { n: '豆包视觉 · 火山方舟', type: 'openai', base: 'https://ark.cn-beijing.volces.com/api/v3', model: 'doubao-1.5-vision-pro-32k-250115', keyUrl: 'https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey' },
+  openai: { n: 'OpenAI', type: 'openai', base: 'https://api.openai.com/v1', model: 'gpt-4o-mini', keyUrl: 'https://platform.openai.com/api-keys' },
+  claude: { n: 'Claude', type: 'anthropic', base: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-5', keyUrl: 'https://console.anthropic.com/settings/keys' },
   custom: { n: '自定义(OpenAI 兼容接口)', type: 'openai', base: '', model: '' },
 };
 let shotImgs = [], shotRows = [];
@@ -1133,8 +1200,8 @@ function initShot() {
 function renderShotEngine() {
   const el = $('#shotEng'); if (!el) return;
   el.innerHTML = useAI()
-    ? `<span class="eng ai"><i></i>AI 识别 · ${esc(S.ai.model)}</span> <button class="link-btn" data-go="data">设置</button>`
-    : `<span class="eng"><i></i>本地识别 · 免费不上传</span> <button class="link-btn" data-go="data">配置 AI 识别更准 ›</button>`;
+    ? `<span class="eng ai"><i></i>AI 识别 · ${esc(S.ai.model)}</span><button type="button" class="link-btn" data-ai>AI 识别设置 ›</button>`
+    : `<span class="eng"><i></i>本地识别 · 免费,截图不出本机</span><button type="button" class="link-btn" data-ai>配置 AI 识别更准 ›</button>`;
 }
 function compressImg(file) {
   return new Promise((resolve, reject) => {
@@ -1163,22 +1230,45 @@ function renderThumbs() {
   $('#shotGo').textContent = shotImgs.length ? `开始识别 ${shotImgs.length} 张` : '开始识别';
 }
 
-/* 本地识别:Tesseract.js 识别文字,再按行切分出 名称/代码/数字 */
-async function ocrRecognize(onProg) {
-  if (!window.Tesseract) {
-    onProg('首次使用,正在加载识别引擎(约 2MB)…');
-    await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+/* 本地识别:Tesseract.js 识别文字,再按行切分出 名称/代码/数字。
+   引擎和语言包随站点一起发布在 ocr/ 目录;本地双击打开时依次尝试站点和 jsDelivr 各镜像,某条线路超时就换下一条 */
+function ocrSources() {
+  const own = /^https?:$/.test(location.protocol) ? [new URL('ocr', location.href).href] : [];
+  const gh = 'xiaobai-shouxi/xiaobai-shouxi.github.io@main/ocr';
+  return [...new Set([...own, 'https://xiaobai-shouxi.github.io/ocr', ...['fastly', 'gcore', 'cdn', 'testingcf'].map(d => `https://${d}.jsdelivr.net/gh/${gh}`)])];
+}
+const withTimeout = (p, ms, msg) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(msg)), ms))]);
+let ocrWorker = null, ocrProg = () => {};
+async function getOcrWorker(onProg) {
+  ocrProg = onProg;
+  if (ocrWorker) return ocrWorker;
+  if (typeof WebAssembly !== 'object' || typeof Worker !== 'function') throw new Error('当前浏览器不支持本地识别(缺少 WebAssembly)。请升级系统或浏览器,或点「配置 AI 识别」改用 AI 识别');
+  const errs = [];
+  for (const base of ocrSources()) {
+    const host = new URL(base).host;
+    try {
+      if (!window.Tesseract) { onProg(`正在加载识别引擎(${host})…`); await loadScript(base + '/tesseract.min.js'); }
+      onProg(`正在加载识别数据(约 8MB,只需加载一次)…`);
+      ocrWorker = await withTimeout(Tesseract.createWorker(['chi_sim', 'eng'], 1, {
+        workerPath: base + '/worker.min.js', corePath: base, langPath: base,
+        logger: m => {
+          if (m.status === 'recognizing text') ocrProg(`正在识别文字 ${Math.round(m.progress * 100)}%`);
+          else if (/loading/.test(m.status)) ocrProg(`正在加载识别数据 ${Math.round((m.progress || 0) * 100)}%(${host})`);
+        },
+      }), 90000, '加载超时');
+      return ocrWorker;
+    } catch (e) { errs.push(`${host}:${e?.message || e}`); }
   }
-  const worker = await Tesseract.createWorker(['chi_sim', 'eng'], 1, {
-    logger: m => { if (m.status === 'recognizing text') onProg(`正在识别文字 ${Math.round(m.progress * 100)}%`); else if (/load/.test(m.status)) onProg('正在加载中文识别数据…'); },
-  });
+  throw new Error('本地识别引擎加载失败,通常是当前网络访问不了识别资源。可以换个网络(如手机热点)重试,或点「配置 AI 识别」改用 AI 识别。\n详情:' + errs.join(';'));
+}
+async function ocrRecognize(onProg) {
+  const worker = await getOcrWorker(onProg);
   const items = [];
   for (let i = 0; i < shotImgs.length; i++) {
     onProg(`正在识别第 ${i + 1}/${shotImgs.length} 张…`);
-    const { data } = await worker.recognize(shotImgs[i].url);
-    items.push(...parseOcr(data.text));
+    try { items.push(...parseOcr((await worker.recognize(shotImgs[i].url)).data.text)); }
+    catch (e) { ocrWorker = null; worker.terminate().catch(() => {}); throw new Error('识别过程出错:' + (e?.message || e) + '。图片太大或设备内存不足时会出现,可截小一点再试'); }
   }
-  await worker.terminate();
   return items;
 }
 const OCR_STOP = /持仓|市值|盈亏|成本|现价|最新|可用|可卖|名称|证券|股票|总资产|资产|数量|仓位|当日|今日|浮动|参考|累计|收益|账户|人民币|港币|美元|全部|交易|买入|卖出|撤单|查询|行情|首页|自选|理财|我的|更多|股数|均价|比例|金额|现金|融资|担保|余额|摊薄|冻结|在途|操作|排序|代码|价格|涨跌|合计|单位|分红|设置|返回|刷新|牛熊|市场|沪深|港股通|美股|基金|个股/;
@@ -1193,7 +1283,7 @@ function parseOcr(text) {
     const names = (line.match(/[\u4e00-\u9fa5A-Za-z][\u4e00-\u9fa5A-Za-z0-9\-]{1,15}/g) || [])
       .map(w => w.replace(/\d{4,}.*$/, ''))
       .filter(w => (w.match(/[\u4e00-\u9fa5]/g) || []).length >= 2 && !OCR_STOP.test(w));
-    const codeM = line.match(/(?<![\d.,])(\d{6}|0\d{4})(?![\d.,])/);
+    const codeM = line.match(/(?:^|[^\d.,])(\d{6}|0\d{4})(?![\d.,])/);
     const code = codeM ? codeM[1] : '';
     const nums = (line.match(/-?\d[\d,]*(?:\.\d+)?%?/g) || [])
       .filter(s => !s.endsWith('%') && s.replace(/^-/, '') !== code)
@@ -1239,11 +1329,11 @@ async function aiRecognize(onProg) {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: 'Bearer ' + a.key },
         body: JSON.stringify({ model: a.model, temperature: 0, messages: [{ role: 'user', content: [
-          ...shotImgs.map(x => ({ type: 'image_url', image_url: { url: p.raw ? x.url.split(',')[1] : x.url } })),
+          ...shotImgs.map(x => ({ type: 'image_url', image_url: { url: x.url } })),
           { type: 'text', text: AI_PROMPT }] }] }),
       });
     }
-  } catch { throw new Error('请求被浏览器拦截(该服务可能不允许网页直接调用),可换一个服务商,或清空 Key 改用本地识别'); }
+  } catch { throw new Error('请求被浏览器拦截:该服务可能不允许网页直接调用,或当前网络访问不了。可在「AI 识别设置」换一家服务商,或清空 Key 改用本地识别'); }
   const j = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error('AI 接口报错:' + (j.error?.message || j.message || res.status));
   const txt = p.type === 'anthropic' ? (j.content || []).map(c => c.text || '').join('') : (j.choices?.[0]?.message?.content || '');
@@ -1268,7 +1358,7 @@ async function runShot() {
   btn.disabled = true; $('#shotResult').innerHTML = '';
   let items = [], local = !useAI();
   try { items = local ? await ocrRecognize(prog) : await aiRecognize(prog); }
-  catch (e) { btn.disabled = false; return setStatus(st, e.message || '识别失败'); }
+  catch (e) { btn.disabled = false; return setStatus(st, (e && e.message) || String(e || '识别失败')); }
   if (!items.length) { btn.disabled = false; return setStatus(st, local ? '没识别出持仓。建议截取持仓列表区域,或在设置里配置 AI 识别' : 'AI 没有在截图里找到持仓'); }
   prog(`识别到 ${items.length} 条,正在匹配证券代码…`);
   const seen = new Set();
@@ -1307,7 +1397,7 @@ function renderShotTable() {
   const accOpts = S.accounts.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join('');
   const n = shotRows.filter(r => r.on && r.ok).length;
   $('#shotResult').innerHTML = !shotRows.length ? '' : `
-    <div class="tbl-wrap" style="margin-top:14px"><table class="shot-tbl"><thead><tr><th style="width:30px"></th><th>截图中识别到</th><th>匹配证券</th><th>现价</th><th>持股数量</th><th>成本价</th></tr></thead><tbody>
+    <div class="tbl-wrap" style="margin-top:14px"><table class="shot-tbl"><thead><tr><th style="width:30px"></th><th>截图中识别到</th><th>匹配证券</th><th>现价</th><th>持股数量</th><th>成本价</th><th>建仓日期</th></tr></thead><tbody>
     ${shotRows.map(r => `<tr class="${r.ok ? '' : 'bad'}" data-r="${r.id}">
       <td><input type="checkbox" data-f="on" ${r.on ? 'checked' : ''} ${r.ok ? '' : 'disabled'} /></td>
       <td><div class="nm">${esc(r.raw)}</div>${r.ok ? '' : `<div class="cd" style="color:var(--err)">${r.q ? '请填写股数' : '没匹配到证券,请改代码'}</div>`}</td>
@@ -1317,7 +1407,9 @@ function renderShotTable() {
       <td>${r.q ? CUR_SIGN[MK[r.mk].cur] + fmt(r.q.price, r.q.price < 10 ? 3 : 2) : '—'}</td>
       <td><input type="number" data-f="shares" value="${r.shares || ''}" min="0" style="width:100px" /></td>
       <td><input type="number" data-f="cost" value="${r.cost || ''}" min="0" step="0.001" style="width:100px" placeholder="${r.q ? r.q.price : ''}" /></td>
+      <td><input type="date" data-f="buy" value="${r.buy || ''}" style="width:140px" /></td>
     </tr>`).join('')}</tbody></table></div>
+    <p class="hint">建仓日期不填就按今天(导入日)计算;老仓位建议填实际买入日,历史分红和 A股红利税才算得准。</p>
     <div class="row" style="margin-top:14px;flex-wrap:wrap;gap:12px">
       <div style="flex:0 0 180px"><select id="shotAcc">${accOpts}</select></div>
       <label class="switch" style="flex:1 1 220px"><input type="checkbox" id="shotOverwrite" checked />同账户已有同代码时,用截图数据覆盖</label>
@@ -1328,6 +1420,7 @@ function renderShotTable() {
   tb.onchange = async e => {
     const tr = e.target.closest('[data-r]'), r = shotRows.find(x => x.id === tr.dataset.r), f = e.target.dataset.f;
     if (f === 'on') { r.on = e.target.checked; return renderShotTable(); }
+    if (f === 'buy') { r.buy = e.target.value; return; }
     if (f === 'shares' || f === 'cost') { r[f] = +e.target.value || 0; fillShotRow(r); return renderShotTable(); }
     if (f === 'mk' || f === 'code') {
       r.mk = tr.querySelector('[data-f=mk]').value; r.code = normCode(r.mk, tr.querySelector('[data-f=code]').value);
@@ -1353,12 +1446,13 @@ async function importShot() {
   let add = 0, upd = 0;
   for (const r of rows) {
     const ex = over && S.holdings.find(h => h.acc === acc && h.mk === r.mk && h.code === r.code && !h.demo);
-    if (ex) { ex.shares = r.shares; ex.cost = r.cost || ex.cost; upd++; }
-    else { S.holdings.push({ id: uid(), acc, mk: r.mk, code: r.code, name: r.q.name, shares: r.shares, cost: r.cost || r.q.price, buy: '' }); add++; }
+    if (ex) { ex.shares = r.shares; ex.cost = r.cost || ex.cost; if (r.buy) ex.buy = r.buy; upd++; }
+    else { S.holdings.push({ id: uid(), acc, mk: r.mk, code: r.code, name: r.q.name, shares: r.shares, cost: r.cost || r.q.price, buy: r.buy || TODAY }); add++; }
   }
   save(); renderAll();
-  setStatus($('#shotStatus'), `已导入:新增 ${add} 只${upd ? `,更新 ${upd} 只` : ''}。建仓日期默认留空(视为长期持有),可在持仓明细里点「编辑」补充`, true);
-  shotRows = []; shotImgs = []; renderThumbs(); $('#shotResult').innerHTML = '';
+  shotRows = []; shotImgs = []; renderThumbs(); $('#shotResult').innerHTML = ''; setStatus($('#shotStatus'), '');
+  $('#dlgShot').close(); switchTab('holdings');
+  toast(`已导入:新增 ${add} 只${upd ? `,更新 ${upd} 只` : ''}`);
   refresh(false);
 }
 function setFormMk(mk) {
@@ -1369,18 +1463,21 @@ function setFormMk(mk) {
 }
 function resetForm() {
   editingId = null;
-  ['#hfCode', '#hfShares', '#hfCost', '#hfBuy'].forEach(s => $(s).value = '');
+  ['#hfCode', '#hfShares', '#hfCost'].forEach(s => $(s).value = '');
+  $('#hfBuy').value = TODAY;
   $('#hfCode').disabled = false;
-  $('#hfTitle').textContent = '添加持仓'; $('#hfSave').textContent = '添加持仓'; $('#hfCancel').hidden = true;
+  $$('#hfMk .seg-btn').forEach(b => b.disabled = false);
+  $('#hfTitle').textContent = '添加持仓'; $('#hfSave').textContent = '添加持仓';
+  setStatus($('#hfStatus'), '');
 }
 function editHolding(h) {
   editingId = h.id; setFormMk(h.mk);
   $('#hfCode').value = h.code; $('#hfCode').disabled = true;
   $('#hfShares').value = h.shares; $('#hfCost').value = h.cost; $('#hfBuy').value = h.buy || ''; $('#hfAcc').value = h.acc;
-  $('#hfTitle').textContent = '编辑持仓 · ' + (h.name || h.code); $('#hfSave').textContent = '保存修改'; $('#hfCancel').hidden = false;
+  $$('#hfMk .seg-btn').forEach(b => b.disabled = b.dataset.mk !== h.mk);
+  $('#hfTitle').textContent = '编辑持仓 · ' + (h.name || h.code); $('#hfSave').textContent = '保存修改';
   setStatus($('#hfStatus'), '');
-  $('#hfBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  $('#hfShares').focus({ preventScroll: true });
+  $('#dlgOne').showModal();
 }
 async function ensureData(mk, code) {
   const k = mk + ':' + code;
@@ -1397,9 +1494,9 @@ async function saveHolding() {
   if (editingId) {
     const h = S.holdings.find(x => x.id === editingId);
     if (!(shares > 0)) return setStatus(st, '请填写持股数量');
-    Object.assign(h, { shares, cost: cost || 0, buy, acc });
-    save(); resetForm(); renderAll();
-    return setStatus(st, `已更新 ${h.name || h.code}`, true);
+    Object.assign(h, { shares, cost: cost || 0, buy: buy || TODAY, acc });
+    save(); renderAll(); $('#dlgOne').close();
+    return toast(`已更新 ${h.name || h.code}`);
   }
   const mk = formMk, raw = $('#hfCode').value.trim();
   if (!raw) return setStatus(st, '请填写证券代码');
@@ -1410,16 +1507,16 @@ async function saveHolding() {
   const r = await ensureData(mk, code);
   btn.disabled = false;
   if (r.err) return setStatus(st, r.err);
-  const h = { id: uid(), acc, mk, code, name: r.q.name, shares, cost: cost || r.q.price, buy };
-  S.holdings.push(h); save(); resetForm(); renderAll();
+  const h = { id: uid(), acc, mk, code, name: r.q.name, shares, cost: cost || r.q.price, buy: buy || TODAY };
+  S.holdings.push(h); save(); renderAll(); $('#dlgOne').close();
   const v = viewOf(h);
-  setStatus(st, `已添加 ${h.name}:近 12 个月每股派息 ${v.ttm.toFixed(4)} 元,预计年息 ${money(v.annual)}${r.divErr ? '。' + r.divErr : ''}`, !r.divErr);
+  toast(`已添加 ${h.name} · 预计年息 ${money(v.annual)}${r.divErr ? '(' + r.divErr + ')' : ''}`, !r.divErr);
 }
 async function bulkImport() {
   const st = $('#bulkStatus'), lines = $('#bulkTxt').value.split('\n').map(l => l.trim()).filter(Boolean);
   if (!lines.length) return setStatus(st, '请先粘贴持仓');
   const mkMap = { A: 'A', 'A股': 'A', SH: 'A', SZ: 'A', ETF: 'F', F: 'F', '基金': 'F', HK: 'HK', '港股': 'HK', US: 'US', '美股': 'US' };
-  const acc = S.acc !== 'all' ? S.acc : S.accounts[0].id;
+  const acc = $('#bulkAcc').value;
   let ok = 0; const bad = [];
   $('#bulkGo').disabled = true;
   for (const l of lines) {
@@ -1429,27 +1526,26 @@ async function bulkImport() {
     st.className = 'status'; st.textContent = `正在导入 ${c}…`;
     const code = normCode(mk, c), r = await ensureData(mk, code);
     if (r.err) { bad.push(l); continue; }
-    S.holdings.push({ id: uid(), acc, mk, code, name: r.q.name, shares: +n, cost: +p || r.q.price, buy: /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : '' });
+    S.holdings.push({ id: uid(), acc, mk, code, name: r.q.name, shares: +n, cost: +p || r.q.price, buy: /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : TODAY });
     ok++;
   }
   $('#bulkGo').disabled = false;
   save(); renderAll();
-  setStatus(st, `成功导入 ${ok} 只${bad.length ? `,${bad.length} 行未识别:${bad.join(' / ')}` : ''}`, !bad.length);
-  if (!bad.length) $('#bulkTxt').value = '';
+  if (bad.length) return setStatus(st, `成功导入 ${ok} 只,${bad.length} 行未识别:${bad.join(' / ')}`);
+  $('#bulkTxt').value = ''; setStatus(st, ''); $('#dlgBulk').close();
+  toast(`成功导入 ${ok} 只持仓`);
 }
 function renderHoldings(s) {
   if (!$('#hfSave')) buildHoldings();
   $('#hDemo').innerHTML = demoBanner();
-  const sel = $('#hfAcc'), cur = sel.value;
-  sel.innerHTML = S.accounts.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join('');
-  sel.value = cur && S.accounts.some(a => a.id === cur) ? cur : (S.acc !== 'all' ? S.acc : S.accounts[0].id);
+  fillAccSel('#hfAcc'); fillAccSel('#bulkAcc');
   $('#accList').innerHTML = S.accounts.map(a => {
     const hs = S.holdings.filter(h => h.acc === a.id), an = hs.map(viewOf).reduce((x, r) => x + r.annual, 0);
     return `<div class="li"><div class="mid"><b>${esc(a.name)}</b> ${S.acc === a.id ? '<span class="badge on">当前查看</span>' : ''}<div>${hs.length} 只持仓 · 预计年息 ${money(an)}</div></div>
       <div><button class="link-btn" data-acc="${a.id}" data-act="view">查看</button><button class="link-btn" data-acc="${a.id}" data-act="rename">重命名</button><button class="link-btn del" data-acc="${a.id}" data-act="del">删除</button></div></div>`;
   }).join('');
   $('#hSum').textContent = s.rows.length ? `${s.rows.length} 只 · 市值 ${money(s.mv, 0)} · 预计年息 ${money(s.annual)}` : '';
-  if (!s.rows.length) { $('#hTable').innerHTML = '<div class="empty"><b>当前账户还没有持仓</b>用下方的截图导入、手动添加或批量导入录入持仓</div>'; return; }
+  if (!s.rows.length) { $('#hTable').innerHTML = '<div class="empty"><b>当前账户还没有持仓</b>点上方「添加持仓 / 截图导入 / 批量导入」录入持仓</div>'; return; }
   const rows = [...s.rows].sort((a, b) => b.mv - a.mv);
   $('#hTable').innerHTML = `<table><thead><tr><th>名称</th><th>持股</th><th>现价 / 成本</th><th>市值</th><th>盈亏</th><th>近12月每股派息</th><th>股息率 市值 / 成本</th><th>预计年息</th><th></th></tr></thead><tbody>
     ${rows.map(r => {
@@ -1640,7 +1736,7 @@ function renderProfile(mk, code, q, list) {
       <div class="tbl-wrap" style="max-height:460px;overflow:auto">${list.length ? `<table><thead><tr><th>报告期</th><th>方案</th><th>每股(${CUR_SIGN[list[0].cur]})</th><th>登记日</th><th>除息日</th><th>派息日</th><th>进度</th></tr></thead><tbody>
         ${list.map(e => `<tr><td>${esc(e.period)}</td><td style="white-space:normal;min-width:160px">${esc(e.plan)}</td><td>${CUR_SIGN[e.cur]}${e.ps.toFixed(4)}</td><td>${e.rec || '—'}</td><td>${e.ex || '—'}</td><td>${e.pay ? e.pay + (e.est ? ' (估)' : '') : '—'}</td>
           <td>${e.ex ? (e.ex <= TODAY ? '<span class="badge ok">已实施</span>' : '<span class="badge on">待除息</span>') : `<span class="badge plan">${esc(e.prog || '预案')}</span>`}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">没有查到现金分红记录</div>'}</div></div>`;
-  $('#pfAdd').onclick = () => { switchTab('holdings'); resetForm(); setFormMk(mk); $('#hfCode').value = code; $('#hfCost').value = q.price; $('#hfBox').scrollIntoView({ block: 'center' }); $('#hfShares').focus({ preventScroll: true }); };
+  $('#pfAdd').onclick = () => { goAdd('one'); setFormMk(mk); $('#hfCode').value = code; $('#hfCost').value = q.price; if (!isPhone()) $('#hfShares').focus(); };
 }
 
 /* ---------- 展望未来 ---------- */
@@ -1662,7 +1758,7 @@ function buildFuture() {
   $$('#future input').forEach(i => i.oninput = calcFuture);
   $('#fuMine').onclick = () => {
     const s = summary();
-    if (!s.rows.length) return alert('还没有持仓数据');
+    if (!s.rows.length) return xbAsk({ title: '还没有持仓', msg: '先在「我的持仓」录入持仓,再用持仓数据做模拟。', ok: '知道了', cancel: null, host: $('#future') });
     $('#fuP').value = Math.round(s.mv); $('#fuY').value = (s.yMv * 100).toFixed(2); calcFuture();
   };
   if (!S.sim.p) { const s = summary(); $('#fuP').value = s.mv ? Math.round(s.mv) : 100000; if (s.yMv > 0) $('#fuY').value = (s.yMv * 100).toFixed(2); }
@@ -1767,12 +1863,8 @@ function buildData() {
           <div class="status" id="dStatus"></div>
         </div>
         <div class="box">
-          <div class="sec-h">AI 截图识别<small>可选 · 不填则用免费的本地识别</small></div>
-          <label>服务商</label><select id="aiPreset">${Object.entries(AI_PRESETS).map(([k, p]) => `<option value="${k}" ${k === S.ai.preset ? 'selected' : ''}>${p.n}</option>`).join('')}</select>
-          <div class="row"><div><label>接口地址</label><input type="text" id="aiBase" value="${esc(S.ai.base)}" placeholder="https://.../v1" /></div>
-            <div style="flex:0 0 42%"><label>模型</label><input type="text" id="aiModel" value="${esc(S.ai.model)}" /></div></div>
-          <label>API Key</label><input type="password" id="aiKey" value="${esc(S.ai.key)}" placeholder="填入后截图导入自动改用 AI 识别" autocomplete="off" />
-          <p class="hint">Key 只保存在本机浏览器;截图会发送给所选服务商。智谱 GLM-4V-Flash 有免费额度,注册即可获取 Key。部分服务商不允许网页直接调用,失败时换一家即可。</p>
+          <div class="sec-h">AI 截图识别<small>可选 · 不配置则用免费的本地识别</small><span class="r"><button type="button" class="link-btn" data-ai>设置 ›</button></span></div>
+          <div id="aiSum"></div>
         </div>
         <div class="box">
           <div class="sec-h">数据来源</div>
@@ -1793,10 +1885,8 @@ function buildData() {
     st.fx.USD = +$('#stUsd').value || st.fx.USD; st.fx.HKD = +$('#stHkd').value || st.fx.HKD;
     save(); renderAll();
   };
-  $$('#data input:not([type=file]):not([id^=ai])').forEach(i => i.onchange = apply);
-  const saveAI = () => { S.ai = { preset: $('#aiPreset').value, base: $('#aiBase').value.trim(), model: $('#aiModel').value.trim(), key: $('#aiKey').value.trim() }; save(); renderShotEngine(); };
-  $('#aiPreset').onchange = () => { const p = AI_PRESETS[$('#aiPreset').value]; $('#aiBase').value = p.base; $('#aiModel').value = p.model; saveAI(); };
-  ['#aiBase', '#aiModel', '#aiKey'].forEach(s => $(s).onchange = saveAI);
+  $$('#data input:not([type=file])').forEach(i => i.onchange = apply);
+  renderAISum();
   $('#dExport').onclick = () => {
     const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `小白收息备份-${TODAY}.json`; a.click();
@@ -1814,12 +1904,116 @@ function buildData() {
     } catch { setStatus($('#dStatus'), '文件格式不对,请选择本工具导出的备份'); }
     e.target.value = '';
   };
-  $('#dClear').onclick = () => {
-    if (!confirm('确定清空所有持仓、账户和设置?建议先导出备份。')) return;
+  $('#dClear').onclick = async () => {
+    if (!await xbAsk({ title: '清空全部数据', msg: '会删除所有持仓、账户和设置,且无法恢复。建议先导出备份。', ok: '清空', danger: true, host: $('#data') })) return;
     localStorage.removeItem(KEY); localStorage.removeItem(CKEY);
     S = DEFAULT(); C = { divs: {}, quotes: {} }; save(); rebuild();
     setStatus($('#dStatus'), '已清空', true);
   };
+}
+
+/* ---------- AI 识别设置 ---------- */
+function renderAISum() {
+  const el = $('#aiSum'); if (!el) return;
+  el.innerHTML = useAI()
+    ? `<span class="eng ai"><i></i>已启用 · ${esc((AI_PRESETS[S.ai.preset] || AI_PRESETS.custom).n.split(' · ')[0])} · ${esc(S.ai.model)}</span>`
+    : `<span class="eng"><i></i>未配置,截图导入使用本地识别</span><p class="hint">配置视觉大模型后识别更准,有几家可以免费用,点「设置」查看。</p>`;
+}
+function openAI() {
+  let d = $('#dlgAI');
+  if (!d) {
+    d = document.createElement('dialog');
+    d.className = 'xb-dlg'; d.id = 'dlgAI'; d.style.setProperty('--c', '167,139,250');
+    document.body.appendChild(d);
+  }
+  const a = S.ai, cur = AI_PRESETS[a.preset] ? a.preset : 'custom';
+  d.innerHTML = `
+    <div class="dlg-head"><b>AI 截图识别</b><button type="button" class="dlg-x" data-close title="关闭">×</button></div>
+    <p class="dlg-msg">可选。配置后截图交给视觉大模型识别,名称、股数、成本更准;不配置则用免费的本地识别,截图不出本机。</p>
+    <label>服务商</label>
+    <select id="aiPreset">${Object.entries(AI_PRESETS).map(([k, p]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${p.n}</option>`).join('')}</select>
+    <div class="row"><div><label>接口地址</label><input type="text" id="aiBase" value="${esc(a.base)}" placeholder="https://.../v1" /></div>
+      <div style="flex:0 0 42%"><label>模型</label><input type="text" id="aiModel" value="${esc(a.model)}" /></div></div>
+    <label>API Key <a class="link-btn" id="aiKeyUrl" target="_blank" rel="noopener">去获取 Key ›</a></label>
+    <input type="password" id="aiKey" value="${esc(a.key)}" placeholder="粘贴 Key,只保存在本机浏览器" autocomplete="off" />
+    <details class="free-tip">
+      <summary>怎么免费用?</summary>
+      <ul>
+        <li><b>硅基流动</b>:注册送代金券,选它 → 点「去获取 Key」→ 粘贴即可,够识别很多张截图</li>
+        <li><b>阿里百炼(通义千问 VL)</b>:新用户开通即送各模型免费额度</li>
+        <li><b>Google Gemini</b>:AI Studio 免费层每天有免费次数,需能访问 Google</li>
+        <li><b>OpenRouter</b>:模型名带 <code>:free</code> 的免费(有频率限制),需海外网络</li>
+      </ul>
+      <p>以上几家都实测允许网页直接调用;额度和政策以各家官网为准。截图会发送给所选服务商。</p>
+    </details>
+    <div class="status" id="aiStatus"></div>
+    <div class="dlg-foot"><button type="button" class="run ghost" id="aiTest">测试连接</button><button type="button" class="run" id="aiSave">保存</button></div>
+    ${a.key ? '<p class="hint" style="text-align:center"><button type="button" class="link-btn del" id="aiClear">清除 Key,改回本地识别</button></p>' : ''}`;
+  const setUrl = () => { const p = AI_PRESETS[$('#aiPreset').value]; const u = $('#aiKeyUrl'); u.hidden = !p.keyUrl; u.href = p.keyUrl || '#'; };
+  const read = () => ({ preset: $('#aiPreset').value, base: $('#aiBase').value.trim(), model: $('#aiModel').value.trim(), key: $('#aiKey').value.trim() });
+  setUrl();
+  $('#aiPreset').onchange = () => { const p = AI_PRESETS[$('#aiPreset').value]; $('#aiBase').value = p.base; $('#aiModel').value = p.model; setUrl(); setStatus($('#aiStatus'), ''); };
+  $('#aiSave').onclick = () => { S.ai = read(); save(); renderShotEngine(); renderAISum(); d.close(); toast(useAI() ? 'AI 识别已启用' : '已保存,截图导入使用本地识别'); };
+  $('#aiTest').onclick = async () => {
+    const c = read(), st = $('#aiStatus'), btn = $('#aiTest');
+    if (!c.key || !c.base || !c.model) return setStatus(st, '请先填写接口地址、模型和 Key');
+    btn.disabled = true; st.className = 'status'; st.textContent = '正在测试…';
+    try { await aiPing(c); setStatus(st, '连接成功,可以保存了', true); }
+    catch (e) { setStatus(st, e.message); }
+    btn.disabled = false;
+  };
+  if ($('#aiClear')) $('#aiClear').onclick = () => { S.ai = { ...read(), key: '' }; save(); renderShotEngine(); renderAISum(); d.close(); toast('已改回本地识别'); };
+  d.showModal();
+}
+async function aiPing(c) {
+  const p = AI_PRESETS[c.preset] || AI_PRESETS.custom, base = c.base.replace(/\/$/, '');
+  let res;
+  try {
+    res = p.type === 'anthropic'
+      ? await fetch(base + '/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': c.key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }, body: JSON.stringify({ model: c.model, max_tokens: 5, messages: [{ role: 'user', content: 'hi' }] }) })
+      : await fetch(base + '/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + c.key }, body: JSON.stringify({ model: c.model, max_tokens: 5, messages: [{ role: 'user', content: 'hi' }] }) });
+  } catch { throw new Error('请求被浏览器拦截:该服务不允许网页直接调用,或当前网络访问不了,请换一家'); }
+  if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error('接口报错:' + (j.error?.message || j.message || res.status)); }
+}
+
+/* ---------- 统一弹窗与提示 ---------- */
+/* 代替系统 confirm / prompt / alert:确认返回 true、取消返回 false;传了 input 时确认返回输入文字、取消返回 null;cancel 传 null 只留一个按钮 */
+function xbAsk({ title, msg = '', input, placeholder = '', ok = '确定', cancel = '取消', danger = false, host = document.body }) {
+  let d = $('#xbAsk');
+  if (!d) {
+    d = document.createElement('dialog');
+    d.className = 'xb-dlg'; d.id = 'xbAsk';
+    d.innerHTML = '<div class="dlg-head"><b></b><button type="button" class="dlg-x" data-v="0" title="关闭">×</button></div><p class="dlg-msg"></p><input type="text" class="dlg-input" /><div class="dlg-foot"><button type="button" class="run ghost" data-v="0"></button><button type="button" class="run" data-v="1"></button></div>';
+    document.body.appendChild(d);
+  }
+  const inp = d.querySelector('.dlg-input'), hasInput = input !== undefined, msgEl = d.querySelector('.dlg-msg');
+  const [no, yes] = d.querySelectorAll('.dlg-foot button');
+  d.style.setProperty('--c', getComputedStyle(host).getPropertyValue('--c').trim() || '52,211,153');
+  d.querySelector('.dlg-head b').textContent = title;
+  msgEl.textContent = msg; msgEl.hidden = !msg;
+  inp.hidden = !hasInput; inp.value = input ?? ''; inp.placeholder = placeholder;
+  no.hidden = cancel === null; no.textContent = cancel || '';
+  yes.textContent = ok; yes.classList.toggle('danger', danger);
+  return new Promise(res => {
+    const done = v => { d.onclick = d.oncancel = inp.onkeydown = null; d.close(); res(hasInput ? (v ? inp.value : null) : v); };
+    d.onclick = e => {
+      const b = e.target.closest('button[data-v]');
+      if (b) return done(b.dataset.v === '1');
+      const r = d.getBoundingClientRect();
+      if (e.target === d && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) done(false);
+    };
+    d.oncancel = e => { e.preventDefault(); done(false); };
+    inp.onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); done(true); } };
+    d.showModal();
+    if (hasInput && !isPhone()) inp.select(); else (danger ? no : yes).focus();
+  });
+}
+let toastTimer;
+function toast(msg, ok = true) {
+  let el = $('#xbToast');
+  if (!el) { el = document.createElement('div'); el.id = 'xbToast'; document.body.appendChild(el); }
+  el.textContent = msg; el.className = ok ? 'show' : 'show err';
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.className = ''; }, 2600);
 }
 
 /* ---------- 到账弹窗 ---------- */
@@ -1917,14 +2111,16 @@ function demoBanner() {
   return `<div class="notice">🐱 当前显示的是 <b>${n} 只示例持仓</b>,仅用于演示效果。
     <div class="r"><button class="run sm" data-cleardemo>清空示例,录入我的持仓</button></div></div>`;
 }
+function fillAccSel(sel) {
+  const el = $(sel), cur = el.value;
+  el.innerHTML = S.accounts.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join('');
+  el.value = cur && S.accounts.some(a => a.id === cur) ? cur : (S.acc !== 'all' ? S.acc : S.accounts[0].id);
+}
 function goAdd(type) {
-  switchTab('holdings');
-  if (editingId) resetForm();
-  if (type === 'shot') return $('#shotBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  const bulk = type === 'bulk';
-  if (bulk) $('#bulkBox').open = true;
-  $(bulk ? '#bulkBox' : '#hfBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  $(bulk ? '#bulkTxt' : '#hfCode').focus({ preventScroll: true });
+  if (type === 'shot') { renderShotEngine(); if (!$('#dlgShot').open) $('#dlgShot').showModal(); return; }
+  if (type === 'bulk') { setStatus($('#bulkStatus'), ''); $('#dlgBulk').showModal(); return; }
+  resetForm(); $('#dlgOne').showModal();
+  if (!isPhone()) $('#hfCode').focus();
 }
 function clearDemo() {
   S.holdings = S.holdings.filter(h => !h.demo);
@@ -1940,6 +2136,8 @@ $('#moreSheet').onclick = e => {
   if (e.target === e.currentTarget || e.target.closest('[data-go],[data-add]')) $('#moreSheet').close();
 };
 document.addEventListener('click', e => {
+  const x = e.target.closest('[data-close]'); if (x) x.closest('dialog').close();
+  if (e.target.closest('[data-ai]')) openAI();
   const g = e.target.closest('[data-go]'); if (g) switchTab(g.dataset.go);
   const a = e.target.closest('[data-add]'); if (a) goAdd(a.dataset.add);
   if (e.target.closest('[data-cleardemo]')) clearDemo();
@@ -1949,7 +2147,8 @@ document.addEventListener('paste', e => {
   const imgs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/'));
   if (!imgs.length) return;
   e.preventDefault();
-  goAdd('shot'); addShotFiles(imgs);
+  if (!$('#dlgShot').open) goAdd('shot');
+  addShotFiles(imgs);
 });
 $('#btnRefresh').onclick = () => refresh(true);
 
