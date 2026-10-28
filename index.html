@@ -2710,7 +2710,7 @@ function etfCalc(code) {
   const o = { code, f, name: f.name || et?.name || code, price: et?.price, mchg: et?.chg, rows: [], ok: 0, n: 0, est: null };
   const rows = etfRows(code);
   o.n = rows.length;
-  if (!(f.nav > 0) || !D) return o;
+  if (!(f.nav > 0) || !D || !EL.t) return o;
   let sr = 0, W = 0;
   for (const r of rows) {
     const q = EL.q[r.s], b = etfBase(r.s, D), ret = q && b ? q.price / b - 1 : null;
