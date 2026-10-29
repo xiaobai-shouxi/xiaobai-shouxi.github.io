@@ -127,6 +127,7 @@
   [data-tab="profile"], #profile { --c: 236,72,153; }
   [data-tab="etf"], #etf { --c: 45,212,191; }
   [data-tab="pool"], #pool { --c: 163,230,53; }
+  [data-tab="rules"], #rules { --c: 96,165,250; }
   [data-tab="future"], #future { --c: 167,139,250; }
   [data-tab="life"], #life { --c: 34,211,238; }
   [data-tab="data"], #data { --c: 148,163,184; }
@@ -249,7 +250,7 @@
   /* 表单 */
   label { display: block; font-size: 13px; color: var(--muted); margin: 16px 0 8px; font-weight: 500; }
   label:first-child { margin-top: 0; }
-  input[type=text], input[type=number], input[type=date], input[type=password], select, textarea {
+  input[type=text], input[type=number], input[type=date], input[type=month], input[type=password], select, textarea {
     width: 100%; padding: 11px 13px; border-radius: 11px; border: 1px solid var(--border-soft);
     background: var(--card-2); color: var(--text); font-size: 14px; outline: none; font-family: inherit;
     transition: border-color .15s ease, box-shadow .15s ease; color-scheme: dark;
@@ -404,6 +405,29 @@
   @media (prefers-reduced-motion: reduce) { .xb-dlg[open], .xb-dlg[open]::backdrop { animation: none; } }
   .xb-dlg::backdrop { background: rgba(4,8,18,.55); }
   dialog { overscroll-behavior: contain; }
+  .rl-card h4 { margin: 12px 0 4px; font-size: 12.5px; color: rgb(var(--c)); font-weight: 700; }
+  .rl-card .sec-h { margin-bottom: 4px; font-size: 15px; }
+  .rl-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+  .rl-list b { color: var(--text); }
+  .rl-sim .gside { grid-template-columns: 320px 1fr; }
+  .rl-sim label:first-child { margin-top: 0; }
+  .rl-kpis { grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  .rl-kpis .stat { padding: 11px 13px; }
+  .rl-kpis .stat b { font-size: 17px; }
+  .rl-chart { display: block; width: 100%; height: auto; border-radius: 10px; background: rgba(255,255,255,.02); }
+  .rl-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted-2); margin-top: 4px; }
+  .rl-legend { display: flex; gap: 6px 14px; align-items: center; flex-wrap: wrap; font-size: 11.5px; color: var(--muted-2); margin-bottom: 6px; }
+  .rl-legend i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: -8px; }
+  .rl-pick { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .rl-pick span { padding: 6px 10px; border-radius: 10px; font-size: 12.5px; border: 1px solid var(--border-soft); color: var(--muted); }
+  .rl-pick span.on { border-color: rgba(var(--c),.6); color: var(--text); background: rgba(var(--c),.1); }
+  .rl-now { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(var(--c),.06); border: 1px dashed rgba(var(--c),.35); font-size: 13px; }
+  .rl-now p { margin: 0 0 6px; color: var(--muted); }
+  .rl-det { margin-top: 12px; }
+  .rl-det summary { cursor: pointer; font-size: 13px; font-weight: 650; margin-bottom: 8px; }
+  .rl-plan td { color: var(--muted-2); }
+  .rl-warn { color: #fbbf24; }
+  @media (max-width: 920px) { .rl-sim .gside { grid-template-columns: 1fr; } .rl-kpis { grid-template-columns: 1fr 1fr; } }
   html.dlg-lock, html.dlg-lock body { overflow: hidden; overscroll-behavior: none; }
   .xb-dlg input, .xb-dlg select, .xb-dlg textarea { background-color: rgba(255,255,255,.05); }
   .xb-dlg .dlg-x { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.11); }
@@ -778,7 +802,7 @@
     .nav .tab.active .tab-icon { background: rgba(var(--c),.18); color: rgb(var(--c)); transform: none; filter: none; }
     .nav .tab-title { font-size: 10.5px; font-weight: 600; color: #7586a6; }
     .nav .tab.active .tab-title { color: var(--text); }
-    .nav .tab[data-tab="pool"], .nav .tab[data-tab="profile"], .nav .tab[data-tab="etf"], .nav .tab[data-tab="future"], .nav .tab[data-tab="life"], .nav .tab[data-tab="data"] { display: none; }
+    .nav .tab[data-tab="pool"], .nav .tab[data-tab="rules"], .nav .tab[data-tab="profile"], .nav .tab[data-tab="etf"], .nav .tab[data-tab="future"], .nav .tab[data-tab="life"], .nav .tab[data-tab="data"] { display: none; }
     .nav .tab-more { display: flex; }
 
     .panel { background: none; border: 0; border-radius: 0; padding: 0; box-shadow: none; }
@@ -984,6 +1008,10 @@
         <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg></span>
         <span class="tab-txt"><div class="tab-title">红利股票池</div><div class="tab-desc">好公司 · 好位置 · 买入价</div></span>
       </button>
+      <button class="tab" data-tab="rules">
+        <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h6"/></svg></span>
+        <span class="tab-txt"><div class="tab-title">投资规则</div><div class="tab-desc">定投美股 · A股分份 · 模拟</div></span>
+      </button>
       <button class="tab" data-tab="profile">
         <span class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg></span>
         <span class="tab-txt"><div class="tab-title">个股分红档案</div><div class="tab-desc">历史分红 · 稳定性评分</div></span>
@@ -1016,6 +1044,7 @@
       <section class="panel" id="calendar"></section>
       <section class="panel" id="stats"></section>
       <section class="panel" id="pool"></section>
+      <section class="panel" id="rules"></section>
       <section class="panel" id="profile"></section>
       <section class="panel" id="etf"></section>
       <section class="panel" id="future"></section>
@@ -2613,10 +2642,11 @@ function switchTab(id) {
   history.replaceState(null, '', '#/' + id);
   if (id === 'etf') etfEnter();
   if (id === 'pool') poolEnter();
+  if (id === 'rules') rulesEnter();
   if (isPhone()) scrollTo({ top: 0, behavior: 'instant' });
   else if (innerWidth <= 920) $('.main').scrollIntoView({ block: 'start' });
 }
-const SECONDARY = ['pool', 'profile', 'etf', 'future', 'life', 'data'];
+const SECONDARY = ['pool', 'rules', 'profile', 'etf', 'future', 'life', 'data'];
 const isPhone = () => matchMedia('(max-width: 640px)').matches;
 function openMore() {
   $('#sheetTabs').innerHTML = SECONDARY.map(id => {
@@ -3086,6 +3116,313 @@ function renderPool() {
       <span><b>买入价</b>:长线定区间——合理价同时看「分红 ÷ 近 5 年股息率中位数」和「每股收益(银行保险用净资产)× 近 5 年估值中位数」取较低的,便宜价同理取 70% 分位股息率 / 30% 分位估值;短线定买点——第一笔取近 4 周低点或现价回调半个月度波动,并夹在便宜价和合理价之间,在合理区间时一个月内正常波动就可能碰到;第二笔是便宜价或再回调一个月度波动。近 4 周涨幅超过正常波动时提示「短线过热」,不追高</span>
       <span>以上全部由规则自动计算,只帮你缩小范围、管住手,不构成投资建议</span>
     </div>`;
+}
+
+/* ---------- 投资规则:美股 ETF 定投 + A 股分份买卖,用前复权日线回测 ---------- */
+const RL_KEY = 'xb-rule-kl';
+let RK;
+try { RK = JSON.parse(localStorage.getItem(RL_KEY) || '{}'); } catch { RK = {}; }
+const rkSave = () => {
+  Object.keys(RK).sort((a, b) => RK[b].t - RK[a].t).slice(6).forEach(k => delete RK[k]);
+  try { localStorage.setItem(RL_KEY, JSON.stringify(RK)); } catch {}
+};
+const ymAdd = (ym, n) => { const [y, m] = ym.split('-').map(Number), t = y * 12 + m - 1 + n; return Math.floor(t / 12) + '-' + pad(t % 12 + 1); };
+const rlCfg = () => (S.rules = Object.assign({
+  usAmt: 200000, usN: 20, usDay: 15, usT: 'us50', usFrom: ymAdd(TODAY.slice(0, 7), -24),
+  aCode: '600036', aAmt: 100000, aN: 10, aFrom: addDays(TODAY, -365 * 3),
+}, S.rules));
+const RL_US = {
+  us50: { n: '美国50', codes: [['513850', '美国50ETF易方达'], ['159577', '美国50ETF汇添富']] },
+  sp500: { n: '标普500', codes: [['513500', '标普500ETF博时']] },
+  ndx: { n: '纳指100', codes: [['513100', '纳指ETF国泰'], ['159941', '纳指ETF广发']] },
+};
+const RL_HOSTS = [{ host: 'web.ifzq.gtimg.cn/appstock' }, { host: 'proxy.finance.qq.com/ifzqgtimg/appstock' }];
+async function rlSeg(sym, a, b) {
+  for (const src of RL_HOSTS) {
+    if (src.bad) continue;
+    const v = '__xbr' + (++seq);
+    try {
+      await loadScript(`https://${src.host}/app/fqkline/get?_var=${v}&param=${sym},day,${a},${b},640,qfq`);
+      const d = window[v]?.data?.[sym];
+      if (d) return (d.qfqday || d.day || []).map(x => [x[0], +x[2]]).filter(x => x[1] > 0);
+    } catch {} finally { try { delete window[v]; } catch {} }
+    src.bad = true;
+  }
+  throw new Error('行情接口暂时连不上,稍后再试');
+}
+/* 接口一次最多返回约 640 个交易日,按 850 天一段往后拉;同一天内同一标的只拉一次 */
+async function rlKline(code, from) {
+  const sym = tqSym('A', code), c = RK[sym];
+  if (c && c.day === TODAY && c.from <= from) return c.d.filter(x => x[0] >= from);
+  const m = new Map();
+  for (let a = from; a <= TODAY; a = addDays(a, 851)) {
+    const b = addDays(a, 850) < TODAY ? addDays(a, 850) : TODAY;
+    (await rlSeg(sym, a, b)).forEach(x => m.set(x[0], x[1]));
+    await new Promise(r => setTimeout(r, 150));
+  }
+  const d = [...m].sort((x, y) => x[0].localeCompare(y[0]));
+  RK[sym] = { t: Date.now(), day: TODAY, from, d }; rkSave();
+  return d;
+}
+
+function lineSvg(lines, marks = [], dates = []) {
+  const W = 640, H = 200, P = 6, all = lines.flatMap(l => l.v).concat(marks.map(m => m.v)).filter(isFinite);
+  const lo = Math.min(...all), hi = Math.max(...all), n = Math.max(...lines.map(l => l.v.length)) - 1 || 1;
+  const X = i => (P + i / n * (W - 2 * P)).toFixed(1), Y = v => (H - P - (v - lo) / (hi - lo || 1) * (H - 2 * P)).toFixed(1);
+  return `<svg class="rl-chart" viewBox="0 0 ${W} ${H}">${lines.map(l => `<polyline fill="none" stroke="${l.c}" stroke-width="${l.w || 1.6}" ${l.dash ? 'stroke-dasharray="4 4"' : ''} points="${l.v.map((v, i) => X(i) + ',' + Y(v)).join(' ')}"/>`).join('')}
+    ${marks.map(m => `<circle cx="${X(m.i)}" cy="${Y(m.v)}" r="3.6" fill="${m.c}" stroke="#0b1220" stroke-width="1"/>`).join('')}</svg>
+    ${dates.length ? `<div class="rl-axis"><span>${dates[0]}</span><span>${dates[dates.length - 1]}</span></div>` : ''}`;
+}
+
+/* 美股定投:每月 N 号(遇休市顺延)买 1 份,场内 ETF 按 100 份一手,买不满一手的钱留到下个月 */
+function usBacktest(kl, cfg) {
+  const unit = cfg.usAmt / cfg.usN, rows = [], curve = [];
+  let cash = 0, sh = 0, inv = 0, j = 0, worst = { r: 0 };
+  for (let k = 0; k < cfg.usN; k++) {
+    const due = ymAdd(cfg.usFrom, k) + '-' + pad(cfg.usDay);
+    while (j < kl.length && kl[j][0] < due) j++;
+    if (j >= kl.length) { rows.push({ k, due, plan: true }); continue; }
+    rows.push({ k, due, i: j, d: kl[j][0], p: kl[j][1] });
+  }
+  let r = 0;
+  kl.forEach(([d, p], i) => {
+    while (r < rows.length && rows[r].i === i) {
+      const x = rows[r++];
+      cash += unit; inv += unit;
+      const lots = Math.floor(cash / (p * 100));
+      x.sh = lots * 100; sh += x.sh; cash -= x.sh * p; x.cum = sh;
+    }
+    const v = sh * p + cash;
+    curve.push({ d, v, inv });
+    if (inv && v / inv - 1 < worst.r) worst = { r: v / inv - 1, d };
+  });
+  const done = rows.filter(x => !x.plan), last = kl[kl.length - 1];
+  if (!done.length) return { rows, done, unit };
+  const v = sh * last[1] + cash, p0 = done[0].p;
+  let peak = 0, lumpDd = 0;
+  kl.slice(done[0].i).forEach(([, p]) => { peak = Math.max(peak, p); lumpDd = Math.min(lumpDd, p / peak - 1); });
+  return { rows, done, unit, curve: curve.slice(done[0].i), inv, v, sh, cash, worst, lump: inv / p0 * last[1], lumpDd, last };
+}
+
+const BL = [.1, .2, .3, .4], BU = [1, 2, 3, 4], SL = [.1, .2, .3, .4, .5], SU = [1, 2, 3, 4, 5];
+/* A 股分份:补仓看建仓价跌幅,止盈看持仓成本涨幅,每档触发一次;「不赚钱不清仓」= 亏着不割肉,赚钱时按档可以卖完。
+   卖完算一轮结束,下一轮同样要等「近 1 年最大涨幅不超过 30%」才重新建仓 */
+function aBacktest(kl, cfg) {
+  const s = kl.findIndex(x => x[0] >= cfg.aFrom);
+  if (s < 0) return { err: '开始日期之后没有行情' };
+  const P = kl.map(x => x[1]), unit = cfg.aAmt / cfg.aN;
+  const rets = []; for (let i = Math.max(1, s - 250); i < Math.max(s, Math.min(P.length, 251)); i++) rets.push(Math.log(P[i] / P[i - 1]));
+  const mu = rets.reduce((a, b) => a + b, 0) / (rets.length || 1);
+  const vol = Math.sqrt(rets.reduce((a, b) => a + (b - mu) ** 2, 0) / (rets.length || 1) * 250);
+  const baseU = vol < .3 ? 3 : vol < .4 ? 2 : 1;
+  const rise1y = i => { let lo = Infinity, mx = 0; for (let j = Math.max(0, i - 250); j <= i; j++) { lo = Math.min(lo, P[j]); mx = Math.max(mx, P[j] / lo - 1); } return mx; };
+  if (unit < P[s] * 100) return { err: `每份 ${money(unit, 0)} 买不起 1 手(${money(P[s] * 100, 0)}),把总资金调大或份数调少` };
+  let cash = cfg.aAmt, sh = 0, cost = 0, ref = 0, bi = 0, si = 0, lastBuy = '', pb = null, ps = false, round = 0, peak = 0, mdd = 0, wait = true;
+  const trades = [], eq = [];
+  const buy = (i, u, why) => {
+    const p = P[i], lots = Math.floor(Math.min(u * unit, cash) / (p * 100));
+    if (!lots) return false;
+    const q = lots * 100; cash -= q * p; sh += q; cost += q * p; lastBuy = kl[i][0];
+    trades.push({ i, d: kl[i][0], p, q, side: 'b', why }); return true;
+  };
+  const sell = (i, u, why) => {
+    const p = P[i]; let q = Math.min(sh, Math.max(100, Math.round(u * unit / p / 100) * 100));
+    if (sh - q < 100) q = sh;
+    const avg = cost / sh; cost -= avg * q; sh -= q; cash += q * p;
+    if (!sh) cost = 0;
+    trades.push({ i, d: kl[i][0], p, q, side: 's', why, pnl: (p - avg) * q });
+  };
+  for (let i = s; i < P.length; i++) {
+    const p = P[i], r1 = i > 0 ? p / P[i - 1] - 1 : 0, r3 = i > 2 ? p / P[i - 3] - 1 : 0;
+    const ma5 = i >= 4 ? (P[i] + P[i - 1] + P[i - 2] + P[i - 3] + P[i - 4]) / 5 : p;
+    if (r1 <= -.07 || r3 <= -.12) pb = { low: Math.min(p, pb?.low ?? p), ok: 0 };
+    else if (pb) { if (p < pb.low) { pb.low = p; pb.ok = 0; } else if (++pb.ok >= 3) pb = null; }
+    if (r1 >= .07) ps = true; else if (ps && p < ma5) ps = false;
+    if (wait) {
+      if ((i === s || (!pb && rise1y(i) <= .3)) && buy(i, baseU, round ? `第 ${round + 1} 轮重新建仓 ${baseU} 份` : `建仓 ${baseU} 份(年化波动 ${pct(vol, 0)})`)) { wait = false; ref = p; bi = 0; si = 0; round++; }
+    } else {
+      if (bi < 4 && p <= ref * (1 - BL[bi]) && !pb && addDays(lastBuy, 10) <= kl[i][0] && buy(i, BU[bi], `比建仓价跌 ${BL[bi] * 100}%,买 ${BU[bi]} 份`)) { bi++; si = 0; }
+      if (si < 5 && p >= cost / sh * (1 + SL[si]) && !ps) {
+        sell(i, SU[si], `比成本涨 ${SL[si] * 100}%,卖 ${SU[si]} 份`); si++;
+        if (!sh) { wait = true; trades.push({ i, d: kl[i][0], p, side: 'r', why: `第 ${round} 轮全部卖完;近 1 年涨幅不超过 30% 时再重新建仓` }); }
+      }
+    }
+    const v = cash + sh * p; peak = Math.max(peak, v); mdd = Math.min(mdd, v / peak - 1); eq.push(v);
+  }
+  const L = P.length - 1, bhSh = Math.floor(cfg.aAmt / (P[s] * 100)) * 100;
+  let bp = 0, bhDd = 0; for (let i = s; i <= L; i++) { bp = Math.max(bp, P[i]); bhDd = Math.min(bhDd, P[i] / bp - 1); }
+  return {
+    s, kl, vol, baseU, unit, trades, eq, mdd, cash, sh, cost, ref, bi, si, pb, ps, round, wait,
+    v: cash + sh * P[L], bh: cfg.aAmt - bhSh * P[s] + bhSh * P[L], bhDd, rStart: rise1y(s), rNow: rise1y(L), p: P[L],
+  };
+}
+
+function buildRules() {
+  const c = rlCfg();
+  const f = (id, l, v, step = 1, unit = '', type = 'number') => `<div><label>${l}${unit ? ` <small>${unit}</small>` : ''}</label><input type="${type}" id="${id}" value="${v}" step="${step}" min="0" /></div>`;
+  const li = a => `<ul class="rl-list">${a.map(x => `<li>${x}</li>`).join('')}</ul>`;
+  const poolOpts = POOL_DEF.map(x => { const code = x.k.slice(2); return `<option value="${code} ${esc(C.quotes[x.k]?.name || '')}"></option>`; }).join('');
+  $('#rules').innerHTML = head('rules', '投资规则', '定投美股 ETF · A 股分份买卖,用历史行情模拟按规则做的结果') + `
+    <div class="grid g2">
+      <div class="box rl-card">
+        <div class="sec-h">定投美股 ETF</div>
+        <h4>钱和账户</h4>${li(['只用 3–5 年内用不到的闲钱', '选场内 ETF 手续费「免五」的账户:不免五的话每笔最低收 5 元,买 1000 元也收 5 元'])}
+        <h4>为什么定投</h4>${li(['不猜高低点,分批买摊平成本;一次性全买容易买在高位', '美股历史上出现过 20%–50% 的大跌,真遇上了、手里有余钱,可以加大买入'])}
+        <h4>怎么做</h4>${li(['资金分 20 份,每月 15 号买 1 份,20 个月买完(例:20 万 → 每月 1 万)', '同一指数有两只 ETF 时(如美国50 的 513850 / 159577),当天买溢价率低的那只', '这两只管理费 0.5%/年,托管费 0.1% / 0.15%', '美国50 的成分股是美股市值最大的 50 家公司', '能承受更大波动的,也可以定投纳指 100,同样挑溢价率低的'])}
+        <h4>大环境</h4>${li(['美债利率高时通常压制美股和黄金;进入降息周期历史上多数时候对它们有利,但不保证上涨'])}
+      </div>
+      <div class="box rl-card">
+        <div class="sec-h">A 股分份买卖</div>
+        <h4>必须做到</h4>${li(['只用至少 3 年不用的闲钱', '不碰热门股,不跟头条消息,不听财经博主荐股', '不碰 1 年内涨过 30%–50% 的股票'])}
+        <h4>准备</h4>${li(['账户最多持有 1–2 只', '资金分成 10–15 份'])}
+        <h4>操作</h4>${li(['建仓 1–3 份:市值大、波动小的买 3 份,市值小、波动大的买 1 份', '比建仓价跌 10% / 20% / 30% / 40%,分别买 1 / 2 / 3 / 4 份;两次买入间隔 10 天以上。多数股票从建仓价跌不过 40%', '比成本涨 10% / 20% / 30% / 40% / 50%,分别卖 1 / 2 / 3 / 4 / 5 份', '不赚钱不清仓'])}
+        <h4>特殊情况</h4>${li(['突然暴跌:停止买入,等止跌 3 天再买', '突然暴涨:停止卖出,等涨势变弱再卖'])}
+        <h4>长期目标</h4>${li(['A 股赚到的钱,转去定投标普 500 这类宽基指数,慢慢攒养老钱'])}
+      </div>
+    </div>
+
+    <div class="box rl-sim">
+      <div class="sec-h">美股定投模拟 <small>按上面的规则,从你选的月份开始每月买 1 份</small></div>
+      <div class="grid gside">
+        <div>
+          <div><label>定投标的</label><select id="rlUsT">${Object.entries(RL_US).map(([k, v]) => `<option value="${k}"${c.usT === k ? ' selected' : ''}>${v.n}(${v.codes.map(x => x[0]).join(' / ')})</option>`).join('')}</select></div>
+          <div class="row">${f('rlUsAmt', '总资金', c.usAmt, 10000, '元')}${f('rlUsN', '分几期', c.usN, 1, '期')}</div>
+          <div class="row">${f('rlUsFrom', '从哪个月开始', c.usFrom, 1, '', 'month')}${f('rlUsDay', '每月几号', c.usDay, 1, '号')}</div>
+          <div class="row" style="margin-top:16px"><button class="run" id="rlUsGo">开始模拟</button><button class="run ghost" id="rlUsNow">从本月开始做计划</button></div>
+          <p class="hint">回测用前复权价格,已包含分红再投入;ETF 按 100 份一手买,不够一手的钱留到下个月。两只 ETF 的历史溢价拿不到,回测统一按先上市的那只算。</p>
+        </div>
+        <div id="rlUsOut"><div class="empty">设好参数点「开始模拟」</div></div>
+      </div>
+    </div>
+
+    <div class="box rl-sim">
+      <div class="sec-h">A 股分份买卖模拟 <small>选一只股票,看从某天开始严格按规则买卖的结果</small></div>
+      <div class="grid gside">
+        <div>
+          <div><label>股票 <small>输入 6 位代码,或从红利池里选</small></label><input type="text" id="rlACode" list="rlAList" value="${esc(c.aCode)}" autocomplete="off" /><datalist id="rlAList">${poolOpts}</datalist></div>
+          <div class="row">${f('rlAAmt', '总资金', c.aAmt, 10000, '元')}${f('rlAN', '分几份', c.aN, 1, '份')}</div>
+          ${f('rlAFrom', '从哪天开始', c.aFrom, 1, '', 'date')}
+          <div class="row" style="margin-top:16px"><button class="run" id="rlAGo">开始模拟</button></div>
+          <p class="hint">建仓份数看开始前一年的年化波动:低于 30% 买 3 份,30%–40% 买 2 份,更高买 1 份。暴跌 = 单日跌 ≥7% 或 3 天累计跌 ≥12%,之后连续 3 天不创新低才恢复买入;暴涨 = 单日涨 ≥7%,收盘跌破 5 日均线才恢复卖出。前复权价格,分红已算进股价。</p>
+        </div>
+        <div id="rlAOut"><div class="empty">设好参数点「开始模拟」</div></div>
+      </div>
+    </div>
+    <div class="hint pl-legend"><span>模拟只用历史行情按固定规则机械计算,没算手续费和税;过去的结果不代表未来,不构成投资建议</span></div>`;
+  $('#rlUsGo').onclick = () => runUs();
+  $('#rlUsNow').onclick = () => { const m = TODAY.slice(0, 7); $('#rlUsFrom').value = +TODAY.slice(8) > (+$('#rlUsDay').value || 15) ? ymAdd(m, 1) : m; runUs(); };
+  $('#rlAGo').onclick = () => runA();
+}
+function rulesEnter() { if (!$('#rlUsOut')) buildRules(); }
+
+function readUs() {
+  const v = id => +$(id).value || 0, c = rlCfg();
+  Object.assign(c, { usT: $('#rlUsT').value, usAmt: Math.max(1000, v('#rlUsAmt')), usN: Math.min(120, Math.max(1, Math.round(v('#rlUsN')))), usDay: Math.min(28, Math.max(1, Math.round(v('#rlUsDay')))), usFrom: /^\d{4}-\d{2}$/.test($('#rlUsFrom').value) ? $('#rlUsFrom').value : c.usFrom });
+  if (c.usFrom < '2014-01') c.usFrom = '2014-01';
+  if (c.usFrom > ymAdd(TODAY.slice(0, 7), 1)) c.usFrom = ymAdd(TODAY.slice(0, 7), 1);
+  save(); return c;
+}
+let rlBusy = false;
+async function runUs() {
+  if (rlBusy) return;
+  const c = readUs(), T = RL_US[c.usT], out = $('#rlUsOut');
+  rlBusy = true; $('#rlUsGo').disabled = true; out.innerHTML = '<div class="empty">正在拉取历史行情…</div>';
+  try {
+    const from = c.usFrom + '-01';
+    const kls = [];
+    const future = c.usFrom + '-' + pad(c.usDay) > TODAY;
+    for (const [code] of T.codes) kls.push(future ? [] : await rlKline(code, from));
+    const bi = kls.length > 1 && kls[1].length && (!kls[0].length || kls[1][0][0] < kls[0][0][0]) ? 1 : 0;
+    const r = usBacktest(kls[bi], c);
+    renderUs(c, T, r, T.codes[bi]);
+    if (T.codes.length > 1 && T.codes.every(([x]) => E.list.includes(x)) && (!EL.t || Date.now() - EL.t > 5 * 6e4)) etfRefresh().then(() => renderUs(c, T, r, T.codes[bi]));
+  } catch (e) { out.innerHTML = `<div class="empty">${esc(e.message || '加载失败')}</div>`; }
+  rlBusy = false; $('#rlUsGo').disabled = false;
+}
+function usPick(T) {
+  if (T.codes.length < 2) return '';
+  if (!T.codes.every(([x]) => E.list.includes(x))) return `<p class="hint">想看两只的实时溢价率,先在「跨境估值」里添加 ${T.codes.map(x => x[0]).join('、')}</p>`;
+  const ps = T.codes.map(([x, n]) => ({ x, n, o: EL.t ? etfCalc(x) : null }));
+  if (ps.some(p => p.o?.prem == null)) return '<p class="hint">正在获取两只 ETF 的实时溢价率…</p>';
+  const best = ps.reduce((a, b) => b.o.prem < a.o.prem ? b : a);
+  return `<div class="rl-pick">${ps.map(p => `<span class="${p === best ? 'on' : ''}">${p.x} ${esc(p.n)} 溢价 <b>${sgn(p.o.prem)}</b>${p === best ? ' ← 今天买这只' : ''}</span>`).join('')}</div>
+    ${best.o.prem > .05 ? '<p class="hint">两只溢价都超过 5%,相当于多花钱买,可以推迟几天等溢价回落</p>' : ''}`;
+}
+function renderUs(c, T, r, bt) {
+  const out = $('#rlUsOut'); if (!out) return;
+  const plan = r.rows.filter(x => x.plan);
+  const tbl = rows => `<div class="tbl-wrap"><table><thead><tr><th>期</th><th>日期</th><th>价格</th><th>买入金额</th><th>买入份额</th></tr></thead><tbody>${rows.map(x => x.plan
+    ? `<tr class="rl-plan"><td>${x.k + 1}</td><td>${x.due}</td><td colspan="2">计划买入 ${money(r.unit, 0)}</td><td>待执行</td></tr>`
+    : `<tr><td>${x.k + 1}</td><td>${x.d}</td><td class="num">${x.p.toFixed(3)}</td><td>${money(r.unit, 0)}</td><td class="num">${fmt(x.sh, 0)}</td></tr>`).join('')}</tbody></table></div>`;
+  const stats = r.done.length ? `
+    <div class="grid rl-kpis">
+      <div class="stat"><span>已投入(${r.done.length} 期)</span><b class="num">${money(r.inv, 0)}</b><em>${r.done[0].d} 起</em></div>
+      <div class="stat"><span>现在值</span><b class="num ${cls(r.v - r.inv)}">${money(r.v, 0)}</b><em>收益 ${sgn(r.v / r.inv - 1)}</em></div>
+      <div class="stat"><span>最惨时浮亏</span><b class="num down">${sgn(r.worst.r)}</b><em>${r.worst.d || '没亏过'}</em></div>
+      <div class="stat"><span>对比:一次性全买</span><b class="num ${cls(r.lump - r.inv)}">${sgn(r.lump / r.inv - 1)}</b><em>期间最大回撤 ${sgn(r.lumpDd, 0)}</em></div>
+    </div>
+    <div class="rl-legend"><i style="background:#60a5fa"></i>持仓市值 <i style="background:#94a3b8"></i>累计投入</div>
+    ${lineSvg([{ v: r.curve.map(x => x.inv), c: '#94a3b8', dash: 1 }, { v: r.curve.map(x => x.v), c: '#60a5fa', w: 2 }], [], [r.curve[0].d, r.curve.at(-1).d])}
+    <p class="hint">回测标的:${bt[0]} ${esc(bt[1])}。${r.lump > r.v ? '这段时间一路上涨,一次性买入更赚;' : '这段时间有涨有跌,分批买入摊低了成本;'}定投的价值在于不用猜高低点,而且回撤更小、拿得住。</p>` : '';
+  out.innerHTML = `${usPick(T)}
+    ${plan.length ? `<div class="sec-h" style="margin-top:6px">接下来的计划 <small>还剩 ${plan.length} 期,每期 ${money(r.unit, 0)}</small></div>` : '<p class="hint">这轮定投已经全部买完。</p>'}
+    ${stats}
+    <details class="rl-det" ${r.done.length ? '' : 'open'}><summary>逐期明细(${r.rows.length} 期)</summary>${tbl(r.rows)}</details>`;
+}
+
+function readA() {
+  const v = id => +$(id).value || 0, c = rlCfg();
+  const code = ($('#rlACode').value.match(/\d{6}/) || [])[0];
+  if (!code) throw new Error('请输入 6 位股票代码');
+  Object.assign(c, { aCode: code, aAmt: Math.max(1000, v('#rlAAmt')), aN: Math.min(30, Math.max(5, Math.round(v('#rlAN')))), aFrom: /^\d{4}-\d{2}-\d{2}$/.test($('#rlAFrom').value) ? $('#rlAFrom').value : c.aFrom });
+  if (c.aFrom > addDays(TODAY, -30)) c.aFrom = addDays(TODAY, -30);
+  if (c.aFrom < '2012-01-01') c.aFrom = '2012-01-01';
+  save(); return c;
+}
+async function runA() {
+  if (rlBusy) return;
+  const out = $('#rlAOut');
+  let c; try { c = readA(); } catch (e) { out.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  rlBusy = true; $('#rlAGo').disabled = true; out.innerHTML = '<div class="empty">正在拉取历史行情…</div>';
+  try {
+    const kl = await rlKline(c.aCode, addDays(c.aFrom, -400));
+    if (kl.length < 60) throw new Error('这只股票的历史行情太少,换一只或把开始日期往后挪');
+    const name = C.quotes['A:' + c.aCode]?.name || c.aCode;
+    renderA(c, name, aBacktest(kl, c));
+  } catch (e) { out.innerHTML = `<div class="empty">${esc(e.message || '加载失败')}</div>`; }
+  rlBusy = false; $('#rlAGo').disabled = false;
+}
+function renderA(c, name, r) {
+  const out = $('#rlAOut'); if (!out) return;
+  if (r.err) { out.innerHTML = `<div class="empty">${esc(r.err)}</div>`; return; }
+  const kl = r.kl.slice(r.s), px = v => '¥' + v.toFixed(v < 10 ? 3 : 2);
+  const tr = r.trades.filter(t => t.side !== 'r'), sells = tr.filter(t => t.side === 's');
+  const next = [];
+  if (r.wait) next.push(r.rNow > .3 ? `上一轮已经全部卖完。近 1 年最大涨幅 ${pct(r.rNow, 0)},按规则先不重新建仓,等涨幅回落到 30% 以内` : r.pb ? '上一轮已经全部卖完,现在处于暴跌暂停期,止跌 3 天后再重新建仓' : `上一轮已经全部卖完,可以重新建仓 ${r.baseU} 份`);
+  else {
+    if (r.rNow > .3) next.push(`近 1 年最大涨幅 ${pct(r.rNow, 0)},按规则这时候不该新开仓`);
+    if (r.bi < 4) next.push(`跌到 <b>${px(r.ref * (1 - BL[r.bi]))}</b>(建仓价 ${px(r.ref)} 的 −${BL[r.bi] * 100}%)买 ${BU[r.bi]} 份${r.pb ? ',但现在处于暴跌暂停期,先等止跌 3 天' : ''}${r.cash < r.p * 100 ? ',不过现金已经用完' : ''}`);
+    else next.push('4 档补仓已经全部用完,只等上涨卖出');
+    if (r.si < 5) next.push(`涨到 <b>${px(r.cost / r.sh * (1 + SL[r.si]))}</b>(成本 ${px(r.cost / r.sh)} 的 +${SL[r.si] * 100}%)卖 ${SU[r.si]} 份${r.ps ? ',但现在处于暴涨暂停期,等跌破 5 日均线再卖' : ''}`);
+  }
+  out.innerHTML = `
+    ${r.rStart > .3 ? `<p class="hint rl-warn">注意:开始那天这只股票近 1 年最大涨幅 ${pct(r.rStart, 0)},按规则本来不该碰</p>` : ''}
+    <div class="grid rl-kpis">
+      <div class="stat"><span>${esc(name)} · 总资金</span><b class="num">${money(c.aAmt, 0)}</b><em>每份 ${money(r.unit, 0)},建仓 ${r.baseU} 份</em></div>
+      <div class="stat"><span>现在值</span><b class="num ${cls(r.v - c.aAmt)}">${money(r.v, 0)}</b><em>收益 ${sgn(r.v / c.aAmt - 1)} · 最大回撤 ${sgn(r.mdd, 0)}</em></div>
+      <div class="stat"><span>对比:一开始全买</span><b class="num ${cls(r.bh - c.aAmt)}">${sgn(r.bh / c.aAmt - 1)}</b><em>最大回撤 ${sgn(r.bhDd, 0)}</em></div>
+      <div class="stat"><span>操作次数</span><b class="num">${tr.length} 笔</b><em>卖出 ${sells.length} 笔 · 做了 ${r.round} 轮</em></div>
+    </div>
+    <div class="rl-legend"><i style="background:#60a5fa"></i>股价 <i style="background:#f87171"></i>买入 <i style="background:#34d399"></i>卖出</div>
+    ${lineSvg([{ v: kl.map(x => x[1]), c: '#60a5fa', w: 1.6 }], tr.map(t => ({ i: t.i - r.s, v: t.p, c: t.side === 'b' ? '#f87171' : '#34d399' })), [kl[0][0], kl.at(-1)[0]])}
+    <div class="rl-now"><div class="sec-h" style="margin:0 0 6px">如果一直按规则做,现在</div>
+      <p>持有 ${fmt(r.sh, 0)} 股(市值 ${money(r.sh * r.p, 0)}),现金 ${money(r.cash, 0)},现价 ${px(r.p)}</p>
+      <ul class="rl-list">${next.map(x => `<li>${x}</li>`).join('')}</ul></div>
+    <p class="hint">${r.v < r.bh ? '这段时间整体上涨,分批卖出会早早落袋,跑输一直拿着;' : '这段时间涨跌反复,分批买卖比一直拿着更好;'}这套规则的长处是回撤小、拿得住(最大回撤 ${sgn(r.mdd, 0)},一直拿着是 ${sgn(r.bhDd, 0)}),更适合震荡行情。</p>
+    <details class="rl-det"><summary>每一笔操作(${r.trades.length})</summary><div class="tbl-wrap"><table><thead><tr><th>日期</th><th>操作</th><th>价格</th><th>股数</th><th>原因</th></tr></thead><tbody>
+      ${r.trades.map(t => t.side === 'r' ? `<tr class="rl-plan"><td>${t.d}</td><td colspan="4">${esc(t.why)}</td></tr>`
+        : `<tr><td>${t.d}</td><td class="${t.side === 'b' ? 'up' : 'down'}">${t.side === 'b' ? '买入' : '卖出'}</td><td class="num">${px(t.p)}</td><td class="num">${fmt(t.q, 0)}</td><td>${esc(t.why)}${t.pnl != null ? `,赚 ${money(t.pnl, 0)}` : ''}</td></tr>`).join('')}
+    </tbody></table></div></details>`;
 }
 
 /* ---------- 跨境估值:QDII ETF 估算净值 = 基准净值 × (1 + Σ权重×股价涨跌) × 汇率变化 ---------- */
