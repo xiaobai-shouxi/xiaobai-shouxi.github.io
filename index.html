@@ -403,6 +403,8 @@
   @keyframes dlg-fade { from { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .xb-dlg[open], .xb-dlg[open]::backdrop { animation: none; } }
   .xb-dlg::backdrop { background: rgba(4,8,18,.55); }
+  dialog { overscroll-behavior: contain; }
+  html.dlg-lock, html.dlg-lock body { overflow: hidden; overscroll-behavior: none; }
   .xb-dlg input, .xb-dlg select, .xb-dlg textarea { background-color: rgba(255,255,255,.05); }
   .xb-dlg .dlg-x { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.11); }
   .xb-dlg .dlg-foot button.run { border-radius: 999px; }
@@ -3432,6 +3434,22 @@ $('#nav').onclick = e => {
   const t = e.target.closest('.tab'); if (!t) return;
   if (t.id === 'tabMore') openMore(); else switchTab(t.dataset.tab);
 };
+/* 原生 dialog 打开时,iOS Safari / 部分安卓仍能触摸滚动背后的页面:有弹窗就把 body 固定住,全部关掉后回到原位置 */
+let dlgLockY = null;
+const syncDlgLock = () => {
+  const open = !!document.querySelector('dialog[open]'), bs = document.body.style;
+  if (open && dlgLockY == null) {
+    dlgLockY = scrollY;
+    Object.assign(bs, { position: 'fixed', top: -dlgLockY + 'px', left: '0', right: '0' });
+    document.documentElement.classList.add('dlg-lock');
+  } else if (!open && dlgLockY != null) {
+    Object.assign(bs, { position: '', top: '', left: '', right: '' });
+    document.documentElement.classList.remove('dlg-lock');
+    scrollTo({ top: dlgLockY, behavior: 'instant' });
+    dlgLockY = null;
+  }
+};
+new MutationObserver(syncDlgLock).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['open'] });
 $('#moreSheet').onclick = e => {
   if (e.target === e.currentTarget || e.target.closest('[data-go],[data-add]')) $('#moreSheet').close();
 };
