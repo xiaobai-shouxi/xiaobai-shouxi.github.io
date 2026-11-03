@@ -591,12 +591,23 @@
   .pl-ty.cons { color: #fda4af; background: rgba(244,114,182,.14); }
   .pl-ty.cyc { color: #fdba74; background: rgba(251,146,60,.15); }
   .pl-ty.oth { color: #c4b5fd; background: rgba(167,139,250,.16); }
-  .pl-tp { font-size: 14.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .pl-tp.g { color: #6ee7b7; } .pl-tp.y { color: #fde047; } .pl-tp.r { color: #fca5a5; }
-  .pl-tb { display: block; width: 56px; height: 4px; margin: 4px auto 0; border-radius: 2px; background: rgba(255,255,255,.07); overflow: hidden; }
-  .pl-tb i { display: block; height: 100%; }
-  .pl-tb i.g { background: #34d399; } .pl-tb i.y { background: #facc15; } .pl-tb i.r { background: #f87171; }
-  .pl-vt { margin-right: 4px; font-size: 12px; }
+  .pl-tbl th.pl-evh, .pl-tbl tbody tr[data-k] td.pl-ev { text-align: left; padding-left: 16px; }
+  .pl-tbl td.pl-ev { white-space: normal; min-width: 190px; }
+  .pl-tbl td.pl-ev .pl-why { white-space: normal; border-radius: 12px; }
+  .pl-why s { white-space: nowrap; }
+  .pl-why .pl-vi { font-style: normal; font-weight: 800; margin-right: 6px; }
+  .pl-why .pl-vi.no { color: #f87171; }
+  .pl-why s { text-decoration: none; font-weight: 500; opacity: .7; margin-left: 8px; padding-left: 8px; border-left: 1px solid currentColor; }
+  .pl-evm { display: none; }
+  .pl-tbl td .pl-disc { color: var(--muted); }
+  .pl-tbl td .pl-disc.soon { color: rgb(var(--c)); font-weight: 600; }
+  .pl-ph { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .pl-ps { font-size: 11px; font-weight: 650; color: var(--muted-2); white-space: nowrap; }
+  .pl-ps.ok { color: #6ee7b7; } .pl-ps.near { color: #fde047; }
+  .pl-pr { display: flex; justify-content: space-between; font-size: 11.5px; line-height: 1.2; }
+  .pl-pr em { font-style: normal; color: var(--muted-2); margin-right: 4px; font-size: 10.5px; }
+  .pl-pr b { font-weight: 650; }
+  .pl-pr span:last-child b { color: #6ee7b7; }
   .pl-why { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 650; line-height: 18px; white-space: nowrap; }
   .pl-grp td { font-size: 12px; font-weight: 700; color: #fca5a5; background: rgba(248,113,113,.06); cursor: default; }
   .pl-det td { background: rgba(var(--c),.04); cursor: default; white-space: normal; text-align: left !important; }
@@ -639,7 +650,7 @@
   .nav .tab.dot .tab-icon { position: relative; }
   .nav .tab.dot .tab-icon::after { content: ""; position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; border-radius: 50%; background: #f87171; box-shadow: 0 0 0 2px var(--bg); }
   @media (max-width: 1100px) { .pl2, .pl2.wide { grid-template-columns: 1fr; } .pl-side { position: static; } }
-  .pl-pos { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; width: 150px; }
+  .pl-pos { display: inline-flex; flex-direction: column; align-items: stretch; gap: 6px; width: 160px; vertical-align: middle; }
   .pl-lv { padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 18px; }
   .pl-lv.lv1 { color: #6ee7b7; background: rgba(52,211,153,.16); }
   .pl-lv.lv2 { color: #bef264; background: rgba(163,230,53,.14); }
@@ -672,7 +683,12 @@
   .pl-legend .pl-dots i { width: 8px; height: 8px; }
   @media (max-width: 640px) {
     .pl-tbl .lg { display: none; }
-    .pl-pos { width: 64px; }
+    .pl-pos { width: 78px; gap: 4px; }
+    .pl-ph { flex-wrap: wrap; justify-content: center; gap: 2px 3px; }
+    .pl-pos .pl-lv { padding: 0 5px; }
+    .pl-ps { flex-basis: 100%; text-align: center; }
+    .pl-pr { display: none; }
+    .pl-evm { display: inline; font-size: 10.5px; font-weight: 650; color: var(--muted); white-space: nowrap; }
     .pl-tbl .pl-ends, .pl-tbl .pl-sub { display: none; }
     .pl-tbl .pl-sig { white-space: normal; max-width: 74px; padding: 2px 6px; font-size: 11px; line-height: 15px; text-align: center; }
     .pl-buy b { font-size: 12.5px; }
@@ -2974,6 +2990,18 @@ async function poolFin(code) {
   const ys = qs.filter(z => z.ann).reverse(), x = ys[ys.length - 1];
   return { fin: /银行|保险|证券/.test(rows[0].ORG_TYPE || ''), y: x?.y, eps: x?.eps, cf: x?.cf, roe: x?.roe, ys, qs };
 }
+/* 预约披露时间表:每只票取最新一期报告期,已披露用实际日,否则用最后一次变更后的预约日 */
+async function poolDisc(codes) {
+  const q = new URLSearchParams({ reportName: 'RPT_PUBLIC_BS_APPOIN', columns: 'ALL', filter: `(SECURITY_CODE in (${codes.map(c => `"${c}"`).join(',')}))(REPORT_DATE>='${addDays(TODAY, -200)}')`, pageSize: '500', pageNumber: '1', sortColumns: 'REPORT_DATE', sortTypes: '-1', source: 'WEB', client: 'WEB' });
+  const r = await jsonp('https://datacenter-web.eastmoney.com/api/data/v1/get?' + q);
+  const m = {};
+  for (const x of r?.result?.data || []) {
+    if (m[x.SECURITY_CODE]) continue;
+    const d = dd(x.ACTUAL_PUBLISH_DATE || x.THIRD_CHANGE_DATE || x.SECOND_CHANGE_DATE || x.FIRST_CHANGE_DATE || x.FIRST_APPOINT_DATE);
+    if (d) m[x.SECURITY_CODE] = { d, done: !!x.ACTUAL_PUBLISH_DATE, per: periodName(x.REPORT_DATE) };
+  }
+  return m;
+}
 /* 宏观:10 年期国债收益率(日度)+ 红利拥挤度(中证红利成交量占沪深两市的比例分位、中证红利自身成交量分位,各取 20 日均值) */
 async function poolMacro() {
   const m = PC.mac || {};
@@ -3024,16 +3052,18 @@ async function poolRefresh(manual) {
   const ok = (k, t) => !PC.bad[t + k] || now - PC.bad[t + k] > PL_TTL.retry;
   const needQ = !qt || ((aOpen() || now - qt > 12 * 36e5) && now - qt > 6e4);
   const needM = (PC.mac?.day !== TODAY || !(PC.mac?.y10?.[0]?.[0] < addDays(TODAY, -365 * 3))) && ok('', 'mac');
+  const needR = PC.r?.day !== TODAY && ok('', 'r');
   const needD = keys.filter(k => (!C.divs[k] || now - C.divs[k].t > PL_TTL.d) && ok(k, 'd'));
   const needK = keys.filter(k => (!PC.k[k] || now - PC.k[k].t > PL_TTL.k) && ok(k, 'k'));
   const needL = keys.filter(k => (!PC.m[k] || now - PC.m[k].t > PL_TTL.m) && ok(k, 'm'));
   const needF = keys.filter(k => (!PC.f[k] || now - PC.f[k].t > PL_TTL.f || (PC.f[k].v && !PC.f[k].v.qs)) && ok(k, 'f'));
   if (!manual && now - (PC.cool || 0) < 10 * 6e4) return renderPool();
-  if (!needQ && !needM && !needD.length && !needK.length && !needL.length && !needF.length) { if (manual) toast(aOpen() ? '数据已是最新' : '数据已是最新 · 现在不是交易时间'); poolT = now; return renderPool(); }
+  if (!needQ && !needM && !needR && !needD.length && !needK.length && !needL.length && !needF.length) { if (manual) toast(aOpen() ? '数据已是最新' : '数据已是最新 · 现在不是交易时间'); poolT = now; return renderPool(); }
   poolBusy = true;
   let stop = 0;
   try {
     if (needM) { poolMsg = '正在更新国债收益率和拥挤度…'; renderPool(); try { await poolMacro(); } catch { PC.bad.mac = Date.now(); } }
+    if (needR) { try { PC.r = { day: TODAY, v: await poolDisc(keys.map(k => k.split(':')[1])) }; } catch { PC.bad.r = Date.now(); } }
     if (needQ) { poolMsg = '正在更新行情…'; renderPool(); await fetchQuotes(keys); }
     let done = 0;
     const total = needD.length + needF.length + needK.length + needL.length;
@@ -3106,7 +3136,7 @@ const y10At = (y10, d) => { let lo = 0, hi = y10.length - 1, r = null; while (lo
 function poolCalc(k) {
   const [mk, code] = k.split(':'), q = C.quotes[k], list = C.divs[k]?.list, kl = PC.k[k]?.d, fin = PC.f[k]?.v, p = poolCfg(), def = POOL_BY[k];
   const h = S.holdings.find(x => hkey(x) === k);
-  const o = { k, mk, code, q, name: q?.name || h?.name || code, held: !!h, ind: def.sub, t: def.t, sub: def.sub, bank: /大行|股份行|城商/.test(def.sub), dots: [] };
+  const o = { k, mk, code, q, name: q?.name || h?.name || code, held: !!h, ind: def.sub, t: def.t, sub: def.sub, bank: /大行|股份行|城商/.test(def.sub), dots: [], disc: PC.r?.v?.[code] };
   if (!q || !list) { o.sig = poolSignal(o); o.cl = poolClassify(o); return o; }
   const cur = MK[mk].cur;
   const evs = list.filter(e => e.ex && e.ps > 0).map(e => [e.ex, e.ps * fx(e.cur) / fx(cur), e.period || '']).sort((a, b) => a[0].localeCompare(b[0]));
@@ -3424,28 +3454,39 @@ function renderPool() {
 
   /* 表格 */
   const mark = o => o.cl.c === 'g' ? '<span class="pl-star" title="重点关注">★</span>' : o.cl.c === 'r' ? '<span class="pl-star r" title="有风险">⚠</span>' : '<span class="pl-star off">☆</span>';
-  const nmCell = o => `<td><div class="nm">${mark(o)}${esc(o.name)}${o.held ? '<span class="tg">已持仓</span>' : ''}</div><div class="cd">${esc(o.code)} · ${esc(o.sub)}</div></td>`;
-  const tCls = T => T == null ? '' : T <= 40 ? 'g' : T <= 60 ? 'y' : 'r';
-  const tempCell = o => o.temp == null ? '<td class="ct"><span class="sm">—</span></td>' : `<td class="ct"><b class="pl-tp ${tCls(o.temp)}">${o.temp.toFixed(0)}</b><span class="pl-tb"><i style="width:${o.temp.toFixed(0)}%" class="${tCls(o.temp)}"></i></span></td>`;
+  const discTag = o => {
+    const x = o.disc; if (!x) return '';
+    const n = daysBetween(TODAY, x.d), md = +x.d.slice(5, 7) + '.' + x.d.slice(8);
+    return `<div class="cd pl-disc${!x.done && n >= 0 && n <= 7 ? ' soon' : ''}" title="${esc(x.per)}${x.done ? '已披露' : '预约披露'} ${x.d}">${x.done ? '业绩披露' : '预约披露'} ${md}</div>`;
+  };
+  const nmCell = o => `<td><div class="nm">${mark(o)}${esc(o.name)}${o.held ? '<span class="tg">已持仓</span>' : ''}</div><div class="cd">${esc(o.code)} · ${esc(o.sub)}</div>${discTag(o)}</td>`;
+  const posCell = o => {
+    if (o.lv == null) return '<td class="ct"><span class="sm">历史不足</span></td>';
+    const g = o.b1 ? o.q.price / o.b1 - 1 : null;
+    const st = g == null ? '' : g <= 0 ? '<span class="pl-ps ok">✓ 已到<span class="lg">买入价</span></span>' : g <= .05 ? `<span class="pl-ps near"><span class="lg">接近 · </span>差 ${(g * 100).toFixed(1)}%</span>` : `<span class="pl-ps"><span class="lg">还</span>差 ${(g * 100).toFixed(1)}%</span>`;
+    return `<td class="ct"><span class="pl-pos"><span class="pl-ph"><span class="pl-lv ${POOL_LV[o.lv][0]}" title="${esc(posTip(o))}">${POOL_LV[o.lv][1]}</span>${o.temp != null ? `<span class="pl-evm">温度 ${o.temp.toFixed(0)}</span>` : ''}${st}</span><span class="pl-bar" title="${esc(posTip(o))}"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>
+      ${o.b1 ? `<span class="pl-pr"><span><em>现价</em><b class="num">${px(o.q.price)}</b></span><span title="${esc(priceTip(o))}"><em>买入价</em><b class="num">${px(o.b1)}</b></span></span>` : ''}</span></td>`;
+  };
   const yCell = o => `<td><b class="num">${o.yldC ? pct(o.yldC) : '—'}</b></td>`;
   const sprCell = o => `<td>${o.spr != null && o.dps ? `<b class="num">${pp1(o.spr)}</b><span class="sm">分位 ${o.sprP != null ? fp(o.sprP) : '—'}</span>` : '—'}</td>`;
   const vetoShort = o => o.bank ? (o.aq ? o.aq.a.join('') + ` 不良 ${o.aq.npl.toFixed(2)}%` : '—') : o.t === 'stable' ? (o.cfc != null ? `覆盖 ${o.cfc.toFixed(1)} 倍` : '—') : o.t === 'cons' ? (o.pr != null ? `派息 ${fp(o.pr)}` : '—') : '—';
-  const vetoCell = o => `<td class="lg"><span class="pl-vt ${o.cat?.ok === false ? 'no' : 'ok'}">${o.cat?.ok === false ? '❌' : '✅'}</span><span class="sm">${vetoShort(o)}</span></td>`;
-  const whyCell = o => `<td class="lg"><span class="pl-why ${o.cl.c}">${esc(o.cl.tag)}</span></td>`;
+  const evalCell = o => {
+    const bad = o.cl.c === 'r' || o.cat?.ok === false, vs = vetoShort(o);
+    const tt = o.temp != null ? `温度 ${o.temp.toFixed(0)}` : '';
+    const tag = o.cl.tag + (tt && !o.cl.tag.includes('温度') ? ' · ' + tt : '');
+    return `<td class="pl-ev lg"><span class="pl-why ${o.cl.c}"><i class="pl-vi${bad ? ' no' : ''}">${bad ? '✗' : '✓'}</i>${esc(tag)}${vs !== '—' ? `<s>${esc(vs)}</s>` : ''}</span></td>`;
+  };
   const gapTxt = o => o.temp == null ? '—' : o.tGap === 0 ? '已在 40 以下' : o.tGap == null ? '需回调 60% 以上' : `回调 ${(-o.tGap * 100).toFixed(1)}% 到 ${px(o.tP)}`;
-  const COLS = ['名称', '股息率', '<span title="股息率 − 10 年国债收益率,分位按近 36 个月"><span class="lg">股息率−国债</span><span class="sh">利差</span></span>', '<span title="0 最便宜 · 100 最贵">综合温度</span>', '<span class="lg">否决项</span>', '<span class="lg">原因</span>'];
-  const rowOf = o => nmCell(o) + yCell(o) + sprCell(o) + tempCell(o) + vetoCell(o) + whyCell(o);
+  const COLS = ['名称', '股息率', '<span title="股息率 − 10 年国债收益率,分位按近 36 个月"><span class="lg">股息率−国债</span><span class="sh">利差</span></span>', '<span title="按历史股息率分位,越靠左越便宜;买入价按右上角的便宜价口径倒推">综合位置<span class="lg"> · 买入价</span></span>', '<span class="lg"><span title="✓ 否决项全过 / ✗ 触发否决 · 温度 0 最便宜、100 最贵">综合评估</span></span>'];
+  const rowOf = o => nmCell(o) + yCell(o) + sprCell(o) + posCell(o) + evalCell(o);
   const nc = COLS.length;
   const detail = o => {
     const s = o.sig, ck = o.cl.why.map(w => `<li class="${w.ok === true ? 'ok' : w.ok === false ? 'no' : 'na'}">${esc(w.t)}</li>`).join('');
-    const pos = o.lv != null ? `<span class="pl-lv ${POOL_LV[o.lv][0]}">${POOL_LV[o.lv][1]}</span> <span class="pl-bar" title="${esc(posTip(o))}"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>` : '<span class="sm">历史不足</span>';
     return `<tr class="pl-det"><td colspan="${nc}"><div class="pl-dw">
       <div><h5>${o.cl.c === 'g' ? '为什么是 ★ 重点关注' : o.cl.c === 'r' ? '为什么有风险' : '为什么还没有 ★'}</h5><ul class="pl-ck">${ck}</ul>
         <p class="hint">按${live ? '今天' : '上一交易日'}收盘价 ${o.cp ? px(o.cp) : '—'} 计算,每天收盘后更新一次分类${o.t === 'cyc' ? ';周期股要等景气数据(V2.1)才能升级' : ''}</p></div>
       <div><h5>收息体检与买入价</h5>
         <div class="pl-kv"><span>买入信号</span><span><span class="pl-sig ${s.s}">${s.n}</span> <span class="sm">${esc(s.t)}</span></span></div>
-        <div class="pl-kv"><span>综合位置</span><span>${pos}</span></div>
-        <div class="pl-kv"><span>合理买入价</span><span>${o.b1 ? `<b class="num" title="${esc(priceTip(o))}">${px(o.b1)}</b> <span class="sm">现价 ${px(o.q.price)}${o.q.price > o.b1 ? ` · 还差 ${((o.q.price / o.b1 - 1) * 100).toFixed(1)}%` : ' · 已到'}</span>` : '<span class="sm">—</span>'}</span></div>
         <div class="pl-kv"><span>体检</span><span class="pl-dl">${o.dots.map(d => `<span title="${esc(d.t)}"><i class="${d.s}"></i>${d.n}</span>`).join('')}</span></div>
         <button class="run sm ghost" data-prof="${o.k}">看分红档案 →</button>
       </div></div></td></tr>`;
@@ -3466,7 +3507,7 @@ function renderPool() {
       ${status}</div>`;
   const table = `<div class="box">
       <div class="sec-h"><span class="pl-ttl">${p.tab === 'all' ? '全部' : esc(p.tab)} ${rows.length} 只 ·<span class="pl-star">★</span>${stars(rows)} 只</span><small>★ 重点关注 = 分红能力可验证、否决项全过、温度不高,排在最前;其余按综合温度从低到高 · 点一行看原因</small></div>
-      ${rows.length ? `<div class="tbl-wrap"><table class="pl-tbl"><thead><tr>${COLS.map((h, i) => `<th class="${i >= 1 ? 'ct' : ''}${h.startsWith('<span class="lg">') ? ' lg' : ''}">${h}</th>`).join('')}</tr></thead><tbody>${tbody}</tbody></table></div>`
+      ${rows.length ? `<div class="tbl-wrap"><table class="pl-tbl"><thead><tr>${COLS.map((h, i) => `<th class="${i >= 1 ? 'ct' : ''}${i === nc - 1 ? ' pl-evh' : ''}${h.startsWith('<span class="lg">') ? ' lg' : ''}">${h}</th>`).join('')}</tr></thead><tbody>${tbody}</tbody></table></div>`
         : `<div class="empty">${pend.length ? '数据还在加载,稍等' : '这个行业暂时没有标的'}</div>`}
     </div>`;
 
