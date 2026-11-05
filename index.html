@@ -3525,7 +3525,7 @@ function renderPool() {
     return `<td class="ct"><span class="pl-pos"><span class="pl-ph"><span class="pl-lv ${POOL_LV[o.lv][0]}" title="${esc(posTip(o))}">${POOL_LV[o.lv][1]}</span>${o.act ? `<span class="pl-evm ${o.act.a}">${ACT[o.act.a]}</span>` : ''}${st}</span><span class="pl-bar" title="${esc(posTip(o))}"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>
       ${o.b1 ? `<span class="pl-pr"><span><em>现价</em><b class="num">${px(o.q.price)}</b></span><span title="${esc(priceTip(o))}"><em>买入价</em><b class="num">${px(o.b1)}</b></span></span>` : ''}</span></td>`;
   };
-  const yCell = o => `<td><b class="num">${o.yldC ? pct(o.yldC) : '—'}</b></td>`;
+  const yCell = o => `<td title="按${o.cp !== o.q?.price ? '昨日' : '最新'}收盘价计算,分类也按它${o.cp !== o.q?.price ? ';下面是按实时价算的,仅供参考' : ''}"><b class="num">${o.yldC ? pct(o.yldC) : '—'}</b>${o.yld && o.cp !== o.q?.price ? `<span class="sm">实时 ${pct(o.yld)}</span>` : ''}</td>`;
   const sprCell = o => `<td>${o.spr != null && o.dps ? `<b class="num">${pp1(o.spr)}</b><span class="sm">分位 ${o.sprP != null ? fp(o.sprP) : '—'}</span>` : '—'}</td>`;
   const qTip = o => o.qual ? o.qual.parts.map(x => `${x.n} ${x.s.toFixed(0)}/${x.max}:${x.t}`).join('\n') : '年报不足 3 年,算不出来';
   const ACT = { buy: '可以买', near: '接近', wait: '等待', no: '暂不考虑' };
@@ -3780,7 +3780,7 @@ async function etfLoadFund(code, force) {
     try {
       const d = (await fm('FundMApi/FundBaseTypeInformation', code)).Datas;
       f.name = d.SHORTNAME || f.name; f.co = d.JJGS || f.co;
-      if (+d.DWJZ > 0) { f.nav = +d.DWJZ; f.navD = dd(d.FSRQ); }
+      if (+d.DWJZ > 0) { f.nav = +d.DWJZ; f.navD = dd(d.FSRQ); f.navG = d.RZDF === '' || d.RZDF == null || isNaN(+d.RZDF) ? null : +d.RZDF / 100; }
       f.nTs = now;
     } catch (e) { etfErr = '净值接口繁忙'; }
   }
@@ -3981,7 +3981,7 @@ const etfVerdict = p => p == null ? ['', '等待估值', '行情和净值加载�
   : p < .02 ? ['l1', '溢价合理', '场内价和净值差不多']
   : p < .05 ? ['l2', '溢价偏高', `多花 ${(p * 100).toFixed(2)}% 买,优先挑同指数溢价低的`]
   : ['l3', '溢价很高', `相当于多花 ${(p * 100).toFixed(2)}% 买,可以等溢价回落再买`];
-let efDet = false;
+let efDet = true;
 
 function renderEtf() {
   const body = $('#efBody'); if (!body) return;
@@ -4045,6 +4045,7 @@ function renderEtf() {
       <td class="${cls(o.rest.ret)}">${sgn(o.rest.ret)}</td><td>${conCell(o.rest.ret === null ? null : o.rest.con)}</td><td class="lg"><span class="sm">${o.rest.q?.time || '—'}</span></td></tr>` : '';
   const facts = [
     `基准净值 <b>${nf(f.nav, 4)}</b>(${f.navD ? f.navD.slice(5) : '—'})`,
+    f.navG != null ? `净值增长率 <b class="${cls(f.navG)}">${sgn(f.navG)}</b>(${f.navD ? f.navD.slice(5) : '—'} 官方)` : '',
     o.est ? `股票 <b class="${cls(o.sr)}">${pp(o.sr)}</b> · 汇率 <b class="${cls(o.fp)}">${pp(o.fp)}</b>` : '',
     EL.fx ? `USD/CNY <b>${EL.fx.toFixed(4)}</b>` : '',
     `股票仓位 <b>${o.exp != null ? o.exp.toFixed(2) + '%' : '—'}</b>${ov?.exp != null ? '(手动)' : ''}`,
