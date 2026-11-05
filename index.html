@@ -622,7 +622,7 @@
   .pl-tbl td .pl-disc.soon { color: rgb(var(--c)); font-weight: 600; }
   .pl-ph { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
   .pl-ps { font-size: 11px; font-weight: 650; color: var(--muted-2); white-space: nowrap; }
-  .pl-ps.ok { color: #6ee7b7; } .pl-ps.near { color: #fde047; }
+  .pl-ps.ok { color: #6ee7b7; } .pl-ps.near { color: #fde047; } .pl-ps.deep { color: var(--gold); font-weight: 750; }
   .pl-pr { display: flex; justify-content: space-between; font-size: 11.5px; line-height: 1.2; }
   .pl-pr em { font-style: normal; color: var(--muted-2); margin-right: 4px; font-size: 10.5px; }
   .pl-pr b { font-weight: 650; }
@@ -3263,7 +3263,7 @@ function poolCalc(k) {
   /* 长线定区间:合理价取「分红 ÷ 近 5 年股息率中位数」和「每股收益(银行保险用净资产)× 近 5 年估值中位数」中较低的,且不超过近一年最高价;
      便宜价取「分红 ÷ 70% 分位股息率(或自定目标)」和「× 估值 30% 分位」中较低的。分红涨得快的公司历史股息率偏低,只用股息率会把价格算得离谱;
      短线定买点:第一笔取「近 4 周低点」和「现价回调半个月度波动」中较低的,再夹在 [便宜价, 合理价] 之间,
-     所以价格在合理区间时,第一笔就在一个月内正常波动能碰到的位置;第二笔 = 便宜价与第一笔再回调一个月度波动中较低的 */
+     所以价格在合理区间时,第一笔就在一个月内正常波动能碰到的位置;第二笔见下 */
   const ty = o.y70;
   if (ty && o.dps > 0 && o.y50) {
     o.ty = ty;
@@ -3276,7 +3276,8 @@ function poolCalc(k) {
     o.L = Math.min(o.Ly, o.Lv ?? Infinity, o.F * (1 - o.sm));
     const sup = Math.min(o.low4 ?? q.price, q.price * (1 - o.sm / 2));
     o.b1 = Math.min(o.F, Math.max(o.L, sup));
-    o.b2 = Math.min(o.L, o.b1 * (1 - o.sm));
+    /* 第二笔:估值 30% 分位和绝对锚中较低者,不用股息率 70% 分位(重估类股票会算得离谱)。回测:12 个月内触达 43% → 21%,触达后持有一年 15.3% → 19.0%,亏损 25% → 19% */
+    o.b2 = o.drift && o.Fa ? Math.min(o.Fa, o.b1 * (1 - o.sm)) : Math.min(o.Lv ?? Infinity, o.Fa ?? (o.Lv ? Infinity : o.L), o.b1 * (1 - o.sm));
     o.gap = q.price / o.b1 - 1;
     /* 要跌 30% 以上才回到合理价:回测里 12 个月内到价的约 8%,当时按市价买入持有一年平均只有约 3% */
     o.far = q.price / o.F - 1 > .43;
@@ -3354,7 +3355,7 @@ function poolAct(o) {
   if (!o.cl?.c || o.sig.k === 'load') return A('wait', '数据加载中');
   if (o.cl.c === 'r') return A('no', o.cl.tag, '没过排雷,分红可能不可持续,先不考虑');
   if (o.qual && o.qual.s < 50) return A('wait', '公司质量偏弱 · 不适合长期收息');
-  if (o.sig.k === 'low') return A('wait', `股息率 ${pct(o.yld, 1)} 不到 4% · 收息性价比低`);
+  if (o.sig.k === 'low') return A('wait', o.y10 != null ? `利差 ${pct(o.yld - o.y10, 1)} 不到 1.5% · 股债利差不足` : `股息率 ${pct(o.yld, 1)} 不到 4% · 收息性价比低`, o.y10 != null && o.dps > 0 ? `股息率 ${pct(o.yld, 1)} − 10 年国债 ${pct(o.y10)};股价 ≤ ${(o.dps / (o.y10 + .015)).toFixed(2)} 时利差才到 1.5%` : '');
   if (o.sig.k === 'short') return A('wait', '历史不足 · 规律还不可靠', d);
   if (o.t === 'cyc') return A('wait', '周期股 · 等景气确认');
   if (o.sig.k === 'hot') return A('wait', '近 4 周涨太快 · 等回踩', d);
@@ -3365,7 +3366,7 @@ function poolAct(o) {
   if (o.sig.k === 'high') return A('wait', `综合位置${POOL_LV[o.lv][1]} · 等回落`, d);
   if (o.sig.k === 'fall') return A('near', '价格已到 · 等止跌', d);
   if (o.qual && o.qual.s < 65) return A('wait', '价格已到 · 公司质量一般,只观察');
-  return A('buy', o.sig.k === 'buy2' ? '进入便宜区间 · 可分批加仓' : '价格已到 · 可分批建仓', d);
+  return A('buy', o.sig.k === 'buy2' ? '跌破第二笔 · 可加仓' : '价格已到 · 可分批建仓', d);
 }
 
 /* ---------- 分类引擎:排雷(一票否决)→ 公司质量 → 估值 / 利差 ---------- */
@@ -3545,7 +3546,7 @@ function renderPool() {
   const posCell = o => {
     if (o.lv == null) return '<td class="ct"><span class="sm">历史不足</span></td>';
     const g = o.b1 ? o.q.price / o.b1 - 1 : null;
-    const st = g == null ? '' : o.far ? `<span class="pl-ps">差 ${(g * 100).toFixed(0)}%<span class="lg"> · 很难到</span></span>` : g <= 0 ? '<span class="pl-ps ok">✓ 已到<span class="lg">买入价</span></span>' : g <= .05 ? `<span class="pl-ps near"><span class="lg">接近 · </span>差 ${(g * 100).toFixed(1)}%</span>` : `<span class="pl-ps"><span class="lg">还</span>差 ${(g * 100).toFixed(1)}%</span>`;
+    const st = g == null ? '' : o.far ? `<span class="pl-ps">差 ${(g * 100).toFixed(0)}%<span class="lg"> · 很难到</span></span>` : g <= 0 ? (o.act?.a === 'wait' || o.act?.a === 'no' ? '<span class="pl-ps">价格已到<span class="lg"> · 未满足买入条件</span></span>' : o.sig?.k === 'buy2' ? `<span class="pl-ps deep">✓ 跌破第二笔<span class="lg"> ¥${o.b2.toFixed(2)}</span></span>` : '<span class="pl-ps ok">✓ 已到<span class="lg">买入价</span></span>') : g <= .05 ? `<span class="pl-ps near"><span class="lg">接近 · </span>差 ${(g * 100).toFixed(1)}%</span>` : `<span class="pl-ps"><span class="lg">还</span>差 ${(g * 100).toFixed(1)}%</span>`;
     return `<td class="ct"><span class="pl-pos"><span class="pl-ph"><span class="pl-lv ${POOL_LV[o.lv][0]}" title="${esc(posTip(o))}">${POOL_LV[o.lv][1]}</span>${o.act ? `<span class="pl-evm ${o.act.a}">${ACT[o.act.a]}</span>` : ''}${st}</span><span class="pl-bar" title="${esc(posTip(o))}"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>
       ${o.b1 ? `<span class="pl-pr"><span><em>现价</em><b class="num">${px(o.q.price)}</b></span><span title="${esc(priceTip(o))}"><em>买入价</em><b class="num">${px(o.b1)}</b></span></span>` : ''}</span></td>`;
   };
@@ -3622,13 +3623,13 @@ function renderPool() {
       <p><b>第二层 · 公司质量</b>:低于 65 分只进一般观察。<b>第三层 · 估值</b>:金融 / 稳定 / 消费要估值不偏贵、股息率−国债利差分位 ≥20%;<b>其他</b>(港口、医药、传媒、机械等,分红来源要逐一核查)要估值到便宜区;<b>周期</b>默认一般观察,景气数据接入后才可能升级。</p>
       <p><b>估值</b>:把市盈率、市净率、股息率和这只股票自己的历史比(30% 市盈率分位 + 30% 市净率分位 + 40% 反向股息率分位,按全历史 20% / 近 10 年 50% / 近 5 年 30% 加权),综合分位 ≤40% 算便宜、40%–60% 适中、>60% 偏贵;财报约有 12 年,更早的市盈率、市净率不计入。<b>合理价</b> = 「分红 ÷ 近 5 年股息率中位数」和「估值中位数 × 每股收益或净资产」中较低者,但不低于绝对锚「分红 ÷ (10 年国债 + 3%)」—— 股息率已经比国债高 3 个百分点,就不再要求跌回历史低位(回测:12 个月内到价率 67% → 78%,到价后持有一年收益 13.4% → 13.8%)。<b>拥挤度</b> = 中证红利成交量占沪深两市比例的分位和它自身成交量分位的平均(20 日均值,近约 2.5 年),低于 40% 低温、高于 80% 高温。</p>
       <p><b>公司质量</b>(0–100,80 以上优秀、65 以上良好、50 以上一般)= 盈利能力 25(5 年加权平均 ROE、毛利率、净利率)+ 稳定性 20(ROE 波动、利润下滑次数、最新一期利润同比)+ 财务安全 20(资产负债率、流动比率;银行看不良率、拨备覆盖率)+ 现金含金量 15(经营现金流 / 利润)+ 分红质量 20(连续分红年数、分红增长、派息率是否在 30%–75%);5 年里越近的年份权重越大(最新一年 35%,往前 25%、18%、12%、10%);公用事业放宽负债要求,金融企业不看现金流,缺的项按其余满分折算;详情里低于该项一半分数的标红。</p>
-      <p><b>结论</b>:有风险 → 暂不考虑;公司质量偏弱、股息率不到 4%、周期股 → 等待;没到买入价时按差距和自身月度波动估时间(一个月波动以内「1 个月内可能到」,两个月以内「约 1–3 个月」,再远「要等明显回调」,是概率不是预测);现价比合理价高 43% 以上(要跌 30% 以上才到)→ 很难到(回测近 5 年、105 只,这种情况 12 个月内到价的约 8%,当时按市价买入持有一年平均约 3%);市盈率(金融股市净率)在近 5 年 95% 分位以上且 ROE 不低于近 5 年均值的 80% → 估值历史高位,最多给接近(回测这种状态下到价后持有一年平均约 6%、四成亏损,正常股票约 14%、三成);到了买入价但还在下跌 → 接近;公司质量一般 → 只观察;其余 → 可以买。</p>
+      <p><b>结论</b>:有风险 → 暂不考虑;公司质量偏弱、股息率比 10 年国债高不到 1.5 个百分点(回测与「股息率 ≥4%」表现相同,但能跟着利率变)、周期股 → 等待;没到买入价时按差距和自身月度波动估时间(一个月波动以内「1 个月内可能到」,两个月以内「约 1–3 个月」,再远「要等明显回调」,是概率不是预测);现价比合理价高 43% 以上(要跌 30% 以上才到)→ 很难到(回测近 5 年、105 只,这种情况 12 个月内到价的约 8%,当时按市价买入持有一年平均约 3%);市盈率(金融股市净率)在近 5 年 95% 分位以上且 ROE 不低于近 5 年均值的 80% → 估值历史高位,最多给接近(回测这种状态下到价后持有一年平均约 6%、四成亏损,正常股票约 14%、三成);到了买入价但还在下跌 → 接近;公司质量一般 → 只观察;其余 → 可以买(分批建仓)。<b>第二笔</b> = 估值 30% 分位、绝对锚、第一笔再回调一个月度波动三者最低,跌破 → 可以加仓(回测:12 个月内触达约 21%,触达后持有一年平均 19%、约两成亏损;旧算法触达 43%、15%、25%)。</p>
       <p>全部由公开数据按规则自动计算,只帮你缩小范围、管住手,不构成投资建议。</p></details>`;
   body.innerHTML = mac + log + `<div class="pl2${p.side ? '' : ' wide'}"><div class="pl-main">${tabs}${table}</div>${side}</div>` + rules;
 }
 
 /* 买入时机,只看价格(风险和公司质量在分类里已经判过),按顺序:
-   股息率 < 4% → 不适合收息;历史不足 3 年或连续分红不足 5 年 → 只观察;
+   股息率 − 10 年国债 < 1.5%(没有国债数据时用股息率 < 4%)→ 不适合收息;历史不足 3 年或连续分红不足 5 年 → 只观察;
    综合位置偏高 → 等回落;没到合理买入价 → 等待(差 5% 以内算接近);到了但还在下跌 → 等止跌;适中位置 → 接近;
    否则到合理买入价可建仓,再跌一个月度波动可加仓 */
 const SIG = {
@@ -3638,7 +3639,7 @@ const SIG = {
 function poolSignal(o) {
   const S2 = (k, t) => ({ k, n: SIG[k][0], s: SIG[k][1], t });
   if (o.lv == null || o.b1 == null) return S2('load', o.dps > 0 || !o.q ? '数据还没加载完' : '近 12 月没有分红');
-  if (o.yld < .04) return S2('low', `股息率 ${pct(o.yld)} 不到 4%,拿来收息性价比不高`);
+  if (o.y10 != null ? o.yld - o.y10 < .015 : o.yld < .04) return S2('low', o.y10 != null ? `股息率 ${pct(o.yld)} 只比 10 年国债 ${pct(o.y10)} 高 ${pct(o.yld - o.y10)},不到 1.5%,拿来收息性价比不高` : `股息率 ${pct(o.yld)} 不到 4%,拿来收息性价比不高`);
   if (o.yrs < 3 || o.cons < 5) return S2('short', '有效历史不足 3 年或连续分红不足 5 年,规律还不可靠');
   if (o.lv >= 3) return S2('high', `综合位置${POOL_LV[o.lv][1]},现在买等于追高,等回落`);
   const P = o.q.price, hotLine = Math.max(.08, o.sm * 1.5);
@@ -3649,7 +3650,7 @@ function poolSignal(o) {
     return S2(o.gap <= .03 ? 'near' : 'wait', t);
   }
   if (o.trend === 'fall') return S2('fall', '价格已到,但股价还在创近期新低、跌势没停,等连续几周不再创新低再买');
-  if (P <= o.b2 && (o.pp ?? 0) >= .5 && o.lv <= 1) return S2('buy2', '明显低于合理买入价,进入长线便宜区间,可以分批加仓');
+  if (P <= o.b2) return S2('buy2', `跌破第二笔买入价 ${o.b2.toFixed(2)},进入深度便宜区,可以加仓(回测这种位置买入持有一年平均约 19%,约两成亏损)`);
   return S2('buy1', P <= o.L ? '进入长线便宜区间,可以分批建仓' : '在长线合理区间、回踩到短线支撑,到了合理买入价,可以先小仓位买入');
 }
 const fp = v => (v * 100).toFixed(0) + '%';
@@ -3661,6 +3662,7 @@ const priceTip = o => [
   `【中线 · 近 1 年】区间 ${o.lo52?.toFixed(2)} ~ ${o.hi52?.toFixed(2)},距高点 ${sgn(o.dd, 0)}`,
   `【短线 · 近 1 个月】近 4 周低点 ${o.low4?.toFixed(2)},4 周涨跌 ${sgn(o.r4, 1)},一个月正常波动约 ±${fp(o.sm)}`,
   `合理买入价 ${o.b1.toFixed(2)}:短线支撑位(近 4 周低点 / 现价回调半个月度波动),夹在便宜价和合理价之间`,
+  o.drift && o.Fa ? `第二笔 ${o.b2.toFixed(2)}:因估值中枢漂移,第二笔底线采用绝对锚 ${o.Fa.toFixed(2)} 打底,不再参考历史分位(和第一笔再回调一个月度波动 ${(o.b1 * (1 - o.sm)).toFixed(2)} 取较低);回测漂移状态下触达后持有一年平均约 10%,结论最多到接近` : `第二笔 ${o.b2.toFixed(2)}:取较低者 —— ${o.Lv ? `${o.vName} 30% 分位 = ${o.Lv.toFixed(2)};` : ''}${o.Fa ? `绝对锚 ${o.Fa.toFixed(2)};` : ''}第一笔再回调一个月度波动 = ${(o.b1 * (1 - o.sm)).toFixed(2)}`,
   o.far ? '⚠ 现价比合理价高 43% 以上,回测里这种情况 12 个月内到价的约 8%' : '',
 ].filter(Boolean).join('\n');
 const posTip = o => [
