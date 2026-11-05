@@ -575,6 +575,9 @@
   .pl-tab b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
   .pl-tab em { font-style: normal; font-size: 12px; font-weight: 700; color: #fbbf24; font-variant-numeric: tabular-nums; }
   .pl-ttl .pl-star { width: auto; margin: 0 2px 0 4px; }
+  #hTable tr.h-lot td { background: rgba(255,255,255,.025); font-size: 12.5px; color: var(--muted); padding-top: 7px; padding-bottom: 7px; }
+  #hTable tr.h-lot td:first-child { padding-left: 28px; }
+  #hTable .h-lots { padding: 0 2px; font-size: inherit; }
   .pl-conc { margin: 10px 2px 0; font-size: 11px; line-height: 1.7; color: var(--muted); opacity: .8; }
   .pl-conc b { color: var(--text); font-weight: 500; }
   .pl-fb { color: #fbbf24; font-weight: 600; margin-right: 6px; }
@@ -1042,6 +1045,7 @@
 
     /* 持仓表格 → 卡片 */
     #hTable { margin: 0; overflow: visible; }
+    #hTable tr.h-lot { margin: -6px 0 10px 16px; padding: 10px 12px; background: var(--card-2); }
     #hTable table, #hTable tbody { display: block; }
     #hTable thead { display: none; }
     #hTable tr { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 10px; padding: 12px; margin-bottom: 10px; border-radius: 14px; background: var(--card); border: 1px solid var(--border-soft); }
@@ -1485,6 +1489,17 @@ function viewOf(h) {
     yMv: price > 0 ? ttm / (price * rate) : NaN, yCost: h.cost > 0 ? ttm / (h.cost * rate) : NaN,
   };
 }
+/* 同一只股票分多笔买入时每笔单独存(建仓日决定红利税和能否参与除权),展示时合并 */
+function groupRows(rows, byAcc) {
+  const m = new Map();
+  for (const r of rows) { const k = (byAcc ? r.h.acc + '|' : '') + r.k; if (!m.has(k)) m.set(k, []); m.get(k).push(r); }
+  return [...m.entries()].map(([gk, ls]) => {
+    ls.sort((a, b) => (a.h.buy || '').localeCompare(b.h.buy || ''));
+    const r0 = ls[0], sum = f => ls.reduce((a, x) => a + f(x), 0), shares = sum(x => x.h.shares), mv = sum(x => x.mv), cv = sum(x => x.cv);
+    const cost = shares ? sum(x => x.h.cost * x.h.shares) / shares : 0, rate = fx(MK[r0.h.mk].cur);
+    return { ...r0, gk, lots: ls, shares, mv, cv, pnl: mv - cv, cost, annual: sum(x => x.annual), yCost: cost > 0 ? r0.ttm / (cost * rate) : NaN };
+  });
+}
 function summary() {
   const rows = scope().map(viewOf);
   const evs = rows.flatMap(r => r.evs.map(e => ({ ...e, name: r.name })));
@@ -1499,6 +1514,7 @@ function summary() {
     yearComing: sum(coming.filter(e => (e.pay || '').startsWith(YEAR)), e => e.amt),
     totalPaid: sum(paid, e => e.amt),
   };
+  s.groups = groupRows(rows, true); s.nStock = groupRows(rows, false).length;
   s.pnl = s.mv - s.cv;
   s.yMv = s.mv ? s.annual / s.mv : NaN;
   s.yCost = s.cv ? s.annual / s.cv : NaN;
@@ -1563,9 +1579,9 @@ function renderOverview(s) {
   s.paid.forEach(e => { if ((e.pay || '').startsWith(YEAR)) months[+e.pay.slice(5, 7) - 1].a += e.amt; });
   s.coming.forEach(e => { if ((e.pay || '').startsWith(YEAR)) months[+e.pay.slice(5, 7) - 1].b += e.amt; });
   const upcoming = [...s.coming, ...s.plans].slice(0, 7);
-  const contrib = [...s.rows].sort((a, b) => b.annual - a.annual);
+  const contrib = groupRows(s.rows, false).sort((a, b) => b.annual - a.annual);
   const cmax = Math.max(1e-9, ...contrib.map(r => r.annual));
-  el.innerHTML = head('overview', '收息总览', `${S.acc === 'all' ? '全部账户' : esc(accName(S.acc))} · ${s.rows.length} 只持仓 · ${tax}口径`,
+  el.innerHTML = head('overview', '收息总览', `${S.acc === 'all' ? '全部账户' : esc(accName(S.acc))} · ${s.nStock} 只持仓 · ${tax}口径`,
     `<button class="run sm" data-add="auto">+ 添加持仓</button><button class="run sm ghost" data-add="shot">截图导入</button>`) + demoBanner() + `
     <div class="hero ov-hero">
       <div class="hs">
@@ -1591,7 +1607,7 @@ function renderOverview(s) {
           <div><span>持仓市值</span><b class="num">${money(s.mv, 0)}</b></div>
           <div><span>持仓成本</span><b class="num">${money(s.cv, 0)}</b></div>
           <div><span>浮动盈亏</span><b class="num ${s.pnl >= 0 ? 'up' : 'down'}">${s.pnl >= 0 ? '+' : ''}${fmt(s.pnl, 0)}<small style="font-weight:500;margin-left:4px">${s.cv ? (s.pnl >= 0 ? '+' : '') + (s.pnl / s.cv * 100).toFixed(1) + '%' : ''}</small></b></div>
-          <div><span>持仓</span><b>${s.rows.length} 只 · ${new Set(s.rows.map(r => r.h.mk)).size} 个市场</b></div>
+          <div><span>持仓</span><b>${s.nStock} 只 · ${new Set(s.rows.map(r => r.h.mk)).size} 个市场</b></div>
         </div>
       </div>
     </div>
@@ -1698,12 +1714,15 @@ function buildHoldings() {
     if (b.dataset.act === 'view') { S.acc = a.id; save(); renderAll(); }
   };
   $('#hTable').onclick = async e => {
+    const g = e.target.closest('[data-g]');
+    if (g) { hLotsOpen.has(g.dataset.g) ? hLotsOpen.delete(g.dataset.g) : hLotsOpen.add(g.dataset.g); return renderHoldings(summary()); }
     const b = e.target.closest('[data-h]'); if (!b) return;
     const h = S.holdings.find(x => x.id === b.dataset.h);
-    if (b.dataset.act === 'del' && await xbAsk({ title: '删除持仓', msg: `确定删除「${h.name || h.code}」?`, ok: '删除', danger: true, host: $('#holdings') })) {
+    if (b.dataset.act === 'del' && await xbAsk({ title: '删除持仓', msg: S.holdings.filter(x => x.acc === h.acc && hkey(x) === hkey(h)).length > 1 ? `确定删除「${h.name || h.code}」${h.buy || ''} 建仓的这一笔(${fmt(h.shares, 0)} 股)?` : `确定删除「${h.name || h.code}」?`, ok: '删除', danger: true, host: $('#holdings') })) {
       S.holdings = S.holdings.filter(x => x !== h); save(); renderAll(); toast(`已删除 ${h.name || h.code}`);
     }
     if (b.dataset.act === 'edit') editHolding(h);
+    if (b.dataset.act === 'addlot') addLot(h);
     if (b.dataset.act === 'profile') openProfile(h.mk, h.code);
   };
   $('#bulkGo').onclick = bulkImport;
@@ -2118,7 +2137,23 @@ async function importShot() {
   syncShotFoot('正在导入…');
   let add = 0, upd = 0;
   for (const r of rows) {
-    const ex = over && S.holdings.find(h => h.acc === acc && h.mk === r.mk && h.code === r.code && !h.demo);
+    const exs = over ? S.holdings.filter(h => h.acc === acc && h.mk === r.mk && h.code === r.code && !h.demo).sort((a, b) => (a.buy || '').localeCompare(b.buy || '')) : [];
+    const ex = exs.length === 1 && exs[0];
+    if (exs.length > 1) {
+      const tot = exs.reduce((a, h) => a + h.shares, 0), nm = r.q.name || r.code, d = r.shares - tot;
+      if (!d) continue;
+      if (d > 0) {
+        if (!await xbAsk({ title: '同一只股票有多笔', msg: `${nm} 已有 ${exs.length} 笔共 ${fmt(tot, 0)} 股,截图是 ${fmt(r.shares, 0)} 股。把多出的 ${fmt(d, 0)} 股记成新的一笔(建仓日 ${r.buy || TODAY})?原来各笔不动,红利税照旧按各笔持有时间算。`, ok: '记成新的一笔', cancel: '跳过这只', host: $('#holdings') })) continue;
+        const c = r.cost > 0 ? (r.cost * r.shares - exs.reduce((a, h) => a + h.cost * h.shares, 0)) / d : 0;
+        S.holdings.push({ id: uid(), acc, mk: r.mk, code: r.code, name: r.q.name, shares: d, cost: c > 0 ? c : r.q.price, buy: r.buy || TODAY }); add++;
+      } else {
+        if (!await xbAsk({ title: '同一只股票有多笔', msg: `${nm} 已有 ${exs.length} 笔共 ${fmt(tot, 0)} 股,截图只有 ${fmt(r.shares, 0)} 股。按「先买先卖」从最早的笔里扣掉 ${fmt(-d, 0)} 股(和 A 股红利税的计算规则一致),剩下各笔的成本和建仓日不变?`, ok: '按先买先卖扣减', cancel: '跳过这只', host: $('#holdings') })) continue;
+        let left = -d;
+        for (const h of exs) { const t = Math.min(left, h.shares); h.shares -= t; left -= t; if (!left) break; }
+        S.holdings = S.holdings.filter(h => !(exs.includes(h) && h.shares <= 0)); upd++;
+      }
+      continue;
+    }
     if (ex) { ex.shares = r.shares; ex.cost = r.cost || ex.cost; if (r.buy) ex.buy = r.buy; upd++; }
     else { S.holdings.push({ id: uid(), acc, mk: r.mk, code: r.code, name: r.q.name, shares: r.shares, cost: r.cost || r.q.price, buy: r.buy || TODAY }); add++; }
   }
@@ -2154,6 +2189,18 @@ function editHolding(h) {
   setStatus($('#hfStatus'), '');
   $('#addMode').hidden = true; setAddMode('one');
   if (!$('#dlgAdd').open) $('#dlgAdd').showModal();
+}
+function addLot(h) {
+  resetForm(); setFormMk(h.mk);
+  pick = { mk: h.mk, code: h.code, name: h.name };
+  $('#hfCode').value = h.code; $('#hfCode').disabled = true; $('#hfAcc').value = h.acc;
+  $$('#hfMk .seg-btn').forEach(b => b.disabled = b.dataset.mk !== h.mk);
+  const have = S.holdings.filter(x => x.acc === h.acc && hkey(x) === hkey(h));
+  $('#hfTitle').textContent = '加一笔 · ' + (h.name || h.code); $('#hfSave').textContent = '添加这一笔';
+  $('#hfPeek').innerHTML = `<span class="pk-ok">✓ 已有 ${have.length} 笔共 ${fmt(have.reduce((a, x) => a + x.shares, 0), 0)} 股;这一笔单独记建仓日,红利税按每笔持有时间分别算</span>`;
+  $('#addMode').hidden = true; setAddMode('one');
+  if (!$('#dlgAdd').open) $('#dlgAdd').showModal();
+  $('#hfShares').focus();
 }
 async function ensureData(mk, code) {
   const k = mk + ':' + code;
@@ -2218,32 +2265,48 @@ async function bulkImport() {
   $('#bulkTxt').value = ''; setStatus(st, ''); $('#dlgAdd').close(); rememberMode('bulk');
   toast(`成功导入 ${ok} 只持仓`);
 }
+const hLotsOpen = new Set();
 function renderHoldings(s) {
   if (!$('#hfSave')) buildHoldings();
   $('#hDemo').innerHTML = demoBanner();
   fillAccSel('#hfAcc'); fillAccSel('#bulkAcc');
   $('#accList').innerHTML = S.accounts.map(a => {
     const hs = S.holdings.filter(h => h.acc === a.id), an = hs.map(viewOf).reduce((x, r) => x + r.annual, 0);
-    return `<div class="li"><div class="mid"><b>${esc(a.name)}</b> ${S.acc === a.id ? '<span class="badge on">当前查看</span>' : ''}<div>${hs.length} 只持仓 · 预计年息 ${money(an)}</div></div>
+    return `<div class="li"><div class="mid"><b>${esc(a.name)}</b> ${S.acc === a.id ? '<span class="badge on">当前查看</span>' : ''}<div>${new Set(hs.map(hkey)).size} 只持仓 · 预计年息 ${money(an)}</div></div>
       <div><button class="link-btn" data-acc="${a.id}" data-act="view">查看</button><button class="link-btn" data-acc="${a.id}" data-act="rename">重命名</button><button class="link-btn del" data-acc="${a.id}" data-act="del">删除</button></div></div>`;
   }).join('');
-  $('#hSum').textContent = s.rows.length ? `${s.rows.length} 只 · 市值 ${money(s.mv, 0)} · 预计年息 ${money(s.annual)}` : '';
+  $('#hSum').textContent = s.rows.length ? `${s.groups.length} 只${s.groups.length < s.rows.length ? `(${s.rows.length} 笔)` : ''} · 市值 ${money(s.mv, 0)} · 预计年息 ${money(s.annual)}` : '';
   if (!s.rows.length) { $('#hTable').innerHTML = '<div class="empty"><b>当前账户还没有持仓</b>点上方「添加持仓 / 截图导入 / 批量导入」录入持仓</div>'; return; }
-  const rows = [...s.rows].sort((a, b) => b.mv - a.mv);
+  const rows = [...s.groups].sort((a, b) => b.mv - a.mv);
+  /* A 股红利税按每笔持有时间:满 1 年免税,1 个月–1 年 10%,1 个月内 20% */
+  const taxTxt = h => { if (h.mk !== 'A' || !h.buy) return ''; const d = daysBetween(h.buy, TODAY);
+    return d > 365 ? ' · 红利税免' : ` · 红利税 ${d > 30 ? 10 : 20}%,${366 - d} 天后免`; };
+  const pnlTd = r => `<td data-l="盈亏" class="${r.pnl >= 0 ? 'up' : 'down'}">${r.pnl >= 0 ? '+' : ''}${fmt(r.pnl, 0)}<span class="sm">${r.cv ? (r.pnl / r.cv * 100).toFixed(2) + '%' : ''}</span></td>`;
   $('#hTable').innerHTML = `<table><thead><tr><th>名称</th><th>持股</th><th>现价 / 成本</th><th>市值</th><th>盈亏</th><th>近12月每股派息</th><th>股息率 市值 / 成本</th><th>预计年息</th><th></th></tr></thead><tbody>
     ${rows.map(r => {
-      const cs = CUR_SIGN[MK[r.h.mk].cur], chg = r.q.chg;
-      return `<tr>
-        <td><div class="nm">${tag(r.h.mk)}${esc(r.name)}</div><div class="cd">${r.h.code}${S.acc === 'all' ? ' · ' + esc(accName(r.h.acc)) : ''}${r.h.buy ? ' · ' + r.h.buy + ' 建仓' : ''}</div></td>
-        <td data-l="持股">${fmt(r.h.shares, 0)}</td>
-        <td data-l="现价 / 成本"><b>${cs}${fmt(r.price, r.price < 10 ? 3 : 2)}</b>${isFinite(chg) ? ` <small class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '+' : ''}${(chg * 100).toFixed(2)}%</small>` : ''}<span class="sm">${cs}${fmt(r.h.cost, 3)}</span></td>
+      const cs = CUR_SIGN[MK[r.h.mk].cur], chg = r.q.chg, n = r.lots.length, open = n > 1 && hLotsOpen.has(r.gk);
+      const main = `<tr${open ? ' class="h-grp open"' : ''}>
+        <td><div class="nm">${tag(r.h.mk)}${esc(r.name)}</div><div class="cd">${r.h.code}${S.acc === 'all' ? ' · ' + esc(accName(r.h.acc)) : ''}${n > 1 ? ` · <button class="link-btn h-lots" data-g="${esc(r.gk)}">${n} 笔 ${open ? '▴' : '▾'}</button>` : r.h.buy ? ' · ' + r.h.buy + ' 建仓' : ''} · <button class="link-btn h-lots" data-h="${r.h.id}" data-act="addlot" title="同一只股票不同时间买入,分笔记录,红利税按每笔持有时间算">+ 加一笔</button></div></td>
+        <td data-l="持股">${fmt(r.shares, 0)}</td>
+        <td data-l="现价 / 成本"><b>${cs}${fmt(r.price, r.price < 10 ? 3 : 2)}</b>${isFinite(chg) ? ` <small class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '+' : ''}${(chg * 100).toFixed(2)}%</small>` : ''}<span class="sm">${n > 1 ? '均价 ' : ''}${cs}${fmt(r.cost, 3)}</span></td>
         <td data-l="市值">${money(r.mv, 0)}</td>
-        <td data-l="盈亏" class="${r.pnl >= 0 ? 'up' : 'down'}">${r.pnl >= 0 ? '+' : ''}${fmt(r.pnl, 0)}<span class="sm">${r.cv ? (r.pnl / r.cv * 100).toFixed(2) + '%' : ''}</span></td>
+        ${pnlTd(r)}
         <td data-l="近12月每股派息">${r.loaded ? '¥' + r.ttm.toFixed(4) : '<span class="sm">加载中</span>'}</td>
         <td data-l="股息率 市值 / 成本"><b>${pct(r.yMv)}</b><span class="sm">${pct(r.yCost)}</span></td>
         <td data-l="预计年息" class="gold" style="--c:250,204,21"><b>${money(r.annual)}</b></td>
-        <td><button class="link-btn" data-h="${r.h.id}" data-act="profile">档案</button><button class="link-btn" data-h="${r.h.id}" data-act="edit">编辑</button><button class="link-btn del" data-h="${r.h.id}" data-act="del">删除</button></td>
+        <td><button class="link-btn" data-h="${r.h.id}" data-act="profile">档案</button>${n > 1 ? '' : `<button class="link-btn" data-h="${r.h.id}" data-act="edit">编辑</button><button class="link-btn del" data-h="${r.h.id}" data-act="del">删除</button>`}</td>
       </tr>`;
+      return main + (open ? r.lots.map((x, i) => `<tr class="h-lot">
+        <td><div class="cd">第 ${i + 1} 笔 · ${x.h.buy || '—'} 建仓${taxTxt(x.h)}</div></td>
+        <td data-l="持股">${fmt(x.h.shares, 0)}</td>
+        <td data-l="成本"><span class="sm">${cs}${fmt(x.h.cost, 3)}</span></td>
+        <td data-l="市值">${money(x.mv, 0)}</td>
+        ${pnlTd(x)}
+        <td></td>
+        <td data-l="成本股息率"><span class="sm">${pct(x.yCost)}</span></td>
+        <td data-l="预计年息" class="gold" style="--c:250,204,21">${money(x.annual)}</td>
+        <td><button class="link-btn" data-h="${x.h.id}" data-act="edit">编辑</button><button class="link-btn del" data-h="${x.h.id}" data-act="del">删除</button></td>
+      </tr>`).join('') : '');
     }).join('')}</tbody></table>`;
 }
 
