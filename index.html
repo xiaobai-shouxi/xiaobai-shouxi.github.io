@@ -577,7 +577,15 @@
   .pl-ttl .pl-star { width: auto; margin: 0 2px 0 4px; }
   #hTable tr.h-lot td { background: rgba(255,255,255,.025); font-size: 12.5px; color: var(--muted); padding-top: 7px; padding-bottom: 7px; }
   #hTable tr.h-lot td:first-child { padding-left: 28px; }
-  #hTable .h-lots { padding: 0 2px; font-size: inherit; }
+  #hTable tr.h-grp { cursor: pointer; }
+  #hTable .h-ops { white-space: nowrap; text-align: right; }
+  .h-chip, .h-more { font: inherit; font-size: 12px; color: var(--muted); background: var(--card-2); border: 1px solid var(--border-soft); border-radius: 8px; height: 26px; padding: 0 9px; cursor: pointer; vertical-align: middle; }
+  .h-chip:hover, .h-more:hover, .h-chip.on { color: var(--text); border-color: rgba(96,165,250,.5); }
+  .h-more { width: 30px; padding: 0; margin-left: 6px; font-size: 15px; line-height: 1; letter-spacing: 1px; }
+  .h-menu { position: fixed; z-index: 1000; min-width: 168px; padding: 5px; border-radius: 12px; background: var(--card); border: 1px solid var(--border-soft); box-shadow: 0 12px 32px rgba(0,0,0,.45); }
+  .h-menu button { display: block; width: 100%; text-align: left; font: inherit; font-size: 13px; color: var(--text); background: none; border: 0; border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+  .h-menu button:hover { background: var(--card-2); }
+  .h-menu button.del { color: #f87171; }
   .pl-conc { margin: 10px 2px 0; font-size: 11px; line-height: 1.7; color: var(--muted); opacity: .8; }
   .pl-conc b { color: var(--text); font-weight: 500; }
   .pl-fb { color: #fbbf24; font-weight: 600; margin-right: 6px; }
@@ -1713,17 +1721,32 @@ function buildHoldings() {
     }
     if (b.dataset.act === 'view') { S.acc = a.id; save(); renderAll(); }
   };
-  $('#hTable').onclick = async e => {
-    const g = e.target.closest('[data-g]');
-    if (g) { hLotsOpen.has(g.dataset.g) ? hLotsOpen.delete(g.dataset.g) : hLotsOpen.add(g.dataset.g); return renderHoldings(summary()); }
-    const b = e.target.closest('[data-h]'); if (!b) return;
-    const h = S.holdings.find(x => x.id === b.dataset.h);
-    if (b.dataset.act === 'del' && await xbAsk({ title: '删除持仓', msg: S.holdings.filter(x => x.acc === h.acc && hkey(x) === hkey(h)).length > 1 ? `确定删除「${h.name || h.code}」${h.buy || ''} 建仓的这一笔(${fmt(h.shares, 0)} 股)?` : `确定删除「${h.name || h.code}」?`, ok: '删除', danger: true, host: $('#holdings') })) {
+  const hAct = async (act, h) => {
+    if (act === 'del' && await xbAsk({ title: '删除持仓', msg: S.holdings.filter(x => x.acc === h.acc && hkey(x) === hkey(h)).length > 1 ? `确定删除「${h.name || h.code}」${h.buy || ''} 建仓的这一笔(${fmt(h.shares, 0)} 股)?` : `确定删除「${h.name || h.code}」?`, ok: '删除', danger: true, host: $('#holdings') })) {
       S.holdings = S.holdings.filter(x => x !== h); save(); renderAll(); toast(`已删除 ${h.name || h.code}`);
     }
-    if (b.dataset.act === 'edit') editHolding(h);
-    if (b.dataset.act === 'addlot') addLot(h);
-    if (b.dataset.act === 'profile') openProfile(h.mk, h.code);
+    if (act === 'edit') editHolding(h);
+    if (act === 'addlot') addLot(h);
+    if (act === 'profile') openProfile(h.mk, h.code);
+  };
+  const closeMenu = () => $('#hMenu')?.remove();
+  document.addEventListener('click', e => { if (!e.target.closest('#hMenu,[data-menu]')) closeMenu(); });
+  window.addEventListener('scroll', closeMenu, true);
+  $('#hTable').onclick = e => {
+    const m = e.target.closest('[data-menu]');
+    if (m) {
+      const open = $('#hMenu')?.dataset.for === m.dataset.menu; closeMenu(); if (open) return;
+      const h = S.holdings.find(x => x.id === m.dataset.menu), k = m.dataset.kind;
+      const items = k === 'lot' ? [['edit', '编辑这一笔'], ['del', '删除这一笔']] : [['profile', '分红档案'], ['addlot', '加一笔(不同时间买入)'], ...(k === 'one' ? [['edit', '编辑'], ['del', '删除']] : [])];
+      const d = document.createElement('div'); d.id = 'hMenu'; d.className = 'h-menu'; d.dataset.for = h.id;
+      d.innerHTML = items.map(([a, t]) => `<button type="button" class="${a === 'del' ? 'del' : ''}" data-a="${a}">${t}</button>`).join('');
+      document.body.appendChild(d);
+      const r = m.getBoundingClientRect(); d.style.top = Math.min(r.bottom + 4, innerHeight - d.offsetHeight - 8) + 'px'; d.style.left = Math.max(8, r.right - d.offsetWidth) + 'px';
+      d.onclick = ev => { const b = ev.target.closest('[data-a]'); if (b) { closeMenu(); hAct(b.dataset.a, h); } };
+      return;
+    }
+    const g = e.target.closest('[data-g]');
+    if (g) { hLotsOpen.has(g.dataset.g) ? hLotsOpen.delete(g.dataset.g) : hLotsOpen.add(g.dataset.g); return renderHoldings(summary()); }
   };
   $('#bulkGo').onclick = bulkImport;
   initShot();
@@ -2285,8 +2308,8 @@ function renderHoldings(s) {
   $('#hTable').innerHTML = `<table><thead><tr><th>名称</th><th>持股</th><th>现价 / 成本</th><th>市值</th><th>盈亏</th><th>近12月每股派息</th><th>股息率 市值 / 成本</th><th>预计年息</th><th></th></tr></thead><tbody>
     ${rows.map(r => {
       const cs = CUR_SIGN[MK[r.h.mk].cur], chg = r.q.chg, n = r.lots.length, open = n > 1 && hLotsOpen.has(r.gk);
-      const main = `<tr${open ? ' class="h-grp open"' : ''}>
-        <td><div class="nm">${tag(r.h.mk)}${esc(r.name)}</div><div class="cd">${r.h.code}${S.acc === 'all' ? ' · ' + esc(accName(r.h.acc)) : ''}${n > 1 ? ` · <button class="link-btn h-lots" data-g="${esc(r.gk)}">${n} 笔 ${open ? '▴' : '▾'}</button>` : r.h.buy ? ' · ' + r.h.buy + ' 建仓' : ''} · <button class="link-btn h-lots" data-h="${r.h.id}" data-act="addlot" title="同一只股票不同时间买入,分笔记录,红利税按每笔持有时间算">+ 加一笔</button></div></td>
+      const main = `<tr${n > 1 ? ` class="h-grp${open ? ' open' : ''}" data-g="${esc(r.gk)}" title="点一下${open ? '收起' : '展开'}各笔"` : ''}>
+        <td><div class="nm">${tag(r.h.mk)}${esc(r.name)}</div><div class="cd">${r.h.code}${S.acc === 'all' ? ' · ' + esc(accName(r.h.acc)) : ''}${n > 1 ? ` · 分 ${n} 笔买入` : r.h.buy ? ' · ' + r.h.buy + ' 建仓' : ''}</div></td>
         <td data-l="持股">${fmt(r.shares, 0)}</td>
         <td data-l="现价 / 成本"><b>${cs}${fmt(r.price, r.price < 10 ? 3 : 2)}</b>${isFinite(chg) ? ` <small class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '+' : ''}${(chg * 100).toFixed(2)}%</small>` : ''}<span class="sm">${n > 1 ? '均价 ' : ''}${cs}${fmt(r.cost, 3)}</span></td>
         <td data-l="市值">${money(r.mv, 0)}</td>
@@ -2294,7 +2317,7 @@ function renderHoldings(s) {
         <td data-l="近12月每股派息">${r.loaded ? '¥' + r.ttm.toFixed(4) : '<span class="sm">加载中</span>'}</td>
         <td data-l="股息率 市值 / 成本"><b>${pct(r.yMv)}</b><span class="sm">${pct(r.yCost)}</span></td>
         <td data-l="预计年息" class="gold" style="--c:250,204,21"><b>${money(r.annual)}</b></td>
-        <td><button class="link-btn" data-h="${r.h.id}" data-act="profile">档案</button>${n > 1 ? '' : `<button class="link-btn" data-h="${r.h.id}" data-act="edit">编辑</button><button class="link-btn del" data-h="${r.h.id}" data-act="del">删除</button>`}</td>
+        <td class="h-ops">${n > 1 ? `<button class="h-chip${open ? ' on' : ''}" data-g="${esc(r.gk)}">${n} 笔 ${open ? '▴' : '▾'}</button>` : ''}<button class="h-more" data-menu="${r.h.id}" data-kind="${n > 1 ? 'grp' : 'one'}" title="档案 / 加一笔${n > 1 ? '' : ' / 编辑 / 删除'}">⋯</button></td>
       </tr>`;
       return main + (open ? r.lots.map((x, i) => `<tr class="h-lot">
         <td><div class="cd">第 ${i + 1} 笔 · ${x.h.buy || '—'} 建仓${taxTxt(x.h)}</div></td>
@@ -2305,7 +2328,7 @@ function renderHoldings(s) {
         <td></td>
         <td data-l="成本股息率"><span class="sm">${pct(x.yCost)}</span></td>
         <td data-l="预计年息" class="gold" style="--c:250,204,21">${money(x.annual)}</td>
-        <td><button class="link-btn" data-h="${x.h.id}" data-act="edit">编辑</button><button class="link-btn del" data-h="${x.h.id}" data-act="del">删除</button></td>
+        <td class="h-ops"><button class="h-more" data-menu="${x.h.id}" data-kind="lot" title="编辑 / 删除这一笔">⋯</button></td>
       </tr>`).join('') : '');
     }).join('')}</tbody></table>`;
 }
