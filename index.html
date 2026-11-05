@@ -1500,8 +1500,17 @@ function viewOf(h) {
     evs.push({ ...ev, st, h, id: evId(h, ev), amt: ev.ps * fx(ev.cur) * h.shares * taxF(h, ev.pay || TODAY) });
   }
   const annual = ttm * h.shares * taxF(h, addDays(TODAY, 366));
+  /* 今年应得:年初前建仓按全年估算;年内建仓按去年同期(建仓日之后)的除息推算,与已公告的取大 */
+  const y0 = YEAR + '-01-01', start = h.buy && h.buy > y0 ? h.buy : y0;
+  let yr = annual;
+  if (start > y0) {
+    const a = addDays(start, -365), b = (YEAR - 1) + '-12-31';
+    const est = list.filter(ev => ev.ex && ev.ex >= a && ev.ex <= b).reduce((x, ev) => x + ev.ps * fx(ev.cur) * h.shares * taxF(h, addDays(ev.pay || ev.ex, 365)), 0);
+    const real = evs.filter(e => (e.pay || e.ex || '').startsWith(YEAR)).reduce((x, e) => x + e.amt, 0);
+    yr = Math.max(est, real);
+  }
   return {
-    h, q, k, price, mv, cv, pnl: mv - cv, ttm, annual, evs, loaded: !!C.divs[k],
+    h, q, k, price, mv, cv, pnl: mv - cv, ttm, annual, yr, start, evs, loaded: !!C.divs[k],
     name: h.name || q.name || h.code,
     yMv: price > 0 ? ttm / (price * rate) : NaN, yCost: h.cost > 0 ? ttm / (h.cost * rate) : NaN,
   };
@@ -1555,6 +1564,8 @@ function summary() {
     yearPaid: sum(paid.filter(e => (e.pay || '').startsWith(YEAR)), e => e.amt),
     yearComing: sum(coming.filter(e => (e.pay || '').startsWith(YEAR)), e => e.amt),
     totalPaid: sum(paid, e => e.amt),
+    yearExp: sum(rows, r => r.yr),
+    start: rows.length ? rows.reduce((m, r) => r.start < m ? r.start : m, rows[0].start) : YEAR + '-01-01',
   };
   s.groups = groupRows(rows, true); s.nStock = groupRows(rows, false).length;
   s.pnl = s.mv - s.cv;
@@ -1611,8 +1622,9 @@ function renderOverview(s) {
   }
   const next = s.coming[0], nextDays = next ? daysBetween(TODAY, next.pay) : 0;
   const comingN = s.coming.filter(e => (e.pay || '').startsWith(YEAR)).length;
-  const prog = s.annual ? Math.min(1, s.yearPaid / s.annual) : 0;
-  const timeProg = (daysBetween(YEAR + '-01-01', TODAY) + 1) / 365;
+  const prog = s.yearExp ? Math.min(1, s.yearPaid / s.yearExp) : 0;
+  const late = s.start > YEAR + '-01-01', yEnd = YEAR + '-12-31';
+  const timeProg = Math.min(1, (daysBetween(s.start, TODAY) + 1) / (daysBetween(s.start, yEnd) + 1));
   const md = TODAY.slice(5);
   const lastSame = s.paid.filter(e => (e.pay || '').startsWith(YEAR - 1) && e.pay.slice(5) <= md).reduce((a, e) => a + e.amt, 0);
   const vsLast = lastSame ? s.yearPaid / lastSame - 1 : null;
@@ -1627,13 +1639,13 @@ function renderOverview(s) {
     `<button class="run sm" data-add="auto">+ 添加持仓</button><button class="run sm ghost" data-add="shot">截图导入</button>`) + demoBanner() + `
     <div class="hero ov-hero">
       <div class="hs">
-        <div class="hero-label">预计年度股息 <span class="badge on">${tax}</span></div>
+        <div class="hero-label" title="按现在的持股数和过去 12 个月的每股分红,估算持有满一年能拿到多少;和建仓时间无关,不是 ${YEAR} 年的到账金额">预计年度股息 <span class="badge on">${tax}</span></div>
         <div class="hero-big num"><small>¥</small>${fmt(s.annual)}</div>
-        <div class="ov-line">月均 <b class="num">${money(s.annual / 12, 0)}</b> · 日均 <b class="num">${money(s.annual / 365)}</b></div>
+        <div class="ov-line">持有一年估算 · 月均 <b class="num">${money(s.annual / 12, 0)}</b> · 日均 <b class="num">${money(s.annual / 365)}</b></div>
         <div class="ov-prog">
-          <div class="ov-prog-top"><span>${YEAR} 已到账<b class="num">${money(s.yearPaid)}</b></span><span>完成 <b class="num" style="font-size:13px">${(prog * 100).toFixed(0)}%</b></span></div>
-          <div class="ov-track" title="白线为全年时间进度 ${(timeProg * 100).toFixed(0)}%"><i style="width:${prog * 100}%"></i><em style="left:${timeProg * 100}%"></em></div>
-          <div class="ov-prog-foot"><span>${vsLast === null ? '去年同期无记录' : `较去年同期 <b class="${vsLast >= 0 ? 'up' : 'down'}">${vsLast >= 0 ? '+' : ''}${(vsLast * 100).toFixed(1)}%</b>`}</span><span>时间进度 ${(timeProg * 100).toFixed(0)}%</span></div>
+          <div class="ov-prog-top"><span>${YEAR} 已到账<b class="num">${money(s.yearPaid)}</b></span><span>${s.yearExp ? `完成 <b class="num" style="font-size:13px">${(prog * 100).toFixed(0)}%</b>` : ''}</span></div>
+          <div class="ov-track" title="${late ? `从建仓日 ${s.start} 起算;今年应得按去年同期除息推算` : '白线为全年时间进度'} ${(timeProg * 100).toFixed(0)}%"><i style="width:${prog * 100}%"></i><em style="left:${timeProg * 100}%"></em></div>
+          <div class="ov-prog-foot"><span>${late ? `${s.start.slice(5).replace('-', '/')} 建仓 · 今年应得 ${s.yearExp ? '约 ' + money(s.yearExp, 0) : '¥0(年内无除息)'}` : vsLast === null ? '去年同期无记录' : `较去年同期 <b class="${vsLast >= 0 ? 'up' : 'down'}">${vsLast >= 0 ? '+' : ''}${(vsLast * 100).toFixed(1)}%</b>`}</span><span>${late ? '持有期' : '时间'}进度 ${(timeProg * 100).toFixed(0)}%</span></div>
         </div>
       </div>
       <div class="hs">
