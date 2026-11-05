@@ -578,6 +578,15 @@
   #hTable tr.h-lot td { background: rgba(255,255,255,.025); font-size: 12.5px; color: var(--muted); padding-top: 7px; padding-bottom: 7px; }
   #hTable tr.h-lot td:first-child { padding-left: 28px; }
   #hTable tr.h-grp { cursor: pointer; }
+  .h-adv { margin-bottom: 16px; padding: 14px 14px 8px; }
+  .h-ai { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 4px; border-top: 1px dashed var(--border-soft); font-size: 13px; }
+  .h-at { color: var(--text); }
+  .h-aw { color: var(--muted); font-size: 12px; flex: 1; min-width: 200px; }
+  .h-ak { display: inline-block; font-size: 11px; line-height: 18px; padding: 0 6px; border-radius: 6px; font-weight: 600; }
+  .h-ak.cut { color: #fca5a5; background: rgba(248,113,113,.15); }
+  .h-ak.add { color: #6ee7b7; background: rgba(52,211,153,.15); }
+  .h-ak.risk { color: #fcd34d; background: rgba(251,191,36,.15); }
+  .h-ak.near { color: var(--muted); background: var(--card-2); }
   #hTable .h-ops { white-space: nowrap; text-align: right; }
   .h-chip, .h-more { font: inherit; font-size: 12px; color: var(--muted); background: var(--card-2); border: 1px solid var(--border-soft); border-radius: 8px; height: 26px; padding: 0 9px; cursor: pointer; vertical-align: middle; }
   .h-chip:hover, .h-more:hover, .h-chip.on { color: var(--text); border-color: rgba(96,165,250,.5); }
@@ -1508,6 +1517,31 @@ function groupRows(rows, byAcc) {
     return { ...r0, gk, lots: ls, shares, mv, cv, pnl: mv - cv, cost, annual: sum(x => x.annual), yCost: cost > 0 ? r0.ttm / (cost * rate) : NaN };
   });
 }
+/* 持仓加减仓提醒。减仓信号回测(换成当月「可以买」持有一年,按股票平均多赚):利差 <1% 约 10pp、综合位置高位约 13pp、
+   比合理价高 43%+ 约 15pp;排雷只作复核,换股没有显著好处(1pp ±4pp);无信号时换不换几乎一样 */
+const y10Now = () => { const y = PC?.mac?.y10; return y?.length ? y[y.length - 1][1] / 100 : Y10_FB; };
+const holdTgt = k => S.tgt?.[k] ?? .01;
+function holdAdvice(groups) {
+  const out = [], y10 = y10Now(), lot = (g, f) => { const step = g.h.mk === 'A' || g.h.mk === 'F' ? 100 : 1; return Math.floor(g.shares * f / step) * step; };
+  for (const g of groups) {
+    const k = g.k, tgt = holdTgt(k);
+    let o = null;
+    if (POOL_BY[k]) { try { o = poolCalc(k); } catch {} if (!o?.cl?.c) o = null; }
+    if (!o && !['A', 'F'].includes(g.h.mk)) continue;
+    const yld = o ? o.yld : g.yMv, spr = yld - (o?.y10 ?? y10), cut = [];
+    if (yld > 0 && spr < tgt) cut.push(`股息率 ${pct(yld)} − 国债 ${pct(o?.y10 ?? y10)} = ${pct(spr)},低于目标 ${pct(tgt)}`);
+    if (o && o.pct < .2) cut.push(`综合位置${POOL_LV[o.lv][1]}(${fp(o.pct)})`);
+    if (o?.far) cut.push(`比合理价 ${o.F.toFixed(2)} 高 ${((o.q.price / o.F - 1) * 100).toFixed(0)}%`);
+    const base = { g, k, tgt, o };
+    if (cut.length) { const f = cut.length >= 2 ? .5 : 1 / 3, q = lot(g, f);
+      out.push({ ...base, kind: 'cut', t: `建议减仓${q ? ` · 约 ${fmt(q, 0)} 股(${cut.length >= 2 ? '一半' : '三分之一'})` : ''}`, why: cut, d: '回测:出现这类信号时继续持有一年平均约 4%–6%,换成当时「可以买」的股票约 13%–15%;两个以上信号同时出现时差距更大。只减一部分,换到便宜的红利股上' }); continue; }
+    if (o?.cl.c === 'r') { out.push({ ...base, kind: 'risk', t: '复核 · ' + o.cl.tag, why: [o.cl.tag], d: '排雷触发说明分红可能不可持续。回测这类换股没有显著好处,所以不直接建议卖,先看分红原因' }); continue; }
+    if (o?.act?.a === 'buy') { const cyc = o.t === 'cyc', q = lot(g, cyc ? 1 / 6 : 1 / 3);
+      out.push({ ...base, kind: 'add', t: `${o.sig.k === 'buy2' ? '跌破第二笔 · 可加仓' : '低于买入线 · 可加仓'}${q ? ` · 约 ${fmt(q, 0)} 股` : ''}`, why: [`现价 ${o.q.price.toFixed(2)},买入线 ${o.b1.toFixed(2)},第二笔 ${o.b2.toFixed(2)}`], d: `按现有持股的${cyc ? '六分之一(周期股减半)' : '三分之一'}估算,分批加` }); continue; }
+    if (o?.act?.a === 'near' && o.gap > 0) out.push({ ...base, kind: 'near', t: `接近加仓线 · 还差 ${(o.gap * 100).toFixed(1)}%`, why: [`跌到 ${o.b1.toFixed(2)} 附近可加`], d: '' });
+  }
+  return out.sort((a, b) => ['cut', 'add', 'risk', 'near'].indexOf(a.kind) - ['cut', 'add', 'risk', 'near'].indexOf(b.kind));
+}
 function summary() {
   const rows = scope().map(viewOf);
   const evs = rows.flatMap(r => r.evs.map(e => ({ ...e, name: r.name })));
@@ -1637,6 +1671,7 @@ const CODE_PH = { A: '如 600519 / 601398', F: '如 510880 / 159905(场内 ETF)'
 function buildHoldings() {
   $('#holdings').innerHTML = head('holdings', '我的持仓', '录入代码与股数,自动拉取行情和分红方案', `<button class="run sm" data-add="auto">+ 添加持仓</button><button class="run sm ghost" data-add="shot">截图导入</button>`) + `
     <div id="hDemo"></div>
+    <div id="hAdv"></div>
     <div class="box" style="padding:16px 14px">
       <div class="sec-h" style="padding-left:4px">持仓明细<span class="r" id="hSum"></span></div>
       <div class="tbl-wrap" id="hTable"></div>
@@ -1732,6 +1767,12 @@ function buildHoldings() {
   const closeMenu = () => $('#hMenu')?.remove();
   document.addEventListener('click', e => { if (!e.target.closest('#hMenu,[data-menu]')) closeMenu(); });
   window.addEventListener('scroll', closeMenu, true);
+  $('#hAdv').onclick = async e => {
+    const b = e.target.closest('[data-tgt]'); if (!b) return;
+    const k = b.dataset.tgt, v = await xbAsk({ title: '股息率目标', msg: '股息率比 10 年国债高多少个百分点以上才继续持有?低于它提醒减仓。默认 1。', input: String(+(holdTgt(k) * 100).toFixed(2)), ok: '保存', host: $('#holdings') });
+    if (v == null || v === false || v === '' || !isFinite(+v)) return;
+    S.tgt = S.tgt || {}; S.tgt[k] = +v / 100; save(); renderAll();
+  };
   $('#hTable').onclick = e => {
     const m = e.target.closest('[data-menu]');
     if (m) {
@@ -2301,6 +2342,14 @@ function renderHoldings(s) {
   $('#hSum').textContent = s.rows.length ? `${s.groups.length} 只${s.groups.length < s.rows.length ? `(${s.rows.length} 笔)` : ''} · 市值 ${money(s.mv, 0)} · 预计年息 ${money(s.annual)}` : '';
   if (!s.rows.length) { $('#hTable').innerHTML = '<div class="empty"><b>当前账户还没有持仓</b>点上方「添加持仓 / 截图导入 / 批量导入」录入持仓</div>'; return; }
   const rows = [...s.groups].sort((a, b) => b.mv - a.mv);
+  const adv = holdAdvice(s.groups), advBy = Object.fromEntries(adv.map(x => [x.g.gk, x]));
+  const AK = { cut: ['减仓', 'cut'], add: ['加仓', 'add'], risk: ['复核', 'risk'], near: ['接近', 'near'] };
+  const poolMiss = s.groups.some(g => POOL_BY[g.k]) && !PC.mac;
+  $('#hAdv').innerHTML = `<div class="box h-adv"><div class="sec-h" style="padding-left:4px">持仓提醒<span class="r">股息率目标默认「比 10 年国债高 1%」,可按股票改 · 只看红利股票池覆盖的股票和 A 股 / ETF</span></div>
+    ${poolMiss ? '<p class="sm" style="padding:0 4px">红利股票池数据还没加载,先打开一次「红利股票池」页,这里才能给出加减仓提醒</p>' : ''}
+    ${adv.length ? adv.map(x => `<div class="h-ai"><span class="h-ak ${AK[x.kind][1]}">${AK[x.kind][0]}</span><b>${esc(x.g.name)}</b><span class="h-at">${esc(x.t)}</span>
+      <span class="h-aw" title="${esc(x.d)}">${x.why.map(esc).join(';')}</span>${x.kind === 'cut' && x.why[0].startsWith('股息率') ? `<button class="link-btn" data-tgt="${x.k}">改目标</button>` : ''}</div>`).join('')
+      : '<p class="sm" style="padding:0 4px">暂无需要加减仓的持仓</p>'}</div>`;
   /* A 股红利税按每笔持有时间:满 1 年免税,1 个月–1 年 10%,1 个月内 20% */
   const taxTxt = h => { if (h.mk !== 'A' || !h.buy) return ''; const d = daysBetween(h.buy, TODAY);
     return d > 365 ? ' · 红利税免' : ` · 红利税 ${d > 30 ? 10 : 20}%,${366 - d} 天后免`; };
@@ -2309,7 +2358,7 @@ function renderHoldings(s) {
     ${rows.map(r => {
       const cs = CUR_SIGN[MK[r.h.mk].cur], chg = r.q.chg, n = r.lots.length, open = n > 1 && hLotsOpen.has(r.gk);
       const main = `<tr${n > 1 ? ` class="h-grp${open ? ' open' : ''}" data-g="${esc(r.gk)}" title="点一下${open ? '收起' : '展开'}各笔"` : ''}>
-        <td><div class="nm">${tag(r.h.mk)}${esc(r.name)}</div><div class="cd">${r.h.code}${S.acc === 'all' ? ' · ' + esc(accName(r.h.acc)) : ''}${n > 1 ? ` · 分 ${n} 笔买入` : r.h.buy ? ' · ' + r.h.buy + ' 建仓' : ''}</div></td>
+        <td><div class="nm">${tag(r.h.mk)}${esc(r.name)}</div><div class="cd">${r.h.code}${S.acc === 'all' ? ' · ' + esc(accName(r.h.acc)) : ''}${n > 1 ? ` · 分 ${n} 笔买入` : r.h.buy ? ' · ' + r.h.buy + ' 建仓' : ''}${advBy[r.gk] && advBy[r.gk].kind !== 'near' ? ` <span class="h-ak ${AK[advBy[r.gk].kind][1]}" title="${esc(advBy[r.gk].t)}">${AK[advBy[r.gk].kind][0]}</span>` : ''}</div></td>
         <td data-l="持股">${fmt(r.shares, 0)}</td>
         <td data-l="现价 / 成本"><b>${cs}${fmt(r.price, r.price < 10 ? 3 : 2)}</b>${isFinite(chg) ? ` <small class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '+' : ''}${(chg * 100).toFixed(2)}%</small>` : ''}<span class="sm">${n > 1 ? '均价 ' : ''}${cs}${fmt(r.cost, 3)}</span></td>
         <td data-l="市值">${money(r.mv, 0)}</td>
