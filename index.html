@@ -3361,12 +3361,12 @@ function poolAct(o) {
   if (o.sig.k === 'hot') return A('wait', '近 4 周涨太快 · 等回踩', d);
   const g = o.gap, sm = o.sm || .06;
   if (o.far) return A('wait', '离合理价太远 · 一年内很难到', `合理价 ${o.F.toFixed(2)},要跌 ${((1 - o.F / o.q.price) * 100).toFixed(0)}% 才到。回测近 5 年,这种情况 12 个月内到价的约 8%,当时直接买入持有一年平均只有约 3%,说明是真的贵`);
-  if (o.drift) return A(g <= .05 ? 'near' : 'wait', `${g > 0 ? `差 ${(g * 100).toFixed(1)}%` : '价格已到'} · 估值历史高位,等回落确认`, `${o.vName}处在近 5 年最高的 5% 区间,公司盈利没变差,可能是被重新定价。回测近 5 年,这种状态下即使到了买入价,持有一年平均只有约 6%、四成亏损(正常股票约 14%、三成亏损),所以最多给「接近」`);
+  if (o.drift) return A(g <= .05 ? 'near' : 'wait', `${g > 0 ? `差 ${(g * 100).toFixed(1)}%` : '已低于买入线'} · 估值历史高位,等回落确认`, `${o.vName}处在近 5 年最高的 5% 区间,公司盈利没变差,可能是被重新定价。回测近 5 年,这种状态下即使到了买入价,持有一年平均只有约 6%、四成亏损(正常股票约 14%、三成亏损),所以最多给「接近」`);
   if (g > 0) return A(g <= .05 && o.lv < 3 ? 'near' : 'wait', `差 ${(g * 100).toFixed(1)}% · ${g <= sm ? '1 个月内可能到' : g <= sm * 2 ? '约 1–3 个月' : '要等明显回调'}`, d);
   if (o.sig.k === 'high') return A('wait', `综合位置${POOL_LV[o.lv][1]} · 等回落`, d);
-  if (o.sig.k === 'fall') return A('near', '价格已到 · 等止跌', d);
-  if (o.qual && o.qual.s < 65) return A('wait', '价格已到 · 公司质量一般,只观察');
-  return A('buy', o.sig.k === 'buy2' ? '跌破第二笔 · 可加仓' : '价格已到 · 可分批建仓', d);
+  if (o.sig.k === 'fall') return A('near', '低于买入线 · 等止跌', d);
+  if (o.qual && o.qual.s < 65) return A('wait', '低于买入线 · 公司质量一般,只观察');
+  return A('buy', o.sig.k === 'buy2' ? '跌破第二笔 · 可加仓' : '低于买入线 · 可分批建仓', d);
 }
 
 /* ---------- 分类引擎:排雷(一票否决)→ 公司质量 → 估值 / 利差 ---------- */
@@ -3546,9 +3546,9 @@ function renderPool() {
   const posCell = o => {
     if (o.lv == null) return '<td class="ct"><span class="sm">历史不足</span></td>';
     const g = o.b1 ? o.q.price / o.b1 - 1 : null;
-    const st = g == null ? '' : o.far ? `<span class="pl-ps">差 ${(g * 100).toFixed(0)}%<span class="lg"> · 很难到</span></span>` : g <= 0 ? (o.act?.a === 'wait' || o.act?.a === 'no' ? '<span class="pl-ps">价格已到<span class="lg"> · 未满足买入条件</span></span>' : o.sig?.k === 'buy2' ? `<span class="pl-ps deep">✓ 跌破第二笔<span class="lg"> ¥${o.b2.toFixed(2)}</span></span>` : '<span class="pl-ps ok">✓ 已到<span class="lg">买入价</span></span>') : g <= .05 ? `<span class="pl-ps near"><span class="lg">接近 · </span>差 ${(g * 100).toFixed(1)}%</span>` : `<span class="pl-ps"><span class="lg">还</span>差 ${(g * 100).toFixed(1)}%</span>`;
+    const st = g == null ? '' : o.far ? `<span class="pl-ps">差 ${(g * 100).toFixed(0)}%<span class="lg"> · 很难到</span></span>` : g <= 0 ? (o.act?.a === 'wait' || o.act?.a === 'no' ? `<span class="pl-ps">低于买入线 ${(-g * 100).toFixed(0)}%<span class="lg"> · 暂不买</span></span>` : o.sig?.k === 'buy2' ? `<span class="pl-ps deep">✓ 跌破第二笔<span class="lg"> ¥${o.b2.toFixed(2)}</span></span>` : `<span class="pl-ps ok">✓ 低于买入线 ${(-g * 100).toFixed(0)}%</span>`) : g <= .05 ? `<span class="pl-ps near"><span class="lg">接近 · </span>差 ${(g * 100).toFixed(1)}%</span>` : `<span class="pl-ps"><span class="lg">还</span>差 ${(g * 100).toFixed(1)}%</span>`;
     return `<td class="ct"><span class="pl-pos"><span class="pl-ph"><span class="pl-lv ${POOL_LV[o.lv][0]}" title="${esc(posTip(o))}">${POOL_LV[o.lv][1]}</span>${o.act ? `<span class="pl-evm ${o.act.a}">${ACT[o.act.a]}</span>` : ''}${st}</span><span class="pl-bar" title="${esc(posTip(o))}"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>
-      ${o.b1 ? `<span class="pl-pr"><span><em>现价</em><b class="num">${px(o.q.price)}</b></span><span title="${esc(priceTip(o))}"><em>买入价</em><b class="num">${px(o.b1)}</b></span></span>` : ''}</span></td>`;
+      ${o.b1 ? `<span class="pl-pr"><span><em>现价</em><b class="num">${px(o.q.price)}</b></span><span title="${esc(priceTip(o))}"><em>买入线</em><b class="num">${px(o.b1)}</b></span></span>` : ''}</span></td>`;
   };
   const yCell = o => `<td title="按${o.cp !== o.q?.price ? '昨日' : '最新'}收盘价计算,分类也按它${o.cp !== o.q?.price ? ';下面是按实时价算的,仅供参考' : ''}"><b class="num">${o.yldC ? pct(o.yldC) : '—'}</b>${o.yld && o.cp !== o.q?.price ? `<span class="sm">实时 ${pct(o.yld)}</span>` : ''}</td>`;
   const sprCell = o => `<td>${o.spr != null && o.dps ? `<b class="num">${pp1(o.spr)}</b><span class="sm">分位 ${o.sprP != null ? fp(o.sprP) : '—'}</span>` : '—'}</td>`;
@@ -3559,7 +3559,7 @@ function renderPool() {
     const qual = `<span class="pl-et" title="${esc(qTip(o))}"><em>公司质量</em><b class="pl-tp ${qc}">${Q != null ? Q.toFixed(0) : '—'}${qn ? `<small>${qn}</small>` : ''}</b>${Q != null ? `<span class="pl-tb"><i class="${qc}" style="width:${Q.toFixed(0)}%"></i></span>` : ''}</span>`;
     return `<td class="pl-ev lg"><div class="pl-eg">${qual}<span class="pl-act"><span class="pl-ap ${act.a}">${ACT[act.a]}</span><span>${esc(act.t)}</span></span></div></td>`;
   };
-  const COLS = ['名称', '股息率', '<span title="股息率 − 10 年国债收益率,分位按近 36 个月"><span class="lg">股息率−国债</span><span class="sh">利差</span></span>', '<span title="按历史股息率分位,越靠左越便宜;买入价按这只股票自己的历史股息率和估值倒推">综合位置<span class="lg"> · 买入价</span></span>', '<span class="lg"><span title="公司质量 0–100,80 以上优秀 · 结论:什么时候可以持有">综合评估</span></span>'];
+  const COLS = ['名称', '股息率', '<span title="股息率 − 10 年国债收益率,分位按近 36 个月"><span class="lg">股息率−国债</span><span class="sh">利差</span></span>', '<span title="按历史股息率分位,越靠左越便宜;买入线 = 价格低于这条线才考虑买,按这只股票自己的历史股息率、估值和国债利率倒推">综合位置<span class="lg"> · 买入线</span></span>', '<span class="lg"><span title="公司质量 0–100,80 以上优秀 · 结论:什么时候可以持有">综合评估</span></span>'];
   const rowOf = o => nmCell(o) + yCell(o) + sprCell(o) + posCell(o) + evalCell(o);
   const nc = COLS.length;
   const detail = o => {
@@ -3643,15 +3643,15 @@ function poolSignal(o) {
   if (o.yrs < 3 || o.cons < 5) return S2('short', '有效历史不足 3 年或连续分红不足 5 年,规律还不可靠');
   if (o.lv >= 3) return S2('high', `综合位置${POOL_LV[o.lv][1]},现在买等于追高,等回落`);
   const P = o.q.price, hotLine = Math.max(.08, o.sm * 1.5);
-  if (o.r4 > hotLine) return S2('hot', `近 4 周涨了 ${fp(o.r4)},超过正常波动,别追,等回踩到合理买入价 ${o.b1.toFixed(2)} 附近`);
+  if (o.r4 > hotLine) return S2('hot', `近 4 周涨了 ${fp(o.r4)},超过正常波动,别追,等回踩到买入线 ${o.b1.toFixed(2)} 附近`);
   if (o.gap > 0) {
-    const t = P > o.F ? `高于长线合理价 ${o.F.toFixed(2)},等回落到合理买入价 ${o.b1.toFixed(2)}(还差 ${(o.gap * 100).toFixed(1)}%)`
-      : `在长线合理区间,等回踩到合理买入价 ${o.b1.toFixed(2)}(还差 ${(o.gap * 100).toFixed(1)}%,一个月内正常波动就可能碰到)`;
+    const t = P > o.F ? `高于长线合理价 ${o.F.toFixed(2)},等回落到买入线 ${o.b1.toFixed(2)}(还差 ${(o.gap * 100).toFixed(1)}%)`
+      : `在长线合理区间,等回踩到买入线 ${o.b1.toFixed(2)}(还差 ${(o.gap * 100).toFixed(1)}%,一个月内正常波动就可能碰到)`;
     return S2(o.gap <= .03 ? 'near' : 'wait', t);
   }
-  if (o.trend === 'fall') return S2('fall', '价格已到,但股价还在创近期新低、跌势没停,等连续几周不再创新低再买');
+  if (o.trend === 'fall') return S2('fall', '已低于买入线,但股价还在创近期新低、跌势没停,等连续几周不再创新低再买');
   if (P <= o.b2) return S2('buy2', `跌破第二笔买入价 ${o.b2.toFixed(2)},进入深度便宜区,可以加仓(回测这种位置买入持有一年平均约 19%,约两成亏损)`);
-  return S2('buy1', P <= o.L ? '进入长线便宜区间,可以分批建仓' : '在长线合理区间、回踩到短线支撑,到了合理买入价,可以先小仓位买入');
+  return S2('buy1', P <= o.L ? '进入长线便宜区间,可以分批建仓' : '在长线合理区间、回踩到短线支撑,已低于买入线,可以先小仓位买入');
 }
 const fp = v => (v * 100).toFixed(0) + '%';
 const TREND = { up: ['年线上方', 'g'], weak: ['年线下方·跌势放缓', 'y'], fall: ['下跌中', 'r'] };
@@ -3661,7 +3661,7 @@ const priceTip = o => [
   `便宜价 ${o.L.toFixed(2)}:取较低者 —— 分红 ÷ 70% 分位股息率 ${pct(o.ty)} = ${o.Ly.toFixed(2)}${o.Lv ? `;${o.vName} 30% 分位 ${o.v30.toFixed(2)} × ${o.vBase.toFixed(2)} = ${o.Lv.toFixed(2)}` : ''}`,
   `【中线 · 近 1 年】区间 ${o.lo52?.toFixed(2)} ~ ${o.hi52?.toFixed(2)},距高点 ${sgn(o.dd, 0)}`,
   `【短线 · 近 1 个月】近 4 周低点 ${o.low4?.toFixed(2)},4 周涨跌 ${sgn(o.r4, 1)},一个月正常波动约 ±${fp(o.sm)}`,
-  `合理买入价 ${o.b1.toFixed(2)}:短线支撑位(近 4 周低点 / 现价回调半个月度波动),夹在便宜价和合理价之间`,
+  `买入线 ${o.b1.toFixed(2)}(现价低于它才考虑买):短线支撑位(近 4 周低点 / 现价回调半个月度波动),夹在便宜价和合理价之间`,
   o.drift && o.Fa ? `第二笔 ${o.b2.toFixed(2)}:因估值中枢漂移,第二笔底线采用绝对锚 ${o.Fa.toFixed(2)} 打底,不再参考历史分位(和第一笔再回调一个月度波动 ${(o.b1 * (1 - o.sm)).toFixed(2)} 取较低);回测漂移状态下触达后持有一年平均约 10%,结论最多到接近` : `第二笔 ${o.b2.toFixed(2)}:取较低者 —— ${o.Lv ? `${o.vName} 30% 分位 = ${o.Lv.toFixed(2)};` : ''}${o.Fa ? `绝对锚 ${o.Fa.toFixed(2)};` : ''}第一笔再回调一个月度波动 = ${(o.b1 * (1 - o.sm)).toFixed(2)}`,
   o.far ? '⚠ 现价比合理价高 43% 以上,回测里这种情况 12 个月内到价的约 8%' : '',
 ].filter(Boolean).join('\n');
