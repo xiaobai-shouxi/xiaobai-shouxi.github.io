@@ -184,6 +184,7 @@
   .panel-head h2 { font-size: 17px; margin: 0; font-weight: 650; }
   .panel-head p { font-size: 12.5px; color: var(--muted); margin: 2px 0 0; }
   .panel-head .ph-right { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .panel-head .ph-right .pl-q { width: 220px; padding: 8px 12px; font-size: 13px; }
 
   .grid { display: grid; gap: 16px; }
   .g2 { grid-template-columns: 1fr 1fr; }
@@ -1011,6 +1012,7 @@
     .panel-head .tab-icon svg { width: 17px; height: 17px; }
     .panel-head .ph-right { width: 100%; margin-left: 0; }
     .panel-head .ph-right .run.sm { flex: 1; padding: 9px 6px; }
+    .panel-head .ph-right .pl-q { flex: 3; width: auto; min-width: 0; }
     #overview .panel-head .ph-right { display: none; }
     .box { padding: 14px; }
     .notice { padding: 10px 12px; font-size: 12.5px; }
@@ -1208,10 +1210,6 @@
         <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg></span>
         <span class="tab-txt"><div class="tab-title">红利股票池</div><div class="tab-desc">好公司 · 好位置 · 买入价</div></span>
       </button>
-      <button class="tab" data-tab="rules">
-        <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h6"/></svg></span>
-        <span class="tab-txt"><div class="tab-title">投资规则</div><div class="tab-desc">定投美股 · A股分份 · 纪律</div></span>
-      </button>
       <button class="tab" data-tab="profile">
         <span class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg></span>
         <span class="tab-txt"><div class="tab-title">个股分红档案</div><div class="tab-desc">历史分红 · 稳定性评分</div></span>
@@ -1227,6 +1225,10 @@
       <button class="tab" data-tab="life">
         <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.5-9 9-9 9z"/></svg></span>
         <span class="tab-txt"><div class="tab-title">息覆生活</div><div class="tab-desc">股息为哪些开销买单</div></span>
+      </button>
+      <button class="tab" data-tab="rules">
+        <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h6"/></svg></span>
+        <span class="tab-txt"><div class="tab-title">投资规则</div><div class="tab-desc">定投美股 · A股分份 · 纪律</div></span>
       </button>
       <button class="tab" data-tab="data">
         <span class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>
@@ -2846,7 +2848,7 @@ function switchTab(id) {
   if (isPhone()) scrollTo({ top: 0, behavior: 'instant' });
   else if (innerWidth <= 920) $('.main').scrollIntoView({ block: 'start' });
 }
-const SECONDARY = ['pool', 'rules', 'profile', 'etf', 'future', 'life', 'data'];
+const SECONDARY = ['pool', 'profile', 'etf', 'future', 'life', 'rules', 'data'];
 const isPhone = () => matchMedia('(max-width: 640px)').matches;
 function openMore() {
   $('#sheetTabs').innerHTML = SECONDARY.map(id => {
@@ -2958,7 +2960,15 @@ const poolCfg = () => {
   if (S.pool.sv !== 3) Object.assign(S.pool, { sv: 3, tab: 'g', open: '', cls: {}, log: [] });
   return S.pool;
 };
-let poolBusy = false, poolMsg = '', poolT = 0;
+let poolBusy = false, poolMsg = '', poolT = 0, poolQ = '';
+/* 模糊搜索:名称 / 代码 / 行业里连续包含,或按顺序包含查询的每个字(如「华三九」命中华润三九) */
+const poolHit = (o, q) => {
+  const nm = o.name.replace(/\s+/g, '').toLowerCase(), hay = nm + o.code + o.sub + indOf(o.sub);
+  if (hay.includes(q)) return true;
+  let i = 0;
+  for (const ch of nm) if (ch === q[i] && ++i === q.length) return true;
+  return false;
+};
 
 const poolKeys = () => POOL_DEF.map(x => x.k);
 /* 周线源按顺序降级,某个源失败一次后本次会话不再请求它;月线只有腾讯有 */
@@ -3460,11 +3470,14 @@ function poolEnter() {
 }
 function buildPool() {
   $('#pool').innerHTML = head('pool', '红利股票池', `约 ${POOL_DEF.length} 只高息标的,按红利类型、否决项和估值每天自动分成三档`, `
+    <input type="text" id="plQ" class="pl-q" placeholder="搜索名称 / 代码 / 行业" autocomplete="off" spellcheck="false" value="${esc(poolQ)}" />
     <button class="run sm" id="plGo">刷新</button>`) + `<div id="plBody"></div>`;
   $('#plGo').onclick = () => poolRefresh(true);
+  $('#plQ').oninput = e => { poolQ = e.target.value; renderPool(); };
+  $('#plQ').onkeydown = e => { if (e.key === 'Escape' && poolQ) { e.target.value = poolQ = ''; renderPool(); } };
   $('#pool').addEventListener('click', e => {
     const p = poolCfg(), hit = s => e.target.closest(s);
-    if (hit('[data-pltab]')) { p.tab = hit('[data-pltab]').dataset.pltab; p.open = ''; save(); return renderPool(); }
+    if (hit('[data-pltab]')) { p.tab = hit('[data-pltab]').dataset.pltab; p.open = ''; poolQ = $('#plQ').value = ''; save(); return renderPool(); }
     if (hit('[data-plgo]')) { PC.cool = 0; PC.bad = {}; poolMsg = ''; poolT = 0; return poolRefresh(true); }
     if (hit('[data-plchg]')) { p.showLog = !p.showLog; p.log.forEach(x => { x.read = true; }); save(); return renderPool(); }
     if (hit('[data-plside]')) { p.side = !p.side; save(); return renderPool(); }
@@ -3552,12 +3565,13 @@ function renderPool() {
         <button class="run sm ghost" data-prof="${o.k}">看分红档案 →</button>
       </div></div></td></tr>`;
   };
-  const rk = { g: 0, y: 1, r: 2 }, inTab = o => p.tab === 'all' || indOf(o.sub) === p.tab;
+  const qn = poolQ.replace(/\s+/g, '').toLowerCase();
+  const rk = { g: 0, y: 1, r: 2 }, inTab = o => qn ? poolHit(o, qn) : p.tab === 'all' || indOf(o.sub) === p.tab;
   const rows = all.filter(o => o.cl.c && inTab(o)).sort((a, b) => rk[a.cl.c] - rk[b.cl.c] || (a.temp ?? 999) - (b.temp ?? 999));
   const tr = o => `<tr data-k="${o.k}" class="${p.open === o.k ? 'on' : ''}${o.cl.c === 'r' ? ' risk' : ''}">${rowOf(o)}</tr>${p.open === o.k ? detail(o) : ''}`;
   const tbody = rows.map(tr).join('');
   const stars = xs => xs.filter(o => o.cl.c === 'g').length;
-  const tabBtn = (id, name, xs) => `<button class="pl-tab${p.tab === id ? ' on' : ''}" data-pltab="${esc(id)}">${esc(name)}<b>${xs.length}</b>${stars(xs) ? `<em>★${stars(xs)}</em>` : ''}</button>`;
+  const tabBtn = (id, name, xs) => `<button class="pl-tab${p.tab === id && !qn ? ' on' : ''}" data-pltab="${esc(id)}">${esc(name)}<b>${xs.length}</b>${stars(xs) ? `<em>★${stars(xs)}</em>` : ''}</button>`;
   const done = all.length - pend.length, hm = t ? `${pad(t.getHours())}:${pad(t.getMinutes())}` : '';
   const status = poolBusy
     ? `<span class="pl-st run"><i class="sp"></i><span>${esc(poolMsg || '正在更新…')}</span>${pend.length ? `<em><s style="width:${(done / all.length * 100).toFixed(0)}%"></s></em><b>${done}/${all.length}</b>` : ''}</span>`
@@ -3567,9 +3581,9 @@ function renderPool() {
   const tabs = `<div class="pl-tabs">${tabBtn('all', '全部', all)}${inds.map(n => tabBtn(n, n, all.filter(o => indOf(o.sub) === n))).join('')}
       ${status}</div>`;
   const table = `<div class="box">
-      <div class="sec-h"><span class="pl-ttl">${p.tab === 'all' ? '全部' : esc(p.tab)} ${rows.length} 只 ·<span class="pl-star">★</span>${stars(rows)} 只</span><small>★ 重点关注 = 排雷全过、公司质量良好以上、估值不贵,排在最前;其余按估值从便宜到贵 · 点一行看原因</small></div>
+      <div class="sec-h"><span class="pl-ttl">${qn ? `搜索「${esc(poolQ.trim())}」` : p.tab === 'all' ? '全部' : esc(p.tab)} ${rows.length} 只 ·<span class="pl-star">★</span>${stars(rows)} 只</span><small>★ 重点关注 = 排雷全过、公司质量良好以上、估值不贵,排在最前;其余按估值从便宜到贵 · 点一行看原因</small></div>
       ${rows.length ? `<div class="tbl-wrap"><table class="pl-tbl"><thead><tr>${COLS.map((h, i) => `<th class="${i >= 1 ? 'ct' : ''}${i === nc - 1 ? ' pl-evh' : ''}${h.startsWith('<span class="lg">') ? ' lg' : ''}">${h}</th>`).join('')}</tr></thead><tbody>${tbody}</tbody></table></div>`
-        : `<div class="empty">${pend.length ? '数据还在加载,稍等' : '这个行业暂时没有标的'}</div>`}
+        : `<div class="empty">${qn ? `没找到和「${esc(poolQ.trim())}」相关的公司,可以试试代码或行业名` : pend.length ? '数据还在加载,稍等' : '这个行业暂时没有标的'}</div>`}
     </div>`;
 
   /* 类别否决项仪表盘 */
