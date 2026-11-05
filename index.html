@@ -588,7 +588,12 @@
   .h-ak.risk { color: #fcd34d; background: rgba(251,191,36,.15); }
   .h-ak.near { color: var(--muted); background: var(--card-2); }
   #hTable .h-ops { white-space: nowrap; text-align: right; }
-  .h-tip { cursor: help; border-bottom: 1px dashed var(--muted-2); }
+  .qtip { display: inline-grid; place-items: center; width: 15px; height: 15px; margin-left: 5px; border-radius: 50%; border: 1px solid var(--muted-2); color: var(--muted); font: 600 10px/1 inherit; font-style: normal; cursor: help; vertical-align: 1px; outline: none; }
+  .qtip:hover, .qtip:focus { color: var(--text); border-color: rgba(96,165,250,.7); }
+  #tipBox { position: fixed; z-index: 9999; max-width: 300px; padding: 10px 12px; border-radius: 10px; background: #1b2540; border: 1px solid rgba(96,165,250,.35); box-shadow: 0 8px 24px rgba(0,0,0,.45); color: var(--text); font-size: 12px; font-weight: 400; line-height: 1.6; text-align: left; white-space: normal; pointer-events: none; }
+  #tipBox b { display: block; color: var(--gold, #facc15); font-weight: 600; margin-top: 6px; }
+  #tipBox b:first-child { margin-top: 0; }
+  #tipBox p { margin: 6px 0 0; color: var(--muted); }
   .h-chip, .h-more { font: inherit; font-size: 12px; color: var(--muted); background: var(--card-2); border: 1px solid var(--border-soft); border-radius: 8px; height: 26px; padding: 0 9px; cursor: pointer; vertical-align: middle; }
   .h-chip:hover, .h-more:hover, .h-chip.on { color: var(--text); border-color: rgba(96,165,250,.5); }
   .h-more { width: 30px; padding: 0; margin-left: 6px; font-size: 15px; line-height: 1; letter-spacing: 1px; }
@@ -1470,6 +1475,22 @@ function periodName(r) {
   const y = r.slice(0, 4), m = r.slice(5, 7);
   return y + ({ '03': '一季报', '06': '中报', '09': '三季报', '12': '年报' }[m] || '');
 }
+
+/* 「?」说明浮窗:原生 title 要停一秒才出、手机上没有,改成悬停即出、点一下也能开关 */
+(() => {
+  let box = null, on = null, at = 0;
+  const hide = () => { box?.remove(); box = on = null; };
+  const show = el => {
+    if (on === el) return; hide(); on = el; at = Date.now();
+    box = document.createElement('div'); box.id = 'tipBox'; box.innerHTML = el.dataset.tip; document.body.appendChild(box);
+    const r = el.getBoundingClientRect(), w = box.offsetWidth, h = box.offsetHeight;
+    box.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+    box.style.top = (r.bottom + 8 + h > innerHeight ? r.top - h - 8 : r.bottom + 8) + 'px';
+  };
+  document.addEventListener('mouseover', e => { const t = e.target.closest?.('[data-tip]'); if (t) show(t); else if (on) hide(); });
+  document.addEventListener('click', e => { const t = e.target.closest?.('[data-tip]'); if (t) { e.stopPropagation(); on === t ? Date.now() - at > 400 && hide() : show(t); } else hide(); }, true);
+  addEventListener('scroll', hide, true);
+})();
 
 /* ---------- 计算 ---------- */
 function taxF(h, payDate) {
@@ -2367,7 +2388,7 @@ function renderHoldings(s) {
   const taxTxt = h => { if (h.mk !== 'A' || !h.buy) return ''; const d = daysBetween(h.buy, TODAY);
     return d > 365 ? ' · 红利税免' : ` · 红利税 ${d > 30 ? 10 : 20}%,${366 - d} 天后免`; };
   const pnlTd = r => `<td data-l="盈亏" class="${r.pnl >= 0 ? 'up' : 'down'}">${r.pnl >= 0 ? '+' : ''}${fmt(r.pnl, 0)}<span class="sm">${r.cv ? (r.pnl / r.cv * 100).toFixed(2) + '%' : ''}</span></td>`;
-  $('#hTable').innerHTML = `<table><thead><tr><th>名称</th><th>持股</th><th>现价 / 成本</th><th>市值</th><th>盈亏</th><th>近12月每股派息</th><th><span class="h-tip" title="上面大字 · 按现价:近 12 个月每股分红 ÷ 现在的股价,等于现在买入能拿到的收益率,判断该拿、该加还是该减看这个(持仓提醒也用它)&#10;下面小字 · 按成本:同样的分红 ÷ 你的买入均价,等于你投进去的钱实际拿到的收益率,只用来回看当初买得好不好;成本已经花出去了,不该影响卖不卖&#10;刚建仓时两者差不多,持有越久、分红涨得越多,按成本的越高">股息率 按现价 / 按成本</span></th><th>预计年息</th><th></th></tr></thead><tbody>
+  $('#hTable').innerHTML = `<table><thead><tr><th>名称</th><th>持股</th><th>现价 / 成本</th><th>市值</th><th>盈亏</th><th>近12月每股派息</th><th>股息率 按现价 / 按成本<i class="qtip" tabindex="0" data-tip="<b>上面大字 · 按现价</b>近 12 个月每股分红 ÷ 现在的股价,等于现在买入能拿到的收益率。判断该拿、该加还是该减看这个,持仓提醒也用它。<b>下面小字 · 按成本</b>同样的分红 ÷ 你的买入均价,等于你投进去的钱实际拿到的收益率,只用来回看当初买得好不好;成本已经花出去了,不该影响卖不卖。<p>刚建仓时两者差不多,持有越久、分红涨得越多,按成本的越高。</p>">?</i></th><th>预计年息</th><th></th></tr></thead><tbody>
     ${rows.map(r => {
       const cs = CUR_SIGN[MK[r.h.mk].cur], chg = r.q.chg, n = r.lots.length, open = n > 1 && hLotsOpen.has(r.gk);
       const main = `<tr${n > 1 ? ` class="h-grp${open ? ' open' : ''}" data-g="${esc(r.gk)}" title="点一下${open ? '收起' : '展开'}各笔"` : ''}>
