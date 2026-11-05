@@ -575,6 +575,8 @@
   .pl-tab b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
   .pl-tab em { font-style: normal; font-size: 12px; font-weight: 700; color: #fbbf24; font-variant-numeric: tabular-nums; }
   .pl-ttl .pl-star { width: auto; margin: 0 2px 0 4px; }
+  .pl-conc { margin: -4px 0 10px; font-size: 12px; color: var(--muted); }
+  .pl-conc b { color: var(--up); font-weight: 600; }
   .pl-tab.on { color: var(--text); border-color: rgba(251,191,36,.55); background: rgba(251,191,36,.1); }
   .pl-star { display: inline-block; width: 1.2em; margin-right: 3px; color: #fbbf24; font-weight: 800; text-align: center; }
   .pl-star.off { color: rgba(255,255,255,.16); }
@@ -3264,13 +3266,17 @@ function poolCalc(k) {
     o.ty = ty;
     o.Fy = o.dps / o.y50; o.Ly = o.dps / ty;
     if (o.v50) { o.Fv = o.vBase * o.v50; o.Lv = o.vBase * o.v30; }
-    o.F = Math.min(o.Fy, o.Fv ?? Infinity, Math.max(o.hi52 ?? Infinity, q.price));
+    /* 绝对锚:股息率达到 10 年国债 + 3% 就不再要求跌回历史低位,避免被重新定价的公司买入价离谱(回测:到价率 67% → 78%,到价后收益不降) */
+    o.Fa = o.y10 != null ? o.dps / (o.y10 + .03) : null;
+    o.F = Math.min(Math.max(Math.min(o.Fy, o.Fv ?? Infinity), o.Fa ?? 0), Math.max(o.hi52 ?? Infinity, q.price));
     o.sm = (o.vol || .2) * Math.sqrt(4 / 52);
     o.L = Math.min(o.Ly, o.Lv ?? Infinity, o.F * (1 - o.sm));
     const sup = Math.min(o.low4 ?? q.price, q.price * (1 - o.sm / 2));
     o.b1 = Math.min(o.F, Math.max(o.L, sup));
     o.b2 = Math.min(o.L, o.b1 * (1 - o.sm));
     o.gap = q.price / o.b1 - 1;
+    /* 要跌 30% 以上才回到合理价:回测里 12 个月内到价的约 8%,当时按市价买入持有一年平均只有约 3% */
+    o.far = q.price / o.F - 1 > .43;
   }
   /* 按财年汇总(2025中报 + 2025年报 都算 2025 年),已公告未除息的预案也算进它所属的财年 */
   const byY = {}, finals = new Set();
@@ -3350,6 +3356,7 @@ function poolAct(o) {
   if (o.t === 'cyc') return A('wait', '周期股 · 等景气确认');
   if (o.sig.k === 'hot') return A('wait', '近 4 周涨太快 · 等回踩', d);
   const g = o.gap, sm = o.sm || .06;
+  if (o.far) return A('wait', '离合理价太远 · 一年内很难到', `合理价 ${o.F.toFixed(2)},要跌 ${((1 - o.F / o.q.price) * 100).toFixed(0)}% 才到。回测近 5 年,这种情况 12 个月内到价的约 8%,当时直接买入持有一年平均只有约 3%,说明是真的贵`);
   if (g > 0) return A(g <= .05 && o.lv < 3 ? 'near' : 'wait', `差 ${(g * 100).toFixed(1)}% · ${g <= sm ? '1 个月内可能到' : g <= sm * 2 ? '约 1–3 个月' : '要等明显回调'}`, d);
   if (o.sig.k === 'high') return A('wait', `综合位置${POOL_LV[o.lv][1]} · 等回落`, d);
   if (o.sig.k === 'fall') return A('near', '价格已到 · 等止跌', d);
@@ -3534,7 +3541,7 @@ function renderPool() {
   const posCell = o => {
     if (o.lv == null) return '<td class="ct"><span class="sm">历史不足</span></td>';
     const g = o.b1 ? o.q.price / o.b1 - 1 : null;
-    const st = g == null ? '' : g <= 0 ? '<span class="pl-ps ok">✓ 已到<span class="lg">买入价</span></span>' : g <= .05 ? `<span class="pl-ps near"><span class="lg">接近 · </span>差 ${(g * 100).toFixed(1)}%</span>` : `<span class="pl-ps"><span class="lg">还</span>差 ${(g * 100).toFixed(1)}%</span>`;
+    const st = g == null ? '' : o.far ? `<span class="pl-ps">差 ${(g * 100).toFixed(0)}%<span class="lg"> · 很难到</span></span>` : g <= 0 ? '<span class="pl-ps ok">✓ 已到<span class="lg">买入价</span></span>' : g <= .05 ? `<span class="pl-ps near"><span class="lg">接近 · </span>差 ${(g * 100).toFixed(1)}%</span>` : `<span class="pl-ps"><span class="lg">还</span>差 ${(g * 100).toFixed(1)}%</span>`;
     return `<td class="ct"><span class="pl-pos"><span class="pl-ph"><span class="pl-lv ${POOL_LV[o.lv][0]}" title="${esc(posTip(o))}">${POOL_LV[o.lv][1]}</span>${o.act ? `<span class="pl-evm ${o.act.a}">${ACT[o.act.a]}</span>` : ''}${st}</span><span class="pl-bar" title="${esc(posTip(o))}"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>
       ${o.b1 ? `<span class="pl-pr"><span><em>现价</em><b class="num">${px(o.q.price)}</b></span><span title="${esc(priceTip(o))}"><em>买入价</em><b class="num">${px(o.b1)}</b></span></span>` : ''}</span></td>`;
   };
@@ -3580,8 +3587,12 @@ function renderPool() {
       : `<span class="pl-st ok"><i></i><span>数据已是最新${hm ? ` · ${hm}` : ''}</span></span>`;
   const tabs = `<div class="pl-tabs">${tabBtn('all', '全部', all)}${inds.map(n => tabBtn(n, n, all.filter(o => indOf(o.sub) === n))).join('')}
       ${status}</div>`;
+  const gs = all.filter(o => o.cl.c === 'g'), gi = {};
+  for (const o of gs) { const n = indOf(o.sub); gi[n] = (gi[n] || 0) + 1; }
+  const gil = Object.entries(gi).sort((a, b) => b[1] - a[1]), top = gil[0];
+  const conc = !qn && p.tab === 'all' && gs.length >= 5 ? `<div class="pl-conc">★ 行业分布:${gil.map(([n, c]) => `${esc(n)} ${c}`).join(' · ')}${top[1] / gs.length > .4 ? ` <b>· ${esc(top[0])}占 ${(top[1] / gs.length * 100).toFixed(0)}%,超过 40%,同时买入注意分散</b>` : ''}</div>` : '';
   const table = `<div class="box">
-      <div class="sec-h"><span class="pl-ttl">${qn ? `搜索「${esc(poolQ.trim())}」` : p.tab === 'all' ? '全部' : esc(p.tab)} ${rows.length} 只 ·<span class="pl-star">★</span>${stars(rows)} 只</span><small>★ 重点关注 = 排雷全过、公司质量良好以上、估值不贵,排在最前;其余按估值从便宜到贵 · 点一行看原因</small></div>
+      <div class="sec-h"><span class="pl-ttl">${qn ? `搜索「${esc(poolQ.trim())}」` : p.tab === 'all' ? '全部' : esc(p.tab)} ${rows.length} 只 ·<span class="pl-star">★</span>${stars(rows)} 只</span><small>★ 重点关注 = 排雷全过、公司质量良好以上、估值不贵,排在最前;其余按估值从便宜到贵 · 点一行看原因</small></div>${conc}
       ${rows.length ? `<div class="tbl-wrap"><table class="pl-tbl"><thead><tr>${COLS.map((h, i) => `<th class="${i >= 1 ? 'ct' : ''}${i === nc - 1 ? ' pl-evh' : ''}${h.startsWith('<span class="lg">') ? ' lg' : ''}">${h}</th>`).join('')}</tr></thead><tbody>${tbody}</tbody></table></div>`
         : `<div class="empty">${qn ? `没找到和「${esc(poolQ.trim())}」相关的公司,可以试试代码或行业名` : pend.length ? '数据还在加载,稍等' : '这个行业暂时没有标的'}</div>`}
     </div>`;
@@ -3605,9 +3616,9 @@ function renderPool() {
       <p>分三层,每份数据只用一次:<b>排雷</b>回答能不能碰,<b>公司质量</b>回答好到什么程度,<b>估值和买入价</b>回答什么时候买。★ 重点关注 = 排雷全过 + 公司质量 ≥65 + 估值不偏贵。</p>
       <p><b>第一层 · 排雷(任一触发 → 有风险)</b>:ST / 退市;市盈率为负,或扣非净利润为负(最新年报或连续两期);近 3 年经营现金流 / 分红 < 1(金融股不看);连续两年没分红;派息率超过 100%;最近一个完整财年的分红总额比上一财年少 10% 以上(按净利润和每股收益估算股本变化,扣除增发、送转的摊薄);类别否决项(银行资产质量连续两期变差、公用事业现金流覆盖不了分红、消费股分红率跳升而利润下降);股息率异常偏高(在近 5 年 85% 分位以上,同时派息率超过 80%、分红减少 10% 以上或利润下滑超过 15%,多半是股价下跌推高的)。</p>
       <p><b>第二层 · 公司质量</b>:低于 65 分只进一般观察。<b>第三层 · 估值</b>:金融 / 稳定 / 消费要估值不偏贵、股息率−国债利差分位 ≥20%;<b>其他</b>(港口、医药、传媒、机械等,分红来源要逐一核查)要估值到便宜区;<b>周期</b>默认一般观察,景气数据接入后才可能升级。</p>
-      <p><b>估值</b>:把市盈率、市净率、股息率和这只股票自己的历史比(30% 市盈率分位 + 30% 市净率分位 + 40% 反向股息率分位,按全历史 20% / 近 10 年 50% / 近 5 年 30% 加权),综合分位 ≤40% 算便宜、40%–60% 适中、>60% 偏贵;财报约有 12 年,更早的市盈率、市净率不计入。<b>拥挤度</b> = 中证红利成交量占沪深两市比例的分位和它自身成交量分位的平均(20 日均值,近约 2.5 年),低于 40% 低温、高于 80% 高温。</p>
+      <p><b>估值</b>:把市盈率、市净率、股息率和这只股票自己的历史比(30% 市盈率分位 + 30% 市净率分位 + 40% 反向股息率分位,按全历史 20% / 近 10 年 50% / 近 5 年 30% 加权),综合分位 ≤40% 算便宜、40%–60% 适中、>60% 偏贵;财报约有 12 年,更早的市盈率、市净率不计入。<b>合理价</b> = 「分红 ÷ 近 5 年股息率中位数」和「估值中位数 × 每股收益或净资产」中较低者,但不低于绝对锚「分红 ÷ (10 年国债 + 3%)」—— 股息率已经比国债高 3 个百分点,就不再要求跌回历史低位(回测:12 个月内到价率 67% → 78%,到价后持有一年收益 13.4% → 13.8%)。<b>拥挤度</b> = 中证红利成交量占沪深两市比例的分位和它自身成交量分位的平均(20 日均值,近约 2.5 年),低于 40% 低温、高于 80% 高温。</p>
       <p><b>公司质量</b>(0–100,80 以上优秀、65 以上良好、50 以上一般)= 盈利能力 25(5 年加权平均 ROE、毛利率、净利率)+ 稳定性 20(ROE 波动、利润下滑次数、最新一期利润同比)+ 财务安全 20(资产负债率、流动比率;银行看不良率、拨备覆盖率)+ 现金含金量 15(经营现金流 / 利润)+ 分红质量 20(连续分红年数、分红增长、派息率是否在 30%–75%);5 年里越近的年份权重越大(最新一年 35%,往前 25%、18%、12%、10%);公用事业放宽负债要求,金融企业不看现金流,缺的项按其余满分折算;详情里低于该项一半分数的标红。</p>
-      <p><b>结论</b>:有风险 → 暂不考虑;公司质量偏弱、股息率不到 4%、周期股 → 等待;没到买入价时按差距和自身月度波动估时间(一个月波动以内「1 个月内可能到」,两个月以内「约 1–3 个月」,再远「要等明显回调」,是概率不是预测);到了买入价但还在下跌 → 接近;公司质量一般 → 只观察;其余 → 可以买。</p>
+      <p><b>结论</b>:有风险 → 暂不考虑;公司质量偏弱、股息率不到 4%、周期股 → 等待;没到买入价时按差距和自身月度波动估时间(一个月波动以内「1 个月内可能到」,两个月以内「约 1–3 个月」,再远「要等明显回调」,是概率不是预测);现价比合理价高 43% 以上(要跌 30% 以上才到)→ 很难到(回测近 5 年、105 只,这种情况 12 个月内到价的约 8%,当时按市价买入持有一年平均约 3%);到了买入价但还在下跌 → 接近;公司质量一般 → 只观察;其余 → 可以买。</p>
       <p>全部由公开数据按规则自动计算,只帮你缩小范围、管住手,不构成投资建议。</p></details>`;
   body.innerHTML = mac + log + `<div class="pl2${p.side ? '' : ' wide'}"><div class="pl-main">${tabs}${table}</div>${side}</div>` + rules;
 }
@@ -3641,12 +3652,13 @@ const fp = v => (v * 100).toFixed(0) + '%';
 const TREND = { up: ['年线上方', 'g'], weak: ['年线下方·跌势放缓', 'y'], fall: ['下跌中', 'r'] };
 const priceTip = o => [
   `【长线 · 近 5 年】`,
-  `合理价 ${o.F.toFixed(2)}:取较低者 —— 分红 ${o.dps.toFixed(3)} ÷ 股息率中位数 ${pct(o.y50)} = ${o.Fy.toFixed(2)}${o.Fv ? `;${o.vName}中位数 ${o.v50.toFixed(2)} × ${o.vName === '市净率' ? '每股净资产' : '每股收益'} ${o.vBase.toFixed(2)} = ${o.Fv.toFixed(2)}` : ''}${o.hi52 && o.F === Math.max(o.hi52, o.q.price) ? `;且不超过一年高点 ${o.hi52.toFixed(2)}` : ''}`,
+  `合理价 ${o.F.toFixed(2)}:取较低者 —— 分红 ${o.dps.toFixed(3)} ÷ 股息率中位数 ${pct(o.y50)} = ${o.Fy.toFixed(2)}${o.Fv ? `;${o.vName}中位数 ${o.v50.toFixed(2)} × ${o.vName === '市净率' ? '每股净资产' : '每股收益'} ${o.vBase.toFixed(2)} = ${o.Fv.toFixed(2)}` : ''}${o.Fa ? `;再和绝对锚取较高者 —— 分红 ÷ (10 年国债 ${pct(o.y10)} + 3%) = ${o.Fa.toFixed(2)}` : ''}${o.hi52 && o.F === Math.max(o.hi52, o.q.price) ? `;且不超过一年高点 ${o.hi52.toFixed(2)}` : ''}`,
   `便宜价 ${o.L.toFixed(2)}:取较低者 —— 分红 ÷ 70% 分位股息率 ${pct(o.ty)} = ${o.Ly.toFixed(2)}${o.Lv ? `;${o.vName} 30% 分位 ${o.v30.toFixed(2)} × ${o.vBase.toFixed(2)} = ${o.Lv.toFixed(2)}` : ''}`,
   `【中线 · 近 1 年】区间 ${o.lo52?.toFixed(2)} ~ ${o.hi52?.toFixed(2)},距高点 ${sgn(o.dd, 0)}`,
   `【短线 · 近 1 个月】近 4 周低点 ${o.low4?.toFixed(2)},4 周涨跌 ${sgn(o.r4, 1)},一个月正常波动约 ±${fp(o.sm)}`,
   `合理买入价 ${o.b1.toFixed(2)}:短线支撑位(近 4 周低点 / 现价回调半个月度波动),夹在便宜价和合理价之间`,
-].join('\n');
+  o.far ? '⚠ 现价比合理价高 43% 以上,回测里这种情况 12 个月内到价的约 8%' : '',
+].filter(Boolean).join('\n');
 const posTip = o => [
   `综合位置:比近几年 ${fp(o.pct)} 的时间便宜`,
   `· 股息率 ${pct(o.yld)}(近 5 年 ${pct(o.yMin)} ~ ${pct(o.yMax)}),分位 ${fp(o.yp)}`,
