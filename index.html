@@ -3701,7 +3701,7 @@ function renderPool() {
   poolTrack(all); poolDot();
   const { day, live } = poolCpDay();
   const inds = [...new Set(POOL_DEF.map(d => indOf(d.sub)))], pend = all.filter(o => !o.cl.c);
-  if (p.tab !== 'all' && !inds.includes(p.tab)) p.tab = 'all';
+  if (p.tab !== 'all' && p.tab !== 'hold' && !inds.includes(p.tab)) p.tab = 'all';
   const px = v => '¥' + v.toFixed(v < 10 ? 3 : 2);
   const t = poolT ? new Date(poolT) : null;
 
@@ -3766,7 +3766,9 @@ function renderPool() {
       </div></div></td></tr>`;
   };
   const qn = poolQ.replace(/\s+/g, '').toLowerCase();
-  const rk = { g: 0, y: 1, r: 2 }, inTab = o => qn ? poolHit(o, qn) : p.tab === 'all' || indOf(o.sub) === p.tab;
+  const held = new Set(S.holdings.map(hkey)), heldXs = all.filter(o => held.has(o.k));
+  if (p.tab === 'hold' && !heldXs.length) p.tab = 'all';
+  const rk = { g: 0, y: 1, r: 2 }, inTab = o => qn ? poolHit(o, qn) : p.tab === 'all' || (p.tab === 'hold' ? held.has(o.k) : indOf(o.sub) === p.tab);
   const rows = all.filter(o => o.cl.c && inTab(o)).sort((a, b) => rk[a.cl.c] - rk[b.cl.c] || (a.temp ?? 999) - (b.temp ?? 999));
   const tr = o => `<tr data-k="${o.k}" class="${p.open === o.k ? 'on' : ''}${o.cl.c === 'r' ? ' risk' : ''}">${rowOf(o)}</tr>${p.open === o.k ? detail(o) : ''}`;
   const tbody = rows.map(tr).join('');
@@ -3778,7 +3780,7 @@ function renderPool() {
     : pend.length || poolMsg
       ? `<button class="pl-st warn" data-plgo title="点一下重新拉取"><i></i><span>${pend.length ? `${pend.length} 只数据还没拿到` : esc(poolMsg)}</span><b>重试 ↻</b></button>`
       : `<span class="pl-st ok"><i></i><span>数据已是最新${hm ? ` · ${hm}` : ''}</span></span>`;
-  const tabs = `<div class="pl-tabs">${tabBtn('all', '全部', all)}${inds.map(n => tabBtn(n, n, all.filter(o => indOf(o.sub) === n))).join('')}
+  const tabs = `<div class="pl-tabs">${tabBtn('all', '全部', all)}${heldXs.length ? tabBtn('hold', '持仓股', heldXs) : ''}${inds.map(n => tabBtn(n, n, all.filter(o => indOf(o.sub) === n))).join('')}
       ${status}</div>`;
   const gs = all.filter(o => o.cl.c === 'g');
   const distOf = xs => { const m = {}; for (const o of xs) { const n = indOf(o.sub); m[n] = (m[n] || 0) + 1; } return Object.entries(m).sort((a, b) => b[1] - a[1]); };
@@ -3788,7 +3790,7 @@ function renderPool() {
     return `<div>${lbl} ${xs.length} 只:${d.map(([n, c]) => `${esc(n)} ${c}`).join(' · ')}${t[1] / xs.length > .4 ? ` <b>· ${esc(t[0])}占 ${(t[1] / xs.length * 100).toFixed(0)}%,超过 40%,同时买入注意分散</b>` : ''}${gl.length ? ` <b>· 同一实控人:${gl.join(';')}</b>` : ''}</div>`; };
   const conc = !qn && p.tab === 'all' ? `<div class="pl-conc">${concLine('★ 行业分布', gs, 5)}${concLine('可以买', all.filter(o => o.act?.a === 'buy'), 3)}</div>` : '';
   const table = `<div class="box">
-      <div class="sec-h"><span class="pl-ttl">${qn ? `搜索「${esc(poolQ.trim())}」` : p.tab === 'all' ? '全部' : esc(p.tab)} ${rows.length} 只 ·<span class="pl-star">★</span>${stars(rows)} 只</span><small>★ 重点关注 = 排雷全过、公司质量良好以上、估值不贵,排在最前;其余按估值从便宜到贵 · 点一行看原因</small></div>
+      <div class="sec-h"><span class="pl-ttl">${qn ? `搜索「${esc(poolQ.trim())}」` : p.tab === 'all' ? '全部' : p.tab === 'hold' ? '持仓股' : esc(p.tab)} ${rows.length} 只 ·<span class="pl-star">★</span>${stars(rows)} 只</span><small>★ 重点关注 = 排雷全过、公司质量良好以上、估值不贵,排在最前;其余按估值从便宜到贵 · 点一行看原因</small></div>
       ${rows.length ? `<div class="tbl-wrap"><table class="pl-tbl"><thead><tr>${COLS.map((h, i) => `<th class="${i >= 1 ? 'ct' : ''}${i === nc - 1 ? ' pl-evh' : ''}${h.startsWith('<span class="lg">') ? ' lg' : ''}">${h}</th>`).join('')}</tr></thead><tbody>${tbody}</tbody></table></div>`
         : `<div class="empty">${qn ? `没找到和「${esc(poolQ.trim())}」相关的公司,可以试试代码或行业名` : pend.length ? '数据还在加载,稍等' : '这个行业暂时没有标的'}</div>`}${conc}
     </div>`;
