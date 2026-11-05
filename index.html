@@ -3571,7 +3571,7 @@ function renderPool() {
     return `<td class="ct"><span class="pl-pos"><span class="pl-ph"><span class="pl-lv ${POOL_LV[o.lv][0]}" title="${esc(posTip(o))}">${POOL_LV[o.lv][1]}</span>${o.act ? `<span class="pl-evm ${o.act.a}">${ACT[o.act.a]}</span>` : ''}${st}</span><span class="pl-bar" title="${esc(posTip(o))}"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>
       ${o.b1 ? `<span class="pl-pr"><span><em>现价</em><b class="num">${px(o.q.price)}</b></span><span title="${esc(priceTip(o))}"><em>买入线</em><b class="num">${px(o.b1)}</b></span></span>` : ''}</span></td>`;
   };
-  const yCell = o => `<td title="按${o.cp !== o.q?.price ? '昨日' : '最新'}收盘价计算,分类也按它${o.cp !== o.q?.price ? ';下面是按实时价算的,仅供参考' : ''}"><b class="num">${o.yldC ? pct(o.yldC) : '—'}</b>${o.yld && o.cp !== o.q?.price ? `<span class="sm">实时 ${pct(o.yld)}</span>` : ''}</td>`;
+  const yCell = o => `<td title="按${o.cp !== o.q?.price ? '昨日' : '最新'}收盘价计算,分类也按它${o.cp !== o.q?.price ? ';下面是按实时价算的,仅供参考' : ''}"><b class="num">${o.yldC ? pct(o.yldC) : '—'}</b>${o.yldC ? `<span class="sm">${o.cp !== o.q?.price ? `昨收 · 实时 ${pct(o.yld)}` : '按收盘价'}</span>` : ''}</td>`;
   const sprCell = o => `<td>${o.spr != null && o.dps ? `<b class="num">${pp1(o.spr)}</b><span class="sm">分位 ${o.sprP != null ? fp(o.sprP) : '—'}${o.yld - o.y10 - .02 >= 0 && o.yld - o.y10 - .02 < .002 ? `<span class="lg pl-fb" title="实时利差离 2% 门槛不到 20bp,股价上涨也会让利差变小"> · 国债+${((o.yld - o.y10 - .02) * 1e4).toFixed(0)}bp 转等待</span>` : ''}</span>` : '—'}</td>`;
   const qTip = o => o.qual ? o.qual.parts.map(x => `${x.n} ${x.s.toFixed(0)}/${x.max}:${x.t}`).join('\n') : '年报不足 3 年,算不出来';
   const ACT = { buy: '可以买', near: '接近', wait: '等待', no: '暂不考虑' };
@@ -3580,7 +3580,7 @@ function renderPool() {
     const qual = `<span class="pl-et" title="${esc(qTip(o))}"><em>公司质量</em><b class="pl-tp ${qc}">${Q != null ? Q.toFixed(0) : '—'}${qn ? `<small>${qn}</small>` : ''}</b>${Q != null ? `<span class="pl-tb"><i class="${qc}" style="width:${Q.toFixed(0)}%"></i></span>` : ''}</span>`;
     return `<td class="pl-ev lg"><div class="pl-eg">${qual}<span class="pl-act"><span class="pl-ap ${act.a}">${ACT[act.a]}</span><span>${esc(act.t)}</span>${act.dr ? `<span class="pl-dft" title="${esc(o.vName)}在近 5 年 95% 分位以上且盈利没变差(估值中枢漂移),解除通常以年计">估值中枢漂移</span>` : ''}</span></div></td>`;
   };
-  const COLS = ['名称', '股息率', '<span title="股息率 − 10 年国债收益率,分位按近 36 个月"><span class="lg">股息率−国债</span><span class="sh">利差</span></span>', '<span title="按历史股息率分位,越靠左越便宜;买入线 = 价格低于这条线才考虑买,按这只股票自己的历史股息率、估值和国债利率倒推">综合位置<span class="lg"> · 买入线</span></span>', '<span class="lg"><span title="公司质量 0–100,80 以上优秀 · 结论:什么时候可以持有">综合评估</span></span>'];
+  const COLS = ['名称', '<span title="近 12 个月分红 ÷ 股价。交易时段按昨日收盘价算(分类也按它),下面小字是实时价算的;收盘后按当天收盘价">股息率</span>', '<span title="股息率 − 10 年国债收益率,分位按近 36 个月"><span class="lg">股息率−国债</span><span class="sh">利差</span></span>', '<span title="按历史股息率分位,越靠左越便宜;买入线 = 价格低于这条线才考虑买,按这只股票自己的历史股息率、估值和国债利率倒推">综合位置<span class="lg"> · 买入线</span></span>', '<span class="lg"><span title="公司质量 0–100,80 以上优秀 · 结论:什么时候可以持有">综合评估</span></span>'];
   const rowOf = o => nmCell(o) + yCell(o) + sprCell(o) + posCell(o) + evalCell(o);
   const nc = COLS.length;
   const detail = o => {
