@@ -791,22 +791,23 @@
   .ef-hd { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
   .ef-hd b { font-size: 18px; } .ef-hd .c { font-size: 12.5px; color: var(--muted-2); }
   .ef-grp { padding: 1px 8px; border-radius: 6px; font-size: 11.5px; color: rgb(var(--c)); background: rgba(var(--c),.12); }
-  .ef-verdict { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--border-soft); background: rgba(255,255,255,.03); }
-  .ef-verdict .big { font-size: 30px; font-weight: 800; letter-spacing: .3px; }
-  .ef-verdict b { display: block; font-size: 15px; } .ef-verdict span { font-size: 12.5px; color: var(--muted); }
-  .ef-verdict.l1 { border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.07); } .ef-verdict.l1 .big, .ef-verdict.l1 b { color: #6ee7b7; }
-  .ef-verdict.l2 { border-color: rgba(250,204,21,.35); background: rgba(250,204,21,.07); } .ef-verdict.l2 .big, .ef-verdict.l2 b { color: #fde047; }
-  .ef-verdict.l3 { border-color: rgba(248,113,113,.38); background: rgba(248,113,113,.07); } .ef-verdict.l3 .big, .ef-verdict.l3 b { color: #fca5a5; }
-  .ef-alt { display: block; width: 100%; text-align: left; margin-top: -6px; padding: 9px 12px; border-radius: 10px; border: 1px dashed var(--border); background: none; color: var(--muted); font: inherit; font-size: 12.5px; cursor: pointer; }
+  .ef-alt { display: block; width: 100%; text-align: left; margin-top: -4px; padding: 9px 12px; border-radius: 10px; border: 1px dashed var(--border); background: none; color: var(--muted); font: inherit; font-size: 12.5px; cursor: pointer; }
   .ef-alt b { color: var(--text); } .ef-alt:hover { border-color: rgba(var(--c),.6); color: var(--text); }
   .ef-alt.ok { cursor: default; color: #6ee7b7; border-color: rgba(52,211,153,.3); }
   .ef-trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .ef-trio > div { padding: 11px 13px; border-radius: 12px; background: var(--card); border: 1px solid var(--border-soft); min-width: 0; }
+  .ef-trio > div { padding: 14px 16px; border-radius: 14px; background: var(--card); border: 1px solid var(--border-soft); min-width: 0; }
   .ef-trio .key { border-color: rgba(var(--c),.35); }
-  .ef-trio span { font-size: 12px; color: var(--muted-2); }
-  .ef-trio b { display: block; font-size: 21px; font-weight: 750; margin: 3px 0 2px; }
-  .ef-trio em { display: block; font-style: normal; font-size: 11.5px; color: var(--muted-2); } .ef-trio em i { font-style: normal; }
-  .ef-meta { font-size: 12px; color: var(--muted-2); }
+  .ef-trio > div > span { font-size: 12.5px; color: var(--muted); }
+  .ef-trio b { display: block; font-size: 28px; font-weight: 800; margin: 6px 0 6px; white-space: nowrap; }
+  .ef-trio b small { font-size: 16px; font-weight: 600; margin-right: 2px; color: var(--muted); }
+  .ef-trio b i { font-style: normal; font-size: 13px; font-weight: 600; }
+  .ef-trio em { display: block; font-style: normal; font-size: 12px; color: var(--muted-2); } .ef-trio em i { font-style: normal; }
+  .ef-trio em .pm { font-size: 12px; margin-left: 2px; }
+  .ef-trio .vt { margin-top: 5px; font-weight: 600; }
+  .ef-trio .pv.l1 { border-color: rgba(52,211,153,.35); } .ef-trio .pv.l1 .vt { color: #6ee7b7; }
+  .ef-trio .pv.l2 { border-color: rgba(250,204,21,.38); } .ef-trio .pv.l2 .vt { color: #fde047; }
+  .ef-trio .pv.l3 { border-color: rgba(248,113,113,.42); background: linear-gradient(160deg, rgba(248,113,113,.08), transparent); } .ef-trio .pv.l3 .vt { color: #fca5a5; }
+  .ef-meta { font-size: 12px; color: var(--muted-2); line-height: 1.7; } .ef-meta b { color: var(--text); font-weight: 600; } .ef-meta i { font-style: normal; }
   .ef-det summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; cursor: pointer; list-style: none; }
   .ef-det summary::-webkit-details-marker { display: none; }
   .ef-det summary .sec-h { margin: 0; }
@@ -835,6 +836,7 @@
   .ef-menu hr { border: 0; border-top: 1px solid var(--border-soft); margin: 5px 4px; }
   .ef-tool { display: flex; align-items: center; gap: 8px; }
   .ef-tool .switch { font-size: 12.5px; color: var(--muted); gap: 7px; white-space: nowrap; }
+  .ef-tool .ef-iv { width: auto; min-width: 0; height: 34px; padding: 0 28px 0 10px; font-size: 12.5px; }
   @media (max-width: 920px) {
     .ef-layout { grid-template-columns: 1fr; }
     .ef-side { position: static; max-height: none; grid-auto-flow: column; grid-auto-columns: 262px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 8px; }
@@ -845,8 +847,9 @@
     .ef-card.active .x { opacity: 1; }
     .ef-trio { gap: 6px; }
     .ef-trio > div { padding: 9px 10px; }
-    .ef-trio b { font-size: 16px; }
-    .ef-verdict .big { font-size: 24px; }
+    .ef-trio { grid-template-columns: 1fr 1fr; }
+    .ef-trio .pv { grid-column: 1 / -1; }
+    .ef-trio b { font-size: 20px; }
     .ef-tbl .lg { display: none; }
     .ef-tbl td, .ef-tbl th { padding-left: 6px; padding-right: 6px; }
     .ef-tbl td .w { width: 58px; padding: 4px 6px; }
@@ -4153,18 +4156,23 @@ function etfEnter() {
   if (!$('#efBody')) buildEtf();
   renderEtf();
   if (!EL.t || Date.now() - EL.t > 25e3) etfRefresh();
+  etfTick();
+}
+function etfTick() {
   clearInterval(etfTimer);
   etfTimer = setInterval(() => {
     if (!E.auto || document.hidden || !$('#etf').classList.contains('active') || !(aOpen() || usOpen())) return;
     etfRefresh();
-  }, 30e3);
+  }, (E.iv || 30) * 1e3);
 }
 function buildEtf() {
   $('#etf').innerHTML = head('etf', '跨境估值', 'QDII 实时估算净值 · 成分股 × 汇率 · 溢价监控', `
     <div class="ef-tool">
-      <label class="switch" title="只在 A股 / 美股交易时段自动刷新"><input type="checkbox" id="efAuto"${E.auto ? ' checked' : ''}/>自动刷新 30 秒</label>
+      <label class="switch" title="只在 A股 / 美股交易时段自动刷新"><input type="checkbox" id="efAuto"${E.auto ? ' checked' : ''}/>自动刷新</label>
+      <select id="efIv" class="ef-iv" title="自动刷新间隔">${[30, 60, 120].map(s => `<option value="${s}"${(E.iv || 30) === s ? ' selected' : ''}>${s} 秒</option>`).join('')}</select>
       <button class="run sm" id="efGo">立即刷新</button>
       <details class="ef-more"><summary>更多 ▾</summary><div class="ef-menu">
+        <button data-ef="info">基金信息 / 费率</button><hr/>
         <button data-ef="hold">更新持仓清单</button>
         <button data-ef="exp">调整股票仓位</button>
         <button data-ef="reset">恢复自动权重</button><hr/>
@@ -4175,6 +4183,7 @@ function buildEtf() {
     </div>`) + `<div id="efBody"></div><input type="file" id="efCsv" accept=".csv,text/csv,text/plain" hidden />`;
   const el = $('#etf');
   $('#efAuto').onchange = e => { E.auto = e.target.checked; eSave(); };
+  $('#efIv').onchange = e => { E.iv = +e.target.value; eSave(); etfTick(); };
   $('#efGo').onclick = () => etfRefresh(true);
   el.addEventListener('click', e => {
     const card = e.target.closest('[data-efc]');
@@ -4266,20 +4275,24 @@ function renderEtf() {
   const alt = !b ? '' : b === o ? `<div class="ef-alt ok">✓ 同指数 ${groups[o.g].length} 只里,这只溢价最低</div>`
     : `<button class="ef-alt" data-efc="${b.code}">同指数溢价最低的是 <b>${esc(etfShort(b.name))} ${b.code}</b> <span class="pm ${pmLv(b.p)}">${sgn(b.p)}</span>,比这只低 ${((o.p - b.p) * 100).toFixed(2)} pp →</button>`;
   const fee = f.fee ? f.fee[0] + f.fee[1] : null;
+  const pp = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(3) + ' pp';
+  const dNav = o.est ? o.est - f.nav : null;
   const hero = `<div class="box ef-hero">
       <div class="ef-hd"><b>${esc(etfShort(o.name))}</b><span class="c">${o.code}</span><span class="ef-grp">${esc(o.g)}</span></div>
-      <div class="ef-verdict ${lv}"><div class="big num">${o.p == null ? '—' : (o.p < 0 ? '折价 ' : '溢价 ') + sgn(Math.abs(o.p)).slice(1)}</div><div><b>${vt}</b><span>${vs}</span></div></div>
-      ${alt}
       <div class="ef-trio">
-        <div><span>场内价格</span><b class="num">${o.price ? o.price.toFixed(3) : '—'}</b><em class="${cls(o.mchg)}">今日 ${sgn(o.mchg)}</em></div>
-        <div class="key"><span>本站估算净值</span><b class="num">${o.est ? o.est.toFixed(4) : '—'}</b><em class="${cls(o.chg)}">较上日 ${o.est ? sgn(o.chg) : '—'}</em></div>
-        <div><span>交易所 IOPV</span><b class="num">${o.iopv ? o.iopv.toFixed(4) : '—'}</b><em><i class="${cls(o.ichg)}">${sgn(o.ichg)}</i> · 溢价 ${sgn(o.iprem)}</em></div>
+        <div class="key"><span>估算参考净值(人民币)</span><b class="num"><small>¥</small>${o.est ? o.est.toFixed(4) : '—'}</b>
+          <em>基准 ${nf(f.nav, 4)}${f.navD ? `(${f.navD.slice(5)})` : ''} · 涨跌额 <i class="${cls(dNav)}">${dNav == null ? '—' : (dNav >= 0 ? '+' : '') + dNav.toFixed(4)}</i></em></div>
+        <div><span>估算总涨跌</span><b class="num ${cls(o.est ? o.chg : null)}">${o.est ? sgn(o.chg, 3) : '—'}</b>
+          <em>${o.est ? `股票 <i class="${cls(o.sr)}">${pp(o.sr)}</i> · 汇率 <i class="${cls(o.fp)}">${pp(o.fp)}</i>` : '等待行情'}</em></div>
+        <div class="pv ${lv}"><span>ETF 二级市场价格</span><b class="num"><small>¥</small>${o.price ? o.price.toFixed(3) : '—'} <i class="${cls(o.mchg)}">${sgn(o.mchg)}</i></b>
+          <em>相对估算净值${o.p != null && o.p < 0 ? '折价' : '溢价'} <span class="pm ${lv}">${o.p == null ? '—' : sgn(o.p, 3)}</span></em>
+          <em class="vt" title="${esc(vs)}">${vt}${o.p != null && o.p >= .05 ? ' · 可等回落再买' : o.p != null && o.p >= .02 ? ' · 优先挑同指数溢价低的' : ''}</em></div>
       </div>
-      <div class="ef-meta">${[esc(f.co || ''), esc(f.idx || ''), etfExch(o.code).replace('证券交易所', '所'), fee != null ? `费率 ${fee.toFixed(2)}%/年` : '', o.amt ? `今日成交 ${etfAmt(o.amt)}` : ''].filter(Boolean).join(' · ')}</div>
+      ${alt}
+      <div class="ef-meta">${[`交易所 IOPV <b>${o.iopv ? o.iopv.toFixed(4) : '—'}</b> <i class="${cls(o.ichg)}">${sgn(o.ichg)}</i> · IOPV 溢价 ${sgn(o.iprem)}`, o.amt ? `今日成交 ${etfAmt(o.amt)}` : '', esc(f.co || ''), esc(f.idx || ''), etfExch(o.code).replace('证券交易所', '所'), fee != null ? `费率 ${fee.toFixed(2)}%/年` : ''].filter(Boolean).join(' · ')}</div>
     </div>`;
 
   const miss = o.n - o.ok + (o.rest && o.rest.ret === null ? 1 : 0);
-  const pp = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(3) + ' pp';
   const cmax = Math.max(1e-9, ...o.rows.map(r => Math.abs(r.con || 0)), Math.abs(o.rest?.con || 0));
   const conCell = c => c == null ? '—' : `<span class="ef-con"><i><s class="${c < 0 ? 'dn' : ''}" style="width:${Math.abs(c) / cmax * 100}%"></s></i><b class="${cls(c)}">${(c >= 0 ? '+' : '') + (c * 100).toFixed(3)}</b></span>`;
   const tr = r => `<tr class="${r.ret === null ? 'miss' : ''}">
@@ -4291,9 +4304,7 @@ function renderEtf() {
       <td>${o.rest.w.toFixed(2)}</td><td class="lg">${o.rest.base ? o.rest.base.toFixed(2) : '—'}</td><td class="lg">${o.rest.q ? o.rest.q.price.toFixed(2) : '—'}</td>
       <td class="${cls(o.rest.ret)}">${sgn(o.rest.ret)}</td><td>${conCell(o.rest.ret === null ? null : o.rest.con)}</td><td class="lg"><span class="sm">${o.rest.q?.time || '—'}</span></td></tr>` : '';
   const facts = [
-    `基准净值 <b>${nf(f.nav, 4)}</b>(${f.navD ? f.navD.slice(5) : '—'})`,
     f.navG != null ? `净值增长率 <b class="${cls(f.navG)}">${sgn(f.navG)}</b>(${f.navD ? f.navD.slice(5) : '—'} 官方)` : '',
-    o.est ? `股票 <b class="${cls(o.sr)}">${pp(o.sr)}</b> · 汇率 <b class="${cls(o.fp)}">${pp(o.fp)}</b>` : '',
     EL.fx ? `USD/CNY <b>${EL.fx.toFixed(4)}</b>` : '',
     `股票仓位 <b>${o.exp != null ? o.exp.toFixed(2) + '%' : '—'}</b>${ov?.exp != null ? '(手动)' : ''}`,
     `持仓 <b>${f.hd ? f.hd + ' 季报' : '—'}</b> · ${esc(ov?.src || f.src || '—')}`,
@@ -4340,6 +4351,18 @@ function etfImport(txt) {
 }
 async function etfMenu(k) {
   const c = E.cur;
+  if (k === 'info') {
+    const f = EC.f[c] || {}, ov = E.ov[c], fee = f.fee, p2 = v => v.toFixed(2) + '%/年';
+    const ln = [
+      `${etfShort(f.name || c)} ${c} · ${etfExch(c)}`,
+      f.co ? `基金公司:${f.co}` : '', f.idx ? `跟踪指数:${f.idx}` : '',
+      fee ? `管理费 ${p2(fee[0])} · 托管费 ${p2(fee[1])} · 合计 ${p2(fee[0] + fee[1])}` : '费率:暂未拿到',
+      fee ? `按合计费率,持有 1 万元一年约 ¥${((fee[0] + fee[1]) * 100).toFixed(0)},每天从净值里计提` : '',
+      `基准净值:${nf(f.nav, 4)}${f.navD ? `(${f.navD})` : ''}${f.navG != null ? ` · 当日官方增长率 ${sgn(f.navG)}` : ''}`,
+      `股票仓位:${etfExp(c).toFixed(2)}%${ov?.exp != null ? '(手动)' : f.cash >= 0 ? `(季报现金 ${(+f.cash).toFixed(2)}%)` : '(默认)'}`,
+      `持仓清单:${f.hd ? f.hd + ' 季报' : '—'} · ${ov?.src || f.src || '—'} · 前十大 ${etfRows(c).length} 只`];
+    return xbAsk({ title: '基金信息 / 费率', cancel: null, ok: '知道了', host: $('#etf'), msg: ln.filter(Boolean).join('\n') });
+  }
   if (k === 'hold') { EL.t = 0; toast('正在重新拉取持仓清单…'); return etfRefresh('hold'); }
   if (k === 'reset') { delete E.ov[c]; eSave(); toast('已恢复为季报持仓与自动仓位'); return renderEtf(); }
   if (k === 'csv-in') return $('#efCsv').click();
