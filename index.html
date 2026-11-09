@@ -4245,7 +4245,7 @@ function renderEtf() {
   if (!E.list.includes(E.cur)) E.cur = E.list[0];
   if (!ETF_SORTS.some(([k]) => k === E.sort)) E.sort = 'def';
   const all = E.list.map(etfCalc);
-  all.forEach(x => { x.g = etfIdx(x); x.p = x.prem ?? x.iprem; });
+  all.forEach(x => { x.g = etfIdx(x); x.p = x.iprem ?? x.prem; x.pe = x.iprem == null && x.prem != null; });
   const groups = {};
   all.forEach(x => (groups[x.g] ||= []).push(x));
   const best = {};
@@ -4260,7 +4260,7 @@ function renderEtf() {
       ${E.list.length > 1 ? `<span class="x" data-efx="${x.code}" title="移出监控"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></span>` : ''}
       <div class="hd"><span class="n">${esc(etfShort(x.name))}</span><span class="c">${x.code}</span>${best[x.g] === x ? '<span class="ef-best">溢价最低</span>' : ''}</div>
       <div class="m"><span>场内 <b class="num">${x.price ? x.price.toFixed(3) : '—'}</b> <i class="${cls(x.mchg)}">${sgn(x.mchg)}</i></span><span class="pm ${pmLv(x.p)}">${x.p == null ? '—' : sgn(x.p)}</span></div>
-      <div class="s"><span>成交 ${x.amt ? etfAmt(x.amt) : '—'}</span><span>IOPV 溢价 ${sgn(x.iprem)}</span></div>
+      <div class="s"><span>成交 ${x.amt ? etfAmt(x.amt) : '—'}</span><span>${x.pe ? '溢价按本站估算' : `IOPV ${x.iopv ? x.iopv.toFixed(4) : '—'}`}</span></div>
     </button>`;
   let list;
   if (E.sort === 'def') list = Object.entries(groups).map(([g, xs]) => `<div class="ef-gh">${esc(g)}<small>${xs.length} 只</small></div>${xs.map(card).join('')}`).join('');
@@ -4285,11 +4285,11 @@ function renderEtf() {
         <div><span>估算总涨跌</span><b class="num ${cls(o.est ? o.chg : null)}">${o.est ? sgn(o.chg, 3) : '—'}</b>
           <em>${o.est ? `股票 <i class="${cls(o.sr)}">${pp(o.sr)}</i> · 汇率 <i class="${cls(o.fp)}">${pp(o.fp)}</i>` : '等待行情'}</em></div>
         <div class="pv ${lv}"><span>ETF 二级市场价格</span><b class="num"><small>¥</small>${o.price ? o.price.toFixed(3) : '—'} <i class="${cls(o.mchg)}">${sgn(o.mchg)}</i></b>
-          <em>相对估算净值${o.p != null && o.p < 0 ? '折价' : '溢价'} <span class="pm ${lv}">${o.p == null ? '—' : sgn(o.p, 3)}</span></em>
+          <em>${o.pe ? '估算溢价(暂无 IOPV)' : '官方溢价(对 IOPV)'}${o.p != null && o.p < 0 ? ' · 折价' : ''} <span class="pm ${lv}">${o.p == null ? '—' : sgn(o.p, 3)}</span></em>
           <em class="vt" title="${esc(vs)}">${vt}${o.p != null && o.p >= .05 ? ' · 可等回落再买' : o.p != null && o.p >= .02 ? ' · 优先挑同指数溢价低的' : ''}</em></div>
       </div>
       ${alt}
-      <div class="ef-meta">${[`交易所 IOPV <b>${o.iopv ? o.iopv.toFixed(4) : '—'}</b> <i class="${cls(o.ichg)}">${sgn(o.ichg)}</i> · IOPV 溢价 ${sgn(o.iprem)}`, o.amt ? `今日成交 ${etfAmt(o.amt)}` : '', esc(f.co || ''), esc(f.idx || ''), etfExch(o.code).replace('证券交易所', '所'), fee != null ? `费率 ${fee.toFixed(2)}%/年` : ''].filter(Boolean).join(' · ')}</div>
+      <div class="ef-meta">${[`交易所 IOPV <b>${o.iopv ? o.iopv.toFixed(4) : '—'}</b> <i class="${cls(o.ichg)}">${sgn(o.ichg)}</i>`, o.amt ? `今日成交 ${etfAmt(o.amt)}` : '', esc(f.co || ''), esc(f.idx || ''), etfExch(o.code).replace('证券交易所', '所'), fee != null ? `费率 ${fee.toFixed(2)}%/年` : ''].filter(Boolean).join(' · ')}</div>
     </div>`;
 
   const miss = o.n - o.ok + (o.rest && o.rest.ret === null ? 1 : 0);
@@ -4318,7 +4318,7 @@ function renderEtf() {
     </details>`;
   body.innerHTML = `<div class="ef-bar"><span class="hint" id="efSt">${esc(st)}</span><div class="chips ef-sort"><span>排序</span>${sortBar}</div></div>
     <div class="ef-layout">${side}<div class="ef-main">${hero}${det}
-    <div class="hint">溢价 = 场内价格 ÷ 本站估算净值 − 1 <span class="pm l1">&lt;2% 合理</span> <span class="pm l2">2–5% 偏高</span> <span class="pm l3">&gt;5% 很高</span></div></div></div>`;
+    <div class="hint">溢价 = 场内价格 ÷ 交易所 IOPV − 1,拿不到 IOPV 时用本站估算净值 <span class="pm l1">&lt;2% 合理</span> <span class="pm l2">2–5% 偏高</span> <span class="pm l3">&gt;5% 很高</span></div></div></div>`;
 }
 
 async function etfAdd() {
@@ -4385,7 +4385,7 @@ async function etfMenu(k) {
     return;
   }
   if (k === 'help') xbAsk({ title: '计算说明', cancel: null, ok: '知道了', host: $('#etf'),
-    msg: '估算净值 = 基准净值 × (1 + Σ 成分股权重 × 股价涨跌) × (当前汇率 ÷ 基准日汇率)。\n\n· 基准净值:基金最近一次公布的单位净值。\n· 股价涨跌:相对「净值日当天」的美股收盘价,而不是简单的昨收,避免净值晚公布时错一天。\n· 权重:最新季报前十大持仓;其余仓位按同指数美股 ETF(QQQ / SPY / OEF / QTEC)走势代理。\n· 汇率:实时 USD/CNY 对比净值日收盘汇率。\n· 溢价 = 场内价格 ÷ 估算净值 − 1。\n· 交易所 IOPV:交易所每 15 秒发布的参考净值,由基金公司按自己的口径计算,放在旁边做对照;IOPV 溢价 = 场内价格 ÷ IOPV − 1。\n\n管理费、托管费每天从净值里计提,单日影响约 0.002%,不单独扣除。' });
+    msg: '估算净值 = 基准净值 × (1 + Σ 成分股权重 × 股价涨跌) × (当前汇率 ÷ 基准日汇率)。\n\n· 基准净值:基金最近一次公布的单位净值。\n· 股价涨跌:相对「净值日当天」的美股收盘价,而不是简单的昨收,避免净值晚公布时错一天。\n· 权重:最新季报前十大持仓;其余仓位按同指数美股 ETF(QQQ / SPY / OEF / QTEC)走势代理。\n· 汇率:实时 USD/CNY 对比净值日收盘汇率。\n· 溢价 = 场内价格 ÷ 交易所 IOPV − 1。IOPV 是交易所交易时段每 15 秒发布的官方参考净值,收盘后停在最后一个值;拿不到 IOPV 时改用本站估算净值,并标注「估算」。\n\n管理费、托管费每天从净值里计提,单日影响约 0.002%,不单独扣除。' });
 }
 
 $('#nav').onclick = e => {
