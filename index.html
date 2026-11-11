@@ -587,6 +587,8 @@
   .h-ak.add { color: #6ee7b7; background: rgba(52,211,153,.15); }
   .h-ak.risk { color: #fcd34d; background: rgba(251,191,36,.15); }
   .h-ak.near { color: var(--muted); background: var(--card-2); }
+  .h-ak.warn { color: #fdba74; background: rgba(251,146,60,.15); }
+  .h-tr { cursor: help; } .h-tr.up { color: var(--up); } .h-tr.down { color: var(--down); }
   #hTable .h-ops { white-space: nowrap; text-align: right; }
   .qtip { display: inline-grid; place-items: center; width: 15px; height: 15px; margin-left: 5px; border-radius: 50%; border: 1px solid var(--muted-2); color: var(--muted); font: 600 10px/1 inherit; font-style: normal; cursor: help; vertical-align: 1px; outline: none; }
   .qtip:hover, .qtip:focus { color: var(--text); border-color: rgba(96,165,250,.7); }
@@ -1564,26 +1566,104 @@ function groupRows(rows, byAcc) {
    比合理价高 43%+ 约 15pp;排雷只作复核,换股没有显著好处(1pp ±4pp);无信号时换不换几乎一样 */
 const y10Now = () => { const y = PC?.mac?.y10; return y?.length ? y[y.length - 1][1] / 100 : Y10_FB; };
 const holdTgt = k => S.tgt?.[k] ?? .01;
+/* 止盈 / 接回参数来自回测(104 只 × 2015–2023 每半年起点,各持有 3 年,对照一直持有、分红照收):
+   浮盈 ≥20% 且位置偏高(综合位置 ≤40% 分位)后,从近 60 日高点回落 8% 或「近 3 个月涨 25% 且高位」才止盈,卖一半,
+   跌 12% 或位置回到偏低以下接回,满一年没跌回按现价接回。年化比一直持有多 0.47pp(样本外)/ 0.67pp,78%–82% 在更低价接回;
+   只看浮盈不看位置和趋势的版本样本外只有 0.33pp */
+const TP = { g: .2, pos: .4, dd: .08, warn: .04, hot: .25, f: .5, back: .12, wait: 365 };
+/* 趋势用复权价:除息日股价按分红往下跳,不复权会被误判成回撤 */
+function holdTrend(k) {
+  const d = C.hk?.[k]?.d, q = C.quotes[k];
+  if (!d || d.length < 30) return null;
+  const kl = d.map(x => [x[0], x[1]]);
+  if (q?.price > 0) { if (kl.at(-1)[0] === TODAY) kl.at(-1)[1] = q.price; else if (aOpen()) kl.push([TODAY, q.price]); }
+  const ex = {};
+  for (const e of C.divs[k]?.list || []) if (e.ex) { const x = ex[e.ex] ||= [0, 0]; x[0] += e.ps || 0; x[1] += (String(e.plan || '').match(/[送转]增?\d+(?:\.\d+)?/g) || []).reduce((s, m) => s + +m.replace(/\D*/, '') / 10, 0); }
+  const A = [kl[0][1]]; let c = 1;
+  for (let i = 1; i < kl.length; i++) {
+    for (const t in ex) if (t > kl[i - 1][0] && t <= kl[i][0]) { const [ps, sg] = ex[t], e2 = (kl[i - 1][1] - ps) / (1 + sg); if (e2 > 0) c *= kl[i - 1][1] / e2; }
+    A.push(kl[i][1] * c);
+  }
+  const R = A.map(v => v / c), n = R.length, p = R[n - 1];
+  const hh = Math.max(...R.slice(-60)), ma20 = R.slice(-20).reduce((a, b) => a + b, 0) / Math.min(20, n);
+  const dd = 1 - p / hh, r3 = n > 63 ? p / R[n - 64] - 1 : null;
+  return { p, hh, line: hh * (1 - TP.dd), dd, r3, st: dd >= TP.dd ? '转跌' : dd >= TP.warn ? '走弱' : p < ma20 ? '震荡' : '上行' };
+}
+/* A 股卖出按先进先出算持有时间,不满 1 年要补扣已到手分红的税(1 个月内 20%,1 个月–1 年 10%) */
+function sellTax(g, q) {
+  if (g.h.mk !== 'A') return null;
+  let left = q, tax = 0, free = '';
+  for (const r of g.lots) {
+    if (left <= 0) break;
+    const n = Math.min(left, r.h.shares); left -= n;
+    const held = r.h.buy ? daysBetween(r.h.buy, TODAY) : 9999;
+    if (held > 365) continue;
+    const got = r.evs.filter(e => e.st === 'paid').reduce((s, e) => s + e.ps * fx(e.cur), 0) * n;
+    if (got > 0) { tax += got * (held > 30 ? .1 : .2); if (!free || addDays(r.h.buy, 366) > free) free = addDays(r.h.buy, 366); }
+  }
+  return tax > 0 ? { tax, free } : null;
+}
+const exSoon = k => { const e = (C.divs[k]?.list || []).filter(e => e.ex > TODAY && e.ps > 0).sort((a, b) => a.ex.localeCompare(b.ex))[0]; const d = e && daysBetween(TODAY, e.ex); return d != null && d <= 15 ? { d, ps: e.ps } : null; };
+const soldOf = gk => (S.sold || []).filter(x => x.acc + '|' + hkey(x) === gk);
 function holdAdvice(groups) {
   const out = [], y10 = y10Now(), lot = (g, f) => { const step = g.h.mk === 'A' || g.h.mk === 'F' ? 100 : 1; return Math.floor(g.shares * f / step) * step; };
+  const totMv = groups.reduce((a, g) => a + g.mv, 0), seen = new Set();
+  const poolOf = k => { if (!POOL_BY[k]) return null; let o = null; try { o = poolCalc(k); } catch {} return o?.cl?.c ? o : null; };
+  /* 待接回:卖出价跌 12%、位置回到偏低以下,或满一年 */
+  const backs = (gk, k, name, o, g) => {
+    for (const x of soldOf(gk)) {
+      const p = C.quotes[k]?.price, bb = x.px * (1 - TP.back), days = daysBetween(x.date, TODAY);
+      if (!(p > 0)) continue;
+      const qty = Math.floor(x.px * x.q / p / (x.mk === 'A' || x.mk === 'F' ? 100 : 1)) * (x.mk === 'A' || x.mk === 'F' ? 100 : 1);
+      const base = { g: g || { name, gk, k, h: x }, k, o, sold: x };
+      const why = [`${x.date} 以 ¥${x.px.toFixed(2)} 卖出 ${fmt(x.q, 0)} 股,接回价 ¥${bb.toFixed(2)}(卖出价 −12%)`];
+      if (p <= bb || (o && o.pct >= .6)) out.push({ ...base, kind: 'back', t: `可以接回 · 约 ${fmt(qty, 0)} 股(用卖出的钱买回)`, why: [...why, p <= bb ? `现价 ${p.toFixed(2)} 已到接回价` : `综合位置回到${POOL_LV[o.lv][1]}`], d: '回测里 78%–82% 的止盈能在更低价格接回,接回后股数比卖出前多' });
+      else if (days >= TP.wait) out.push({ ...base, kind: 'back', t: '满一年没跌回 · 可按现价接回,或换池里「可以买」的', why: [...why, `现价 ${p.toFixed(2)},比卖出价${p >= x.px ? '高' : '低'} ${Math.abs((p / x.px - 1) * 100).toFixed(1)}%`], d: '回测里满一年没跌回的按现价接回,算进了收益' });
+      else out.push({ ...base, kind: 'pend', t: `待接回 ${fmt(x.q, 0)} 股 · 还差 ${((1 - bb / p) * 100).toFixed(1)}%`, why, d: '' });
+    }
+  };
   for (const g of groups) {
     const k = g.k, tgt = holdTgt(k);
-    let o = null;
-    if (POOL_BY[k]) { try { o = poolCalc(k); } catch {} if (!o?.cl?.c) o = null; }
+    seen.add(g.gk);
+    const o = poolOf(k);
     if (!o && !['A', 'F'].includes(g.h.mk)) continue;
+    const base = { g, k, tgt, o };
+    const nb = out.length; backs(g.gk, k, g.name, o, g);
+    if (out.length > nb && out.slice(nb).some(x => x.kind === 'back')) continue;
+    /* 止盈:浮盈够 + 位置偏高才进观察,趋势转弱才动手 */
+    const gain = g.cost > 0 ? g.price / g.cost - 1 : 0, hi = o ? o.pct <= TP.pos : true, tr = holdTrend(k);
+    if (gain >= TP.g && hi && tr) {
+      const hot = tr.r3 != null && tr.r3 >= TP.hot && o && o.pct < .2;
+      const pos = o ? `综合位置${POOL_LV[o.lv][1]}` : '不在股票池,只按趋势判断';
+      if (tr.dd >= TP.dd || hot) {
+        const q = lot(g, TP.f), tx = sellTax(g, q), es = exSoon(k);
+        out.push({ ...base, kind: 'tp', t: `建议止盈 · 卖一半约 ${fmt(q, 0)} 股 · 接回价 ¥${(g.price * (1 - TP.back)).toFixed(2)}`,
+          why: [`浮盈 ${(gain * 100).toFixed(1)}%`, hot ? `近 3 个月涨 ${(tr.r3 * 100).toFixed(0)}%,过热` : `从近 60 日高点 ¥${tr.hh.toFixed(2)} 回落 ${(tr.dd * 100).toFixed(1)}%,跌破止盈线 ¥${tr.line.toFixed(2)}`, pos,
+            ...(tx ? [`现在卖要补扣分红税约 ¥${fmt(tx.tax, 0)},${tx.free} 后免`] : []), ...(es ? [`${es.d} 天后除息(每股 ${es.ps.toFixed(3)}),可以除息后再卖`] : [])],
+          d: '回测:按这套规则止盈再接回,年化比一直持有多约 0.5pp,接回成功率约 80%。卖出后点持仓「⋯ → 卖出」记一笔,跌到接回价会提醒' });
+        continue;
+      }
+      if (tr.dd >= TP.warn) { out.push({ ...base, kind: 'warn', t: `趋势走弱 · 跌到 ¥${tr.line.toFixed(2)} 止盈(还差 ${((1 - tr.line / tr.p) * 100).toFixed(1)}%)`, why: [`浮盈 ${(gain * 100).toFixed(1)}%`, `从近 60 日高点 ¥${tr.hh.toFixed(2)} 回落 ${(tr.dd * 100).toFixed(1)}%`, pos], d: '止盈线 = 近 60 个交易日最高价 × 92%,会跟着新高往上移' }); continue; }
+      out.push({ ...base, kind: 'watch', t: `浮盈 ${(gain * 100).toFixed(1)}% · 趋势${tr.st === '上行' ? '仍向上' : '震荡'} · 止盈线 ¥${tr.line.toFixed(2)}`, why: [pos, '让利润再跑,跌破止盈线再卖'], d: '止盈线 = 近 60 个交易日最高价 × 92%,会跟着新高往上移' });
+      continue;
+    }
     const yld = o ? o.yld : g.yMv, spr = yld - (o?.y10 ?? y10), cut = [];
     if (yld > 0 && spr < tgt) cut.push(`股息率 ${pct(yld)} − 国债 ${pct(o?.y10 ?? y10)} = ${pct(spr)},低于目标 ${pct(tgt)}`);
     if (o && o.pct < .2) cut.push(`综合位置${POOL_LV[o.lv][1]}(${fp(o.pct)})`);
     if (o?.far) cut.push(`比合理价 ${o.F.toFixed(2)} 高 ${((o.q.price / o.F - 1) * 100).toFixed(0)}%`);
-    const base = { g, k, tgt, o };
-    if (cut.length) { const f = cut.length >= 2 ? .5 : 1 / 3, q = lot(g, f);
-      out.push({ ...base, kind: 'cut', t: `建议减仓${q ? ` · 约 ${fmt(q, 0)} 股(${cut.length >= 2 ? '一半' : '三分之一'})` : ''}`, why: cut, d: '回测:出现这类信号时继续持有一年平均约 4%–6%,换成当时「可以买」的股票约 13%–15%;两个以上信号同时出现时差距更大。只减一部分,换到便宜的红利股上' }); continue; }
+    if (cut.length) { const f = cut.length >= 2 ? .5 : 1 / 3, q = lot(g, f), tx = q && sellTax(g, q);
+      out.push({ ...base, kind: 'cut', t: `建议减仓${q ? ` · 约 ${fmt(q, 0)} 股(${cut.length >= 2 ? '一半' : '三分之一'})` : ''}`, why: [...cut, ...(tx ? [`现在卖要补扣分红税约 ¥${fmt(tx.tax, 0)},${tx.free} 后免`] : [])], d: '回测:出现这类信号时继续持有一年平均约 4%–6%,换成当时「可以买」的股票约 13%–15%;两个以上信号同时出现时差距更大。只减一部分,换到便宜的红利股上' }); continue; }
     if (o?.cl.c === 'r') { out.push({ ...base, kind: 'risk', t: '复核 · ' + o.cl.tag, why: [o.cl.tag], d: '排雷触发说明分红可能不可持续。回测这类换股没有显著好处,所以不直接建议卖,先看分红原因' }); continue; }
-    if (o?.act?.a === 'buy') { const cyc = o.t === 'cyc', q = lot(g, cyc ? 1 / 6 : 1 / 3);
-      out.push({ ...base, kind: 'add', t: `${o.sig.k === 'buy2' ? '跌破第二笔 · 可加仓' : '低于买入线 · 可加仓'}${q ? ` · 约 ${fmt(q, 0)} 股` : ''}`, why: [`现价 ${o.q.price.toFixed(2)},买入线 ${o.b1.toFixed(2)},第二笔 ${o.b2.toFixed(2)}`], d: `按现有持股的${cyc ? '六分之一(周期股减半)' : '三分之一'}估算,分批加` }); continue; }
+    if (o?.act?.a === 'buy') { const cyc = o.t === 'cyc', q = lot(g, cyc ? 1 / 6 : 1 / 3), p = o.q.price;
+      const avg = q ? (g.cost * g.shares + p * q) / (g.shares + q) : g.cost, w = totMv ? (g.mv + p * q * fx(MK[g.h.mk].cur)) / (totMv + p * q * fx(MK[g.h.mk].cur)) : 0;
+      out.push({ ...base, kind: 'add', t: `${o.sig.k === 'buy2' ? '跌破第二笔 · 可加仓' : '低于买入线 · 可加仓'}${q ? ` · 约 ${fmt(q, 0)} 股` : ''}`,
+        why: [`现价 ${p.toFixed(2)},买入线 ${o.b1.toFixed(2)},第二笔 ${o.b2.toFixed(2)}`, `现价比你的成本${p >= g.cost ? '高' : '低'} ${Math.abs((p / g.cost - 1) * 100).toFixed(1)}%${q ? `,加完均价 ${avg.toFixed(2)}` : ''}`, ...(q && w > .3 ? [`加完占总市值 ${(w * 100).toFixed(0)}%,单只偏重`] : [])],
+        d: `按现有持股的${cyc ? '六分之一(周期股减半)' : '三分之一'}估算,分批加` }); continue; }
     if (o?.act?.a === 'near' && o.gap > 0) out.push({ ...base, kind: 'near', t: `接近加仓线 · 还差 ${(o.gap * 100).toFixed(1)}%`, why: [`跌到 ${o.b1.toFixed(2)} 附近可加`], d: '' });
   }
-  return out.sort((a, b) => ['cut', 'add', 'risk', 'near'].indexOf(a.kind) - ['cut', 'add', 'risk', 'near'].indexOf(b.kind));
+  for (const x of S.sold || []) { const gk = x.acc + '|' + hkey(x); if (seen.has(gk) || (S.acc !== 'all' && x.acc !== S.acc)) continue; seen.add(gk); backs(gk, hkey(x), x.name, poolOf(hkey(x)), null); }
+  const ord = ['tp', 'back', 'warn', 'cut', 'add', 'risk', 'near', 'watch', 'pend'];
+  return out.sort((a, b) => ord.indexOf(a.kind) - ord.indexOf(b.kind));
 }
 function summary() {
   const rows = scope().map(viewOf);
@@ -1809,11 +1889,20 @@ function buildHoldings() {
     if (act === 'edit') editHolding(h);
     if (act === 'addlot') addLot(h);
     if (act === 'profile') openProfile(h.mk, h.code);
+    if (act === 'sell') sellGroup(h.acc + '|' + hkey(h));
   };
   const closeMenu = () => $('#hMenu')?.remove();
   document.addEventListener('click', e => { if (!e.target.closest('#hMenu,[data-menu]')) closeMenu(); });
   window.addEventListener('scroll', closeMenu, true);
   $('#hAdv').onclick = async e => {
+    const sb = e.target.closest('[data-sell],[data-back],[data-drop]');
+    if (sb?.dataset.sell) return sellGroup(sb.dataset.sell);
+    if (sb?.dataset.back) return backSold(sb.dataset.back);
+    if (sb?.dataset.drop) {
+      const x = (S.sold || []).find(s => s.id === sb.dataset.drop);
+      if (x && await xbAsk({ title: '不再接回', msg: `不再提醒接回 ${x.name}?已落袋的利润照样计入摊薄成本。`, ok: '不接了', host: $('#holdings') })) { S.sold = S.sold.filter(s => s !== x); save(); renderAll(); }
+      return;
+    }
     const b = e.target.closest('[data-tgt]'); if (!b) return;
     const k = b.dataset.tgt, v = await xbAsk({ title: '股息率目标', msg: '股息率比 10 年国债高多少个百分点以上才继续持有?低于它提醒减仓。默认 1。', input: String(+(holdTgt(k) * 100).toFixed(2)), ok: '保存', host: $('#holdings') });
     if (v == null || v === false || v === '' || !isFinite(+v)) return;
@@ -1824,7 +1913,7 @@ function buildHoldings() {
     if (m) {
       const open = $('#hMenu')?.dataset.for === m.dataset.menu; closeMenu(); if (open) return;
       const h = S.holdings.find(x => x.id === m.dataset.menu), k = m.dataset.kind;
-      const items = k === 'lot' ? [['edit', '编辑这一笔'], ['del', '删除这一笔']] : [['profile', '分红档案'], ['addlot', '加一笔(不同时间买入)'], ...(k === 'one' ? [['edit', '编辑'], ['del', '删除']] : [])];
+      const items = k === 'lot' ? [['edit', '编辑这一笔'], ['del', '删除这一笔']] : [['profile', '分红档案'], ['addlot', '加一笔(不同时间买入)'], ['sell', '卖出(止盈 / 减仓)'], ...(k === 'one' ? [['edit', '编辑'], ['del', '删除']] : [])];
       const d = document.createElement('div'); d.id = 'hMenu'; d.className = 'h-menu'; d.dataset.for = h.id;
       d.innerHTML = items.map(([a, t]) => `<button type="button" class="${a === 'del' ? 'del' : ''}" data-a="${a}">${t}</button>`).join('');
       document.body.appendChild(d);
@@ -2312,6 +2401,36 @@ function addLot(h) {
   if (!$('#dlgAdd').open) $('#dlgAdd').showModal();
   $('#hfShares').focus();
 }
+/* 止盈卖出:按先进先出从最早那笔扣,记下卖出价,跌到接回价时提醒;落袋利润用来算摊薄成本 */
+async function sellGroup(gk) {
+  const g = summary().groups.find(x => x.gk === gk); if (!g) return;
+  const host = $('#holdings'), step = g.h.mk === 'A' || g.h.mk === 'F' ? 100 : 1;
+  const q0 = Math.max(step, Math.floor(g.shares * TP.f / step) * step);
+  const qs = await xbAsk({ title: `卖出 ${g.name}`, msg: `现在持有 ${fmt(g.shares, 0)} 股。按先进先出从最早那笔扣减;记下后,跌到接回价(卖出价 −12%)会提醒你买回。`, input: String(Math.min(q0, g.shares)), placeholder: '卖出股数', ok: '下一步', host });
+  const q = Math.floor(+qs);
+  if (!(q > 0)) return;
+  if (q > g.shares) return toast('超过持股数', false);
+  const ps = await xbAsk({ title: '卖出价格', msg: '实际成交价,默认现价', input: String(+g.price.toFixed(3)), placeholder: '每股价格', ok: '记录', host });
+  const px = +ps;
+  if (!(px > 0)) return;
+  let left = q;
+  for (const r of g.lots) { if (left <= 0) break; const n = Math.min(left, r.h.shares); r.h.shares -= n; left -= n; }
+  S.holdings = S.holdings.filter(h => h.shares > 0);
+  (S.sold ||= []).push({ id: uid(), acc: g.h.acc, mk: g.h.mk, code: g.h.code, name: g.name, q, px, date: TODAY, cost: g.cost });
+  (S.real ||= {})[gk] = (S.real[gk] || 0) + (px - g.cost) * q;
+  save(); renderAll(); toast(`已记录卖出 ${g.name} ${fmt(q, 0)} 股 · 接回价 ¥${(px * (1 - TP.back)).toFixed(2)}`);
+}
+async function backSold(id) {
+  const x = (S.sold || []).find(s => s.id === id); if (!x) return;
+  const host = $('#holdings'), k = hkey(x), p = C.quotes[k]?.price || x.px, step = x.mk === 'A' || x.mk === 'F' ? 100 : 1;
+  const qs = await xbAsk({ title: `接回 ${x.name}`, msg: `当初 ¥${x.px.toFixed(2)} 卖出 ${fmt(x.q, 0)} 股,卖出的钱按现价约能买 ${fmt(Math.floor(x.px * x.q / p / step) * step, 0)} 股`, input: String(Math.floor(x.px * x.q / p / step) * step || x.q), placeholder: '买回股数', ok: '下一步', host });
+  const q = Math.floor(+qs); if (!(q > 0)) return;
+  const ps = await xbAsk({ title: '买回价格', input: String(+p.toFixed(3)), placeholder: '每股价格', ok: '记录', host });
+  const px = +ps; if (!(px > 0)) return;
+  S.holdings.push({ id: uid(), acc: x.acc, mk: x.mk, code: x.code, name: x.name, shares: q, cost: px, buy: TODAY });
+  S.sold = S.sold.filter(s => s !== x);
+  save(); renderAll(); refresh(); toast(`已接回 ${x.name} ${fmt(q, 0)} 股`);
+}
 async function ensureData(mk, code) {
   const k = mk + ':' + code;
   try { await fetchQuotes([k]); } catch {}
@@ -2388,14 +2507,18 @@ function renderHoldings(s) {
   $('#hSum').textContent = s.rows.length ? `${s.groups.length} 只${s.groups.length < s.rows.length ? `(${s.rows.length} 笔)` : ''} · 市值 ${money(s.mv, 0)} · 预计年息 ${money(s.annual)}` : '';
   if (!s.rows.length) { $('#hTable').innerHTML = '<div class="empty"><b>当前账户还没有持仓</b>点上方「添加持仓 / 截图导入 / 批量导入」录入持仓</div>'; return; }
   const rows = [...s.groups].sort((a, b) => b.mv - a.mv);
-  const adv = holdAdvice(s.groups), advBy = Object.fromEntries(adv.map(x => [x.g.gk, x]));
-  const AK = { cut: ['减仓', 'cut'], add: ['加仓', 'add'], risk: ['复核', 'risk'], near: ['接近', 'near'] };
+  const adv = holdAdvice(s.groups), advBy = {};
+  adv.forEach(x => { advBy[x.g.gk] ||= x; });
+  const AK = { tp: ['止盈', 'cut'], back: ['接回', 'add'], warn: ['预警', 'warn'], cut: ['减仓', 'cut'], add: ['加仓', 'add'], risk: ['复核', 'risk'], near: ['接近', 'near'], watch: ['观察', 'near'], pend: ['待接回', 'near'] };
   const poolMiss = s.groups.some(g => POOL_BY[g.k]) && !PC.mac;
-  $('#hAdv').innerHTML = `<div class="box h-adv"><div class="sec-h" style="padding-left:4px">持仓提醒<span class="r">股息率目标默认「比 10 年国债高 1%」,可按股票改 · 只看红利股票池覆盖的股票和 A 股 / ETF</span></div>
+  const btn = x => x.kind === 'cut' && x.why[0].startsWith('股息率') ? `<button class="link-btn" data-tgt="${x.k}">改目标</button>`
+    : x.kind === 'tp' || x.kind === 'cut' ? `<button class="link-btn" data-sell="${esc(x.g.gk)}">记录卖出</button>`
+    : x.sold ? `<button class="link-btn" data-back="${x.sold.id}">已接回</button><button class="link-btn" data-drop="${x.sold.id}">不接了</button>` : '';
+  $('#hAdv').innerHTML = `<div class="box h-adv"><div class="sec-h" style="padding-left:4px">持仓提醒<span class="r">止盈看浮盈 + 位置 + 趋势,卖出后跌回接回价会提醒 · 只看红利股票池覆盖的股票和 A 股 / ETF</span></div>
     ${poolMiss ? '<p class="sm" style="padding:0 4px">红利股票池数据还没加载,先打开一次「红利股票池」页,这里才能给出加减仓提醒</p>' : ''}
     ${adv.length ? adv.map(x => `<div class="h-ai"><span class="h-ak ${AK[x.kind][1]}">${AK[x.kind][0]}</span><b>${esc(x.g.name)}</b><span class="h-at">${esc(x.t)}</span>
-      <span class="h-aw" title="${esc(x.d)}">${x.why.map(esc).join(';')}</span>${x.kind === 'cut' && x.why[0].startsWith('股息率') ? `<button class="link-btn" data-tgt="${x.k}">改目标</button>` : ''}</div>`).join('')
-      : '<p class="sm" style="padding:0 4px">暂无需要加减仓的持仓</p>'}</div>`;
+      <span class="h-aw" title="${esc(x.d)}">${x.why.map(esc).join(';')}</span>${btn(x)}</div>`).join('')
+      : '<p class="sm" style="padding:0 4px">暂无需要操作的持仓</p>'}</div>`;
   /* A 股红利税按每笔持有时间:满 1 年免税,1 个月–1 年 10%,1 个月内 20% */
   const taxTxt = h => { if (h.mk !== 'A' || !h.buy) return ''; const d = daysBetween(h.buy, TODAY);
     return d > 365 ? ' · 红利税免' : ` · 红利税 ${d > 30 ? 10 : 20}%,${366 - d} 天后免`; };
@@ -2404,9 +2527,9 @@ function renderHoldings(s) {
     ${rows.map(r => {
       const cs = CUR_SIGN[MK[r.h.mk].cur], chg = r.q.chg, n = r.lots.length, open = n > 1 && hLotsOpen.has(r.gk);
       const main = `<tr${n > 1 ? ` class="h-grp${open ? ' open' : ''}" data-g="${esc(r.gk)}" title="点一下${open ? '收起' : '展开'}各笔"` : ''}>
-        <td><div class="nm">${tag(r.h.mk)}${esc(r.name)}</div><div class="cd">${r.h.code}${S.acc === 'all' ? ' · ' + esc(accName(r.h.acc)) : ''}${n > 1 ? ` · 分 ${n} 笔买入` : r.h.buy ? ' · ' + r.h.buy + ' 建仓' : ''}${advBy[r.gk] && advBy[r.gk].kind !== 'near' ? ` <span class="h-ak ${AK[advBy[r.gk].kind][1]}" title="${esc(advBy[r.gk].t)}">${AK[advBy[r.gk].kind][0]}</span>` : ''}</div></td>
+        <td><div class="nm">${tag(r.h.mk)}${esc(r.name)}</div><div class="cd">${r.h.code}${S.acc === 'all' ? ' · ' + esc(accName(r.h.acc)) : ''}${n > 1 ? ` · 分 ${n} 笔买入` : r.h.buy ? ' · ' + r.h.buy + ' 建仓' : ''}${(tr => tr ? ` · <span class="h-tr ${tr.st === '上行' ? 'up' : tr.st === '转跌' ? 'down' : ''}" title="止盈线 ¥${tr.line.toFixed(2)} = 近 60 日高点 ¥${tr.hh.toFixed(2)} × 92%">趋势${tr.st}</span>` : '')(holdTrend(r.k))}${advBy[r.gk] && !['near', 'watch', 'pend'].includes(advBy[r.gk].kind) ? ` <span class="h-ak ${AK[advBy[r.gk].kind][1]}" title="${esc(advBy[r.gk].t)}">${AK[advBy[r.gk].kind][0]}</span>` : ''}</div></td>
         <td data-l="持股">${fmt(r.shares, 0)}</td>
-        <td data-l="现价 / 成本"><b>${cs}${fmt(r.price, r.price < 10 ? 3 : 2)}</b>${isFinite(chg) ? ` <small class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '+' : ''}${(chg * 100).toFixed(2)}%</small>` : ''}<span class="sm">${n > 1 ? '均价 ' : ''}${cs}${fmt(r.cost, 3)}</span></td>
+        <td data-l="现价 / 成本"><b>${cs}${fmt(r.price, r.price < 10 ? 3 : 2)}</b>${isFinite(chg) ? ` <small class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '+' : ''}${(chg * 100).toFixed(2)}%</small>` : ''}<span class="sm">${n > 1 ? '均价 ' : ''}${cs}${fmt(r.cost, 3)}</span>${S.real?.[r.gk] ? `<span class="sm" title="已落袋止盈利润 ${money(S.real[r.gk], 0)} 摊到现有持股">摊薄 ${cs}${fmt((r.cost * r.shares - S.real[r.gk]) / r.shares, 3)}</span>` : ''}</td>
         <td data-l="市值">${money(r.mv, 0)}</td>
         ${pnlTd(r)}
         <td data-l="年度每股分红">${r.loaded ? '¥' + r.ttm.toFixed(4) + `<span class="sm">${r.fy ? r.fy + ' 年度' : '近 12 个月'}</span>` : '<span class="sm">加载中</span>'}</td>
@@ -2986,7 +3109,7 @@ function setBadge(txt, cls = '') {
 let refreshing = false;
 async function refresh(force) {
   if (refreshing) return;
-  const keys = [...new Set(S.holdings.map(hkey))];
+  const keys = [...new Set([...S.holdings, ...(S.sold || [])].map(hkey))];
   if (!keys.length) { renderAll(); return; }
   refreshing = true; $('#btnRefresh').classList.add('spin'); setBadge('正在更新行情与分红…', 'busy');
   const fails = [];
@@ -2997,7 +3120,11 @@ async function refresh(force) {
     const [mk, code] = k.split(':');
     return fetchDivs(mk, code).then(list => { C.divs[k] = { t: Date.now(), list }; }).catch(() => fails.push(code));
   }));
-  await Promise.all([qp, dp]);
+  /* 止盈趋势用近 90 个交易日日线,一天拉一次 */
+  C.hk ||= {};
+  const kp = Promise.all(keys.filter(k => /^[AF]:/.test(k) && (force || C.hk[k]?.day !== TODAY)).map(k =>
+    poolKline(k, 90, 'day').then(d => { if (d.length) C.hk[k] = { day: TODAY, d }; }).catch(() => {})));
+  await Promise.all([qp, dp, kp]);
   S.holdings.forEach(h => { if (!h.name && C.quotes[hkey(h)]) h.name = C.quotes[hkey(h)].name; });
   save(); saveCache();
   refreshing = false; $('#btnRefresh').classList.remove('spin');
