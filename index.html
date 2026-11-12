@@ -1026,7 +1026,12 @@
 
   /* 手机:类 App 布局,底部 Tab + 「更多」面板 */
   @media (max-width: 640px) {
-    body { padding: calc(10px + env(safe-area-inset-top)) 12px calc(86px + env(safe-area-inset-bottom)); }
+    body {
+      --tabbar: 56px;
+      padding: calc(10px + env(safe-area-inset-top)) 12px calc(var(--tabbar) + env(safe-area-inset-bottom));
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
     .wrap { min-height: 0; }
     .brand { gap: 10px; flex-wrap: nowrap; }
     .brand-logo { width: 44px; height: 44px; border-radius: 14px; border-width: 2px; }
@@ -1042,18 +1047,24 @@
     .shell { margin-top: 16px; }
 
     .nav {
-      position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 50; width: auto; flex-direction: row; gap: 2px; overflow: visible;
-      padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+      position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 50; width: auto; flex-direction: row; gap: 2px;
+      align-items: center; box-sizing: border-box; overflow: visible;
+      height: calc(var(--tabbar) + env(safe-area-inset-bottom));
+      padding: 0 6px env(safe-area-inset-bottom);
       background: rgba(9,13,27,.86); -webkit-backdrop-filter: blur(22px) saturate(150%); backdrop-filter: blur(22px) saturate(150%);
       border-top: 1px solid rgba(255,255,255,.07);
     }
-    .nav .tab { flex: 1; min-width: 0; flex-direction: column; gap: 3px; padding: 3px 0; background: none; border: 0; border-radius: 12px; box-shadow: none; }
+    .nav .tab {
+      appearance: none; -webkit-appearance: none; flex: 1; min-width: 0; height: 48px; max-height: 48px;
+      flex-direction: column; justify-content: center; gap: 2px; padding: 4px 0 2px; margin: 0;
+      background: none; border: 0; border-radius: 12px; box-shadow: none; overflow: visible;
+    }
     .nav .tab::before, .nav .tab::after, .nav .tab-desc { display: none; }
     .nav .tab:hover { transform: none; box-shadow: none; }
-    .nav .tab-icon { width: 40px; height: 28px; border-radius: 10px; background: transparent; color: #7586a6; filter: none; transition: background .2s ease, color .2s ease; }
+    .nav .tab-icon { width: 28px; height: 22px; border-radius: 8px; background: transparent; color: #7586a6; filter: none; transition: background .2s ease, color .2s ease; }
     .nav .tab-icon svg { width: 20px; height: 20px; }
     .nav .tab.active .tab-icon { background: rgba(var(--c),.18); color: rgb(var(--c)); transform: none; filter: none; }
-    .nav .tab-title { font-size: 11px; font-weight: 600; color: #7586a6; }
+    .nav .tab-title { font-size: 11px; line-height: 13px; font-weight: 600; color: #7586a6; }
     .nav .tab.active .tab-title { color: var(--text); }
     .nav > .tab[data-tab="pool"],
     .nav > .tab[data-tab="rules"],
@@ -1120,7 +1131,7 @@
     .foot { padding-top: 18px; font-size: 11px; }
     .xb-dlg, .xb-dlg.wide, #arrival, #xbAsk { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 26px 26px 0 0; max-height: 90vh; border-bottom: 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); }
     .xb-dlg[open] { animation: sheet-in .3s cubic-bezier(.2,.9,.3,1); }
-    #xbToast { bottom: calc(84px + env(safe-area-inset-bottom)); }
+    #xbToast { bottom: calc(var(--tabbar) + 12px + env(safe-area-inset-bottom)); }
   }
   /* 启动页:招财猫招手 */
   #splash {
