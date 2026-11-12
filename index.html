@@ -4405,9 +4405,9 @@ function renderEtf() {
       <div class="ef-trio">
         <div class="key"><span>估算参考净值(人民币)</span><b class="num"><small>¥</small>${o.est ? o.est.toFixed(4) : '—'}</b>
           <em>基于 ${f.navD ? f.navD.slice(5) + ' ' : ''}官方净值 ${nf(f.nav, 4)} 推算</em></div>
-        <div><span>估算总涨跌</span><b class="num ${cls(o.est ? o.chg : null)}">${o.est ? sgn(o.chg, 3) : '—'}</b>
+        <div><span>净值涨跌<i class="qtip" tabindex="0" data-tip="<b>比的是昨天的官方净值</b>背后那一篮子股票按人民币算,相对昨天官方净值涨了多少。下面拆成股票和汇率。<p>它和右边「较昨收」不是同一个数。净值在涨,场内价仍可能跌:成交价里的溢价如果缩小,缩小的幅度盖过净值上涨,你看到的价格就跌了。</p>">?</i></span><b class="num ${cls(o.est ? o.chg : null)}">${o.est ? sgn(o.chg, 3) : '—'}</b>
           <em>${o.est ? `股票 <i class="${cls(o.sr)}">${pp(o.sr)}</i> · 汇率 <i class="${cls(o.fp)}">${pp(o.fp)}</i>` : '等待行情'}</em></div>
-        <div class="pv ${lv}"><span>ETF 二级市场价格</span><b class="num"><small>¥</small>${o.price ? o.price.toFixed(3) : '—'} <i class="${cls(o.mchg)}">${sgn(o.mchg)}</i></b>
+        <div class="pv ${lv}"><span>ETF 二级市场价格<i class="qtip" tabindex="0" data-tip="<b>比的是昨天的收盘价</b>交易所里的成交价,「较昨收」是今天相对昨天收盘涨跌多少。你实际买到的是这个价,不是左边的净值。<p>两者的差距就是下面的溢价。溢价变小的时候,哪怕净值在涨,这个价格也会下跌。</p>">?</i></span><b class="num"><small>¥</small>${o.price ? o.price.toFixed(3) : '—'} <i class="${cls(o.mchg)}">${o.mchg == null || !isFinite(o.mchg) ? '—' : '较昨收 ' + sgn(o.mchg)}</i></b>
           <em>${o.pe ? '估算溢价(暂无 IOPV)' : '官方溢价(对 IOPV)'}${o.p != null && o.p < 0 ? ' · 折价' : ''} <span class="pm ${lv}">${o.p == null ? '—' : sgn(o.p, 3)}</span></em>
           <em class="vt" title="${esc(vs)}">${vt}${o.p != null && o.p >= .05 ? ' · 可等回落再买' : o.p != null && o.p >= .02 ? ' · 优先挑同指数溢价低的' : ''}</em></div>
       </div>
