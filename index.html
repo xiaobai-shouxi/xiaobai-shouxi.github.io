@@ -118,7 +118,7 @@
   select.acc-sel { width: auto; height: 32px; padding: 0 32px 0 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }
 
   /* 左侧导航 */
-  .shell { display: flex; gap: 20px; align-items: flex-start; margin-top: 26px; }
+  .shell { display: flex; flex: 1; flex-wrap: wrap; gap: 20px; align-items: flex-start; align-content: flex-start; margin-top: 26px; }
   .nav { flex: 0 0 224px; width: 224px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 22px; }
   [data-tab="overview"], #overview { --c: 250,204,21; }
   [data-tab="holdings"], #holdings { --c: 79,140,255; }
@@ -173,7 +173,7 @@
   .tab.active .tab-desc { color: var(--muted); }
 
   /* 面板 */
-  .main { flex: 1; min-width: 0; }
+  .main { flex: 1 1 480px; min-width: 0; }
   .panel {
     display: none; background: var(--card); border: 1px solid var(--border-soft); border-top: 3px solid rgb(var(--c));
     border-radius: var(--radius); padding: 26px 26px 28px; box-shadow: var(--shadow); animation: fade .22s ease;
@@ -974,7 +974,7 @@
   .notice b { color: rgb(var(--c)); }
   .notice .r { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
   .pill-btn.primary { background: var(--btn-bg); color: var(--btn-text); border-color: transparent; box-shadow: 0 6px 16px rgba(var(--btn-rgb),.3); }
-  .foot { margin-top: auto; padding-top: 26px; text-align: center; font-size: 12px; color: var(--muted-2); line-height: 1.7; }
+  .foot { flex: 1 0 100%; margin-top: auto; padding-top: 26px; text-align: center; font-size: 12px; color: var(--muted-2); line-height: 1.7; }
 
   @media (max-width: 1180px) {
     .ov-hero { grid-template-columns: 1.6fr 1fr; row-gap: 16px; }
@@ -1028,11 +1028,19 @@
   @media (max-width: 640px) {
     body {
       --tabbar: 56px;
-      padding: calc(10px + env(safe-area-inset-top)) 12px calc(var(--tabbar) + env(safe-area-inset-bottom));
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: calc(8px + env(safe-area-inset-top)) 0 env(safe-area-inset-bottom);
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
     }
-    .wrap { min-height: 0; }
+    .wrap { flex: 1; min-height: 0; height: auto; display: flex; flex-direction: column; overflow: hidden; }
+    .brand { flex: none; padding: 0 12px; }
+    .shell { flex: 1; min-height: 0; margin-top: 12px; display: flex; flex-direction: column; flex-wrap: nowrap; gap: 0; overflow: hidden; }
+    .main { order: 1; flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; padding: 0 12px 16px; }
+    .foot { order: 2; flex: none; margin: 0; padding: 4px 12px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .brand { gap: 10px; flex-wrap: nowrap; }
     .brand-logo { width: 44px; height: 44px; border-radius: 14px; border-width: 2px; }
     .brand-logo::before { border-radius: 18px; inset: -3px; filter: blur(8px); }
@@ -1044,14 +1052,15 @@
     .brand-right .pill-btn svg { width: 16px; height: 16px; }
     #btnRefresh[data-st="err"]::after { content: ""; position: absolute; top: 1px; right: 1px; width: 8px; height: 8px; border-radius: 50%; background: var(--err); box-shadow: 0 0 6px var(--err); }
     select.acc-sel { max-width: 132px; height: 34px; padding: 0 24px 0 11px; background-position: right 8px center; text-overflow: ellipsis; }
-    .shell { margin-top: 16px; }
 
     .nav {
-      position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 50; width: auto; flex-direction: row; gap: 2px;
+      order: 3;
+      position: static; top: auto; left: auto; right: auto; bottom: auto; z-index: 50;
+      width: 100%; flex: none; flex-direction: row; gap: 2px;
       align-items: center; box-sizing: border-box; overflow: visible;
-      height: calc(var(--tabbar) + env(safe-area-inset-bottom));
-      padding: 0 6px env(safe-area-inset-bottom);
-      background: rgba(9,13,27,.86); -webkit-backdrop-filter: blur(22px) saturate(150%); backdrop-filter: blur(22px) saturate(150%);
+      height: var(--tabbar);
+      padding: 0 6px;
+      background: rgba(9,13,27,.96); -webkit-backdrop-filter: blur(22px) saturate(150%); backdrop-filter: blur(22px) saturate(150%);
       border-top: 1px solid rgba(255,255,255,.07);
     }
     .nav .tab {
@@ -1131,7 +1140,7 @@
     .foot { padding-top: 18px; font-size: 11px; }
     .xb-dlg, .xb-dlg.wide, #arrival, #xbAsk { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 26px 26px 0 0; max-height: 90vh; border-bottom: 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); }
     .xb-dlg[open] { animation: sheet-in .3s cubic-bezier(.2,.9,.3,1); }
-    #xbToast { bottom: calc(var(--tabbar) + 12px + env(safe-area-inset-bottom)); }
+    #xbToast { bottom: calc(var(--tabbar) + env(safe-area-inset-bottom) + 12px); }
   }
   /* 启动页:招财猫招手 */
   #splash {
@@ -1329,9 +1338,8 @@
       <section class="panel" id="life"></section>
       <section class="panel" id="data"></section>
     </main>
+    <div class="foot">数据来自东方财富 / 天天基金 / 腾讯行情的公开接口,仅供记录参考,不构成投资建议 · 所有持仓只保存在本机浏览器</div>
   </div>
-
-  <div class="foot">数据来自东方财富 / 天天基金 / 腾讯行情的公开接口,仅供记录参考,不构成投资建议 · 所有持仓只保存在本机浏览器</div>
 </div>
 
 <div id="holdDlgs"></div>
@@ -3206,7 +3214,7 @@ function switchTab(id) {
   if (id === 'etf') etfEnter();
   if (id === 'pool') poolEnter();
   if (id === 'rules') rulesEnter();
-  if (isPhone()) scrollTo({ top: 0, behavior: 'instant' });
+  if (isPhone()) $('.main').scrollTo({ top: 0, behavior: 'instant' });
   else if (innerWidth <= 920) $('.main').scrollIntoView({ block: 'start' });
 }
 const SECONDARY = ['pool', 'profile', 'etf', 'future', 'life', 'rules', 'data'];
