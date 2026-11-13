@@ -562,9 +562,14 @@
   .pl2.wide { grid-template-columns: minmax(0, 1fr) 150px; }
   .pl-main { min-width: 0; }
   .pl-tabs { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-  .pl-st { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border-soft); background: var(--card-2); color: var(--muted); font: inherit; font-size: 13px; white-space: nowrap; }
+  .pl-st { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border-soft); background: var(--card-2); color: var(--muted); font: inherit; font-size: 13px; white-space: nowrap; cursor: default; }
+  .ph-right .pl-st { margin-left: 0; max-width: 100%; }
+  .ph-right .pl-st > span { overflow: hidden; text-overflow: ellipsis; }
   .pl-st > i { width: 7px; height: 7px; border-radius: 50%; flex: none; }
   .pl-st.ok > i { background: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,.18); }
+  button.pl-st.ok { cursor: pointer; }
+  button.pl-st.ok b { color: var(--muted); font-weight: 700; }
+  button.pl-st.ok:hover { color: var(--text); border-color: rgba(52,211,153,.45); }
   .pl-st.warn { cursor: pointer; color: #fde68a; border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.08); }
   .pl-st.warn > i { background: #fbbf24; box-shadow: 0 0 0 3px rgba(251,191,36,.2); }
   .pl-st.warn b { color: #fbbf24; font-weight: 700; }
@@ -765,8 +770,7 @@
     .pl-tab { padding: 7px 10px; font-size: 13px; }
     .pl-tabs { flex-wrap: nowrap; overflow-x: auto; margin: 0 -12px 12px; padding: 0 12px 4px; scrollbar-width: none; }
     .pl-tab { flex: none; }
-    .pl-tabs > .pl-st { order: -1; flex: none; margin-left: 0; }
-    .pl-tabs > .pl-st.ok { display: none; }
+    .panel-head .ph-right .pl-st { flex: 1 1 100%; justify-content: center; }
   }
   /* 跨境估值 */
   .ef-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin: -10px 0 12px; }
@@ -1168,17 +1172,13 @@
 </div>
 <script>
 (() => {
-  const seen = sessionStorage.getItem('xbSplash');
-  sessionStorage.setItem('xbSplash', '1');
   let done;
   window.splashGone = new Promise(r => done = r);
   window.hideSplash = () => {
     const el = document.getElementById('splash');
     if (!el || el.classList.contains('out')) return;
-    setTimeout(() => {
-      el.classList.add('out');
-      setTimeout(() => { el.remove(); done(); }, 460);
-    }, Math.max(0, (seen ? 400 : 1300) - performance.now()));
+    el.classList.add('out');
+    setTimeout(() => { el.remove(); done(); }, 460);
   };
   setTimeout(window.hideSplash, 4000);
 })();
@@ -3156,33 +3156,50 @@ function setBadge(txt, cls = '') {
   $('#badge').className = 'brand-badge ' + cls; $('#badgeTxt').textContent = txt;
   $('#btnRefresh').dataset.st = cls; $('#btnRefresh').title = txt;
 }
-let refreshing = false;
+let refreshing = false, refreshSeq = 0;
 async function refresh(force) {
   if (refreshing) return;
   const keys = [...new Set([...S.holdings, ...(S.sold || [])].map(hkey))];
   if (!keys.length) { renderAll(); return; }
-  refreshing = true; $('#btnRefresh').classList.add('spin'); setBadge('正在更新行情与分红…', 'busy');
-  const fails = [];
-  const qp = fetchQuotes(keys).catch(() => fails.push('行情'));
+  const seq = ++refreshSeq;
+  refreshing = true; $('#btnRefresh').classList.add('spin'); setBadge('正在更新行情…', 'busy');
+  let quoteOk = true;
+  try { await fetchQuotes(keys); } catch { quoteOk = false; }
+  if (seq !== refreshSeq) { refreshing = false; $('#btnRefresh').classList.remove('spin'); return; }
+  S.holdings.forEach(h => { if (!h.name && C.quotes[hkey(h)]) h.name = C.quotes[hkey(h)].name; });
+  save(); saveCache();
+  refreshing = false; $('#btnRefresh').classList.remove('spin');
+  const t = new Date(), hm = `${pad(t.getHours())}:${pad(t.getMinutes())}`;
+  setBadge(quoteOk ? `已更新 ${hm}` : '行情更新失败', quoteOk ? '' : 'err');
+  renderAll();
+  if ($('#fuOut') && !S.sim.p) calcFuture();
+  /* 分红和日线接着拉,不挡行情上屏。失败或返回更短的序列时保留原缓存 */
+  const divFails = [];
   const dp = Promise.all(keys.map(k => {
     const c = C.divs[k];
     if (!force && c && Date.now() - c.t < 12 * 3600e3) return null;
     const [mk, code] = k.split(':');
-    return fetchDivs(mk, code).then(list => { C.divs[k] = { t: Date.now(), list }; }).catch(() => fails.push(code));
+    return fetchDivs(mk, code).then(list => {
+      if (seq !== refreshSeq || !Array.isArray(list)) return;
+      if (!list.length && C.divs[k]?.list?.length) return;
+      C.divs[k] = { t: Date.now(), list };
+    }).catch(() => divFails.push(code));
   }));
-  /* 止盈趋势用近 90 个交易日日线,一天拉一次 */
   C.hk ||= {};
   const kp = Promise.all(keys.filter(k => /^[AF]:/.test(k) && (force || C.hk[k]?.day !== TODAY)).map(k =>
-    poolKline(k, 90, 'day').then(d => { if (d.length) C.hk[k] = { day: TODAY, d }; }).catch(() => {})));
-  await Promise.all([qp, dp, kp]);
-  S.holdings.forEach(h => { if (!h.name && C.quotes[hkey(h)]) h.name = C.quotes[hkey(h)].name; });
-  save(); saveCache();
-  refreshing = false; $('#btnRefresh').classList.remove('spin');
-  const t = new Date();
-  setBadge(fails.length ? `部分数据更新失败:${fails.slice(0, 3).join('、')}` : `已更新 ${pad(t.getHours())}:${pad(t.getMinutes())}`, fails.length ? 'err' : '');
-  renderAll();
-  if ($('#fuOut') && !S.sim.p) calcFuture();
-  checkArrivals(summary());
+    poolKline(k, 90, 'day').then(d => {
+      if (seq !== refreshSeq || d.length < 30) return;
+      C.hk[k] = { day: TODAY, d };
+    }).catch(() => {})));
+  dp.then(() => {
+    saveCache();
+    if (seq !== refreshSeq) return;
+    renderAll();
+    if ($('#fuOut') && !S.sim.p) calcFuture();
+    if (divFails.length && quoteOk) setBadge(`已更新 ${hm} · 分红未更新:${divFails.slice(0, 3).join('、')}`, 'err');
+    checkArrivals(summary());
+  });
+  kp.then(() => { saveCache(); if (seq !== refreshSeq) return; renderAll(); });
 }
 function renderHeader() {
   const sel = $('#accSel');
@@ -3870,14 +3887,14 @@ function poolEnter() {
 function buildPool() {
   $('#pool').innerHTML = head('pool', '红利股票池', `约 ${POOL_DEF.length} 只高息标的,按红利类型、否决项和估值每天自动分成三档`, `
     <input type="text" id="plQ" class="pl-q" placeholder="搜索名称 / 代码 / 行业" autocomplete="off" spellcheck="false" value="${esc(poolQ)}" />
-    <button class="run sm" id="plGo">刷新</button>`) + `<div id="plBody"></div>`;
-  $('#plGo').onclick = () => poolRefresh(true);
+    <span id="plStat"></span>`) + `<div id="plBody"></div>`;
   $('#plQ').oninput = e => { poolQ = e.target.value; renderPool(); };
   $('#plQ').onkeydown = e => { if (e.key === 'Escape' && poolQ) { e.target.value = poolQ = ''; renderPool(); } };
   $('#pool').addEventListener('click', e => {
     const p = poolCfg(), hit = s => e.target.closest(s);
     if (hit('[data-pltab]')) { p.tab = hit('[data-pltab]').dataset.pltab; p.open = ''; poolQ = $('#plQ').value = ''; save(); return renderPool(); }
     if (hit('[data-plgo]')) { PC.cool = 0; PC.bad = {}; poolMsg = ''; poolT = 0; return poolRefresh(true); }
+    if (hit('[data-plrefresh]')) return poolRefresh(true);
     if (hit('[data-plchg]')) { p.showLog = !p.showLog; p.log.forEach(x => { x.read = true; }); save(); return renderPool(); }
     if (hit('[data-plside]')) { p.side = !p.side; save(); return renderPool(); }
     if (hit('[data-prof]')) { const [mk, code] = hit('[data-prof]').dataset.prof.split(':'); return openProfile(mk, code); }
@@ -3973,14 +3990,15 @@ function renderPool() {
   const tbody = rows.map(tr).join('');
   const stars = xs => xs.filter(o => o.cl.c === 'g').length;
   const tabBtn = (id, name, xs) => `<button class="pl-tab${p.tab === id && !qn ? ' on' : ''}" data-pltab="${esc(id)}">${esc(name)}<b>${xs.length}</b>${stars(xs) ? `<em>★${stars(xs)}</em>` : ''}</button>`;
-  const done = all.length - pend.length, hm = t ? `${pad(t.getHours())}:${pad(t.getMinutes())}` : '';
+  const hm = t ? `${pad(t.getHours())}:${pad(t.getMinutes())}` : '';
+  const prog = /(\d+)\/(\d+)/.exec(poolMsg || '');
   const status = poolBusy
-    ? `<span class="pl-st run"><i class="sp"></i><span>${esc(poolMsg || '正在更新…')}</span>${pend.length ? `<em><s style="width:${(done / all.length * 100).toFixed(0)}%"></s></em><b>${done}/${all.length}</b>` : ''}</span>`
+    ? `<span class="pl-st run" title="${esc(poolMsg || '正在更新…')}"><i class="sp"></i><span>${prog ? '拉取中' : esc(poolMsg || '正在更新…')}</span>${prog ? `<em><s style="width:${(prog[1] / prog[2] * 100).toFixed(0)}%"></s></em><b>${prog[1]}/${prog[2]}</b>` : ''}</span>`
     : pend.length || poolMsg
       ? `<button class="pl-st warn" data-plgo title="点一下重新拉取"><i></i><span>${pend.length ? `${pend.length} 只数据还没拿到` : esc(poolMsg)}</span><b>重试 ↻</b></button>`
-      : `<span class="pl-st ok"><i></i><span>数据已是最新${hm ? ` · ${hm}` : ''}</span></span>`;
-  const tabs = `<div class="pl-tabs">${tabBtn('all', '全部', all)}${heldXs.length ? tabBtn('hold', '持仓股', heldXs) : ''}${inds.map(n => tabBtn(n, n, all.filter(o => indOf(o.sub) === n))).join('')}
-      ${status}</div>`;
+      : `<button class="pl-st ok" data-plrefresh title="点一下重新拉取"><i></i><span>数据已是最新${hm ? ` · ${hm}` : ''}</span><b>↻</b></button>`;
+  const stat = $('#plStat'); if (stat) stat.innerHTML = status;
+  const tabs = `<div class="pl-tabs">${tabBtn('all', '全部', all)}${heldXs.length ? tabBtn('hold', '持仓股', heldXs) : ''}${inds.map(n => tabBtn(n, n, all.filter(o => indOf(o.sub) === n))).join('')}</div>`;
   const gs = all.filter(o => o.cl.c === 'g');
   const distOf = xs => { const m = {}; for (const o of xs) { const n = indOf(o.sub); m[n] = (m[n] || 0) + 1; } return Object.entries(m).sort((a, b) => b[1] - a[1]); };
   const concLine = (lbl, xs, min) => { if (xs.length < min) return ''; const d = distOf(xs), t = d[0];
