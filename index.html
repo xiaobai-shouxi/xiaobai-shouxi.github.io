@@ -119,7 +119,7 @@
 
   /* 左侧导航 */
   .shell { display: flex; gap: 20px; align-items: flex-start; margin-top: 26px; }
-  .nav { flex: 0 0 224px; width: 224px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 22px; }
+  .nav { flex: 0 0 224px; width: 224px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 22px; z-index: 2; }
   [data-tab="overview"], #overview { --c: 250,204,21; }
   [data-tab="holdings"], #holdings { --c: 79,140,255; }
   [data-tab="calendar"], #calendar { --c: 52,211,153; }
@@ -773,6 +773,11 @@
     .panel-head .ph-right .pl-st { flex: 1 1 100%; justify-content: center; }
   }
   /* 跨境估值 */
+  .ef-nq { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: -4px 0 14px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--border-soft); background: var(--card-2); }
+  .ef-nq .k { font-size: 12px; color: var(--muted); }
+  .ef-nq .k b { color: var(--text); font-size: 14px; }
+  .ef-nq .px { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .ef-nq .sep { width: 1px; align-self: stretch; background: var(--border-soft); }
   .ef-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin: -10px 0 12px; }
   .ef-bar .hint { margin: 0; }
   .ef-sort { align-items: center; gap: 6px; }
@@ -4254,7 +4259,50 @@ async function tqKline(sym, n) {
 }
 const lastOnOrBefore = (map, D) => { let best = null, bd = ''; for (const k in map) if (k <= D && k > bd) { bd = k; best = map[k]; } return best; };
 
+/* 迷你纳指主连:CME 小型纳指当月连续,和券商里的 NQ0W 主连是同一类合约。大数字用最新价,涨跌由最新价对上一结算价现算 */
+async function etfNq() {
+  try {
+    const r = await jsonp('https://push2.eastmoney.com/api/qt/stock/get?secid=103.NQ00Y&fields=f43,f58,f60,f86&invt=2&fltt=2&_=' + Date.now(), 'cb');
+    const d = r?.data, px = +d?.f43, prev = +d?.f60;
+    if (!(px > 0)) return;
+    EL.nq = { px, prev, chg: prev > 0 ? px / prev - 1 : null, t: (+d.f86 || 0) * 1000 || Date.now() };
+    paintNq();
+  } catch {}
+}
+let nqTimer = null, nqBusy = false;
+function nqTick() {
+  clearInterval(nqTimer);
+  nqTimer = setInterval(async () => {
+    if (nqBusy || document.hidden || !$('#etf')?.classList.contains('active')) return;
+    nqBusy = true;
+    try { await etfNq(); } finally { nqBusy = false; }
+  }, 10000);
+}
+function nqInner() {
+  const ndx = E.list.map(etfCalc).filter(x => etfIdx(x) === '纳指100' && x.mchg != null);
+  const navg = ndx.length ? ndx.reduce((s, x) => s + x.mchg, 0) / ndx.length : null;
+  const nq = EL.nq, ngap = nq && nq.chg != null && navg != null ? nq.chg - navg : null;
+  const nqTm = nq?.t ? (() => { const d = new Date(nq.t); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; })() : '';
+  return `<div><div class="k"><b>迷你纳指主连</b> NQ00Y<i class="qtip" tabindex="0" data-tip="<b>大数字是最新价</b>和券商里的 NQ0W 主连是同一类,取 CME 小型纳斯达克当月连续的最新成交价。<p>下面的涨跌用这个最新价对上一笔结算价现算。期货几乎全天都在交易;右边基金的场内涨跌只覆盖 A 股今天,两边不是同一段时间。</p>">?</i></div>
+      <div class="px">${nq ? nq.px.toFixed(2) : '—'}</div>
+      <div class="k">${nq ? `最新 ${nqTm} · 较结算 <b class="${cls(nq.chg)}">${sgn(nq.chg)}</b>` : '等待最新价'}</div></div>
+    <i class="sep"></i>
+    <div><div class="k">纳指100 场内平均${ndx.length ? ` · ${ndx.length} 只` : ''}</div>
+      <div class="px ${cls(navg)}">${navg == null ? '—' : sgn(navg)}</div>
+      <div class="k">各只较昨收的平均</div></div>
+    <i class="sep"></i>
+    <div><div class="k">期货减场内</div>
+      <div class="px ${cls(ngap)}">${ngap == null ? '—' : (ngap >= 0 ? '+' : '') + (ngap * 100).toFixed(2) + ' pp'}</div>
+      <div class="k">${ngap == null ? '两边到齐才能比' : ngap > 0.0015 ? '期货目前更高' : ngap < -0.0015 ? '基金场内目前更高' : '两边差不多'}</div></div>`;
+}
+function paintNq() {
+  const el = $('#efNq');
+  if (!el) return;
+  el.innerHTML = nqInner();
+}
 async function etfQuotes() {
+  const nqP = etfNq();
+  try {
   const us = new Set();
   E.list.forEach(c => { etfRows(c).forEach(r => us.add(r.s)); us.add(etfProxy(EC.f[c] || {})); });
   const syms = [...E.list.map(c => tqSym('F', c)), ...[...us].map(s => 'us' + s), 'whUSDCNY'];
@@ -4274,6 +4322,7 @@ async function etfQuotes() {
   const fx = +String(window.v_whUSDCNY || '').split('~')[3];
   if (fx > 0) EL.fx = fx;
   EL.t = Date.now();
+  } finally { await nqP; }
 }
 
 /* 基准价 = 基金净值日当天的美股收盘价,不能简单用昨收:净值常晚一天公布 */
@@ -4348,7 +4397,9 @@ function etfEnter() {
   if (!$('#efBody')) buildEtf();
   renderEtf();
   if (!EL.t || Date.now() - EL.t > 25e3) etfRefresh();
+  else etfNq();
   etfTick();
+  nqTick();
 }
 function etfTick() {
   clearInterval(etfTimer);
@@ -4506,7 +4557,7 @@ function renderEtf() {
       <tbody>${o.rows.map(tr).join('')}${rest}</tbody></table></div>` : `<div class="empty">${etfBusy ? '正在加载持仓…' : '暂时拿不到持仓清单,可稍后点「更多 → 更新持仓清单」,或导入 CSV'}</div>`}
       <div class="hint">前十大持仓 ${o.W ? o.W.toFixed(2) + '%' : '—'} 来自最新季报,其余 ${o.rest ? o.rest.w.toFixed(2) + '%' : '0%'} 按同指数美股 ETF 走势代理;美股报价约延时 15 分钟。交易所 IOPV 由基金公司按自己的口径计算,和本站估算有差距很常见。</div>
     </details>`;
-  body.innerHTML = `<div class="ef-bar"><span class="hint" id="efSt">${esc(st)}</span><div class="chips ef-sort"><span>排序</span>${sortBar}</div></div>
+  body.innerHTML = `<div class="ef-nq" id="efNq">${nqInner()}</div><div class="ef-bar"><span class="hint" id="efSt">${esc(st)}</span><div class="chips ef-sort"><span>排序</span>${sortBar}</div></div>
     <div class="ef-layout">${side}<div class="ef-main">${hero}${det}
     <div class="hint">溢价 = 场内价格 ÷ 交易所 IOPV − 1,拿不到 IOPV 时用本站估算净值 <span class="pm l1">&lt;2% 合理</span> <span class="pm l2">2–5% 偏高</span> <span class="pm l3">&gt;5% 很高</span></div></div></div>`;
 }
