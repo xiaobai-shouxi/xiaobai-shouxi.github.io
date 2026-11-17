@@ -610,8 +610,14 @@
   .h-ak.warn { color: #fdba74; background: rgba(251,146,60,.15); }
   .h-tr { cursor: help; } .h-tr.up { color: var(--up); } .h-tr.down { color: var(--down); }
   #hTable .h-ops { white-space: nowrap; text-align: right; }
-  .qtip { display: inline-grid; place-items: center; width: 15px; height: 15px; margin-left: 5px; border-radius: 50%; border: 1px solid var(--muted-2); color: var(--muted); font: 600 10px/1 inherit; font-style: normal; cursor: help; vertical-align: 1px; outline: none; }
-  .qtip:hover, .qtip:focus { color: var(--text); border-color: rgba(96,165,250,.7); }
+  .qtip {
+    display: inline-block; box-sizing: border-box; width: 14px; height: 14px; margin-left: 4px; padding: 0; border: 0; border-radius: 0;
+    background: currentColor; color: var(--muted); font-size: 0; line-height: 0; vertical-align: middle; position: relative; top: -1px; cursor: help; outline: none; flex: none;
+    --qtip: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M9.5 9.2a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2.2-2.5 3.6'/><path d='M12 17.2h.01'/></svg>");
+    -webkit-mask: var(--qtip) center / contain no-repeat;
+    mask: var(--qtip) center / contain no-repeat;
+  }
+  .qtip:hover, .qtip:focus { color: var(--text); }
   #tipBox { position: fixed; z-index: 9999; max-width: 300px; padding: 10px 12px; border-radius: 10px; background: #1b2540; border: 1px solid rgba(96,165,250,.35); box-shadow: 0 8px 24px rgba(0,0,0,.45); color: var(--text); font-size: 12px; font-weight: 400; line-height: 1.6; text-align: left; white-space: normal; pointer-events: none; }
   #tipBox b { display: block; color: var(--gold, #facc15); font-weight: 600; margin-top: 6px; }
   #tipBox b:first-child { margin-top: 0; }
@@ -1663,7 +1669,7 @@ const soldOf = gk => (S.sold || []).filter(x => x.acc + '|' + hkey(x) === gk);
 function holdAdvice(groups) {
   const out = [], y10 = y10Now(), lot = (g, f) => { const step = g.h.mk === 'A' || g.h.mk === 'F' ? 100 : 1; return Math.floor(g.shares * f / step) * step; };
   const totMv = groups.reduce((a, g) => a + g.mv, 0), seen = new Set();
-  const poolOf = k => { if (!POOL_BY[k]) return null; let o = null; try { o = poolCalc(k); } catch {} return o?.cl?.c ? o : null; };
+  const poolOf = k => { if (!POOL_BY[k]) return null; let o = null; try { o = poolCalc(k); } catch {} return o?.cl?.c && poolKeep(o) ? o : null; };
   /* 待接回:卖出价跌 12%、位置回到偏低以下,或满一年 */
   const backs = (gk, k, name, o, g) => {
     for (const x of soldOf(gk)) {
@@ -3364,6 +3370,8 @@ const poolHit = (o, q) => {
 };
 
 const poolKeys = () => POOL_DEF.map(x => x.k);
+/* 收盘价股息率和表格同一口径;不到 3% 不跟踪,股价跌下来会自己回来 */
+const poolKeep = o => !(o.cp > 0 && o.dps != null && o.yldC < 0.03);
 /* 周线源按顺序降级,某个源失败一次后本次会话不再请求它;月线只有腾讯有 */
 const KL_SRC = [
   { host: 'web.ifzq.gtimg.cn/appstock', bad: false },
@@ -3900,7 +3908,7 @@ function poolEnter() {
   if (!poolT || Date.now() - poolT > 5 * 6e4) poolRefresh();
 }
 function buildPool() {
-  $('#pool').innerHTML = head('pool', '红利股票池', `约 ${POOL_DEF.length} 只高息标的,按红利类型、否决项和估值每天自动分成三档`, `
+  $('#pool').innerHTML = head('pool', '红利股票池', `高息标的,股息率不到 3% 的不跟踪;按红利类型、否决项和估值每天自动分成三档`, `
     <input type="text" id="plQ" class="pl-q" placeholder="搜索名称 / 代码 / 行业" autocomplete="off" spellcheck="false" value="${esc(poolQ)}" />
     <span id="plStat"></span>`) + `<div id="plBody"></div>`;
   $('#plQ').oninput = e => { poolQ = e.target.value; renderPool(); };
@@ -3928,7 +3936,7 @@ const poolDot = () => $('.nav .tab[data-tab="pool"]')?.classList.toggle('dot', (
 
 function renderPool() {
   const body = $('#plBody'); if (!body) return;
-  const p = poolCfg(), all = poolKeys().map(poolCalc);
+  const p = poolCfg(), all = poolKeys().map(poolCalc).filter(poolKeep);
   poolTrack(all); poolDot();
   const { day, live } = poolCpDay();
   const inds = [...new Set(POOL_DEF.map(d => indOf(d.sub)))], pend = all.filter(o => !o.cl.c);
@@ -4043,7 +4051,7 @@ function renderPool() {
       ${card('周期 · 利润 vs 股息率', cyc.length, cyc.filter(o => o.over), '利润同比降超 30% 且股息率被动跳升', cyc.some(o => o.cycTop) ? `<p class="sm">景气可能见顶(ROE 在自身历史 70% 分位以上且利润增速放缓),位置不够低时等待:</p><div class="pl-nms">${nm(cyc.filter(o => o.cycTop))}</div>` : '<p class="sm">暂无景气见顶迹象(ROE 在自身历史 70% 分位以上且利润增速放缓)</p>')}` : ''}
     </aside>`;
   const rules = `<details class="hint pl-rules"><summary>分类规则</summary>
-      <p>分三层,每份数据只用一次:<b>排雷</b>回答能不能碰,<b>公司质量</b>回答好到什么程度,<b>估值和买入价</b>回答什么时候买。★ 重点关注 = 排雷全过 + 公司质量 ≥65 + 估值不偏贵。</p>
+      <p>股息率按收盘价算,不到 3% 的不放进股票池,没有跟踪价值;跌下来过了 3% 会自己回来。分三层,每份数据只用一次:<b>排雷</b>回答能不能碰,<b>公司质量</b>回答好到什么程度,<b>估值和买入价</b>回答什么时候买。★ 重点关注 = 排雷全过 + 公司质量 ≥65 + 估值不偏贵。</p>
       <p><b>第一层 · 排雷(任一触发 → 有风险)</b>:ST / 退市;市盈率为负,或扣非净利润为负(最新年报或连续两期);近 3 年经营现金流 / 分红 < 1(金融股不看);连续两年没分红;派息率超过 100%;最近一个完整财年的分红总额比上一财年少 10% 以上(按净利润和每股收益估算股本变化,扣除增发、送转的摊薄),但派息率没降、最新季报利润同比不差于 −15% 的算利润带动,不排雷(回测这类下一年再削减约 6%,主动少分或利润仍大跌的约 34%);类别否决项(银行资产质量连续两期变差、公用事业现金流覆盖不了分红、消费股分红率跳升而利润下降);股息率异常偏高(在近 5 年 85% 分位以上,同时派息率超过 80%、分红减少 10% 以上或利润下滑超过 15%,多半是股价下跌推高的)。</p>
       <p><b>第二层 · 公司质量</b>:低于 65 分只进一般观察。<b>第三层 · 估值</b>:金融 / 稳定 / 消费要估值不偏贵、股息率−国债利差分位 ≥20%;<b>其他</b>(港口、医药、传媒、机械等,分红来源要逐一核查)要估值到便宜区;<b>周期</b>不进重点关注,分红波动大(回测下一年削减约三成),只按价格位置给买入结论。</p>
       <p><b>估值</b>:把市盈率、市净率、股息率和这只股票自己的历史比(30% 市盈率分位 + 30% 市净率分位 + 40% 反向股息率分位,按全历史 20% / 近 10 年 50% / 近 5 年 30% 加权),综合分位 ≤40% 算便宜、40%–60% 适中、>60% 偏贵;财报约有 12 年,更早的市盈率、市净率不计入。<b>合理价</b> = 「分红 ÷ 近 5 年股息率中位数」和「估值中位数 × 每股收益或净资产」中较低者,但不低于绝对锚「分红 ÷ (10 年国债 + 3%)」—— 股息率已经比国债高 3 个百分点,就不再要求跌回历史低位(回测:12 个月内到价率 67% → 80%,到价后持有一年收益 13.4% → 13.7%)。<b>拥挤度</b> = 中证红利成交量占沪深两市比例的分位和它自身成交量分位的平均(20 日均值,近约 2.5 年),低于 40% 低温、高于 80% 高温。</p>
