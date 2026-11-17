@@ -4322,7 +4322,10 @@ async function etfQuotes() {
   E.list.forEach(c => {
     const a = String(window['v_' + tqSym('F', c)] || '').split('~');
     // a[78] 交易所实时 IOPV,a[81] 交易所口径的上一日单位净值
-    if (+a[3] > 0) EL.etf[c] = { price: +a[3], prev: +a[4], chg: +a[32] / 100, amt: +a[37] * 1e4 || 0, name: a[1], iopv: +a[78] > 0 ? +a[78] : null, inav: +a[81] > 0 ? +a[81] : null };
+    if (+a[3] > 0) {
+      const rawT = String(a[30] || '').trim();
+      EL.etf[c] = { price: +a[3], prev: +a[4], chg: +a[32] / 100, amt: +a[37] * 1e4 || 0, name: a[1], iopv: +a[78] > 0 ? +a[78] : null, inav: +a[81] > 0 ? +a[81] : null, time: rawT.length >= 12 ? `${rawT.slice(8, 10)}:${rawT.slice(10, 12)}` : '' };
+    }
   });
   us.forEach(s => {
     const [p, b] = s.split('.'), raw = b ? window['v_us' + p]?.[b] : window['v_us' + s];
@@ -4368,7 +4371,7 @@ async function etfBases() {
 
 function etfCalc(code) {
   const f = EC.f[code] || {}, D = f.navD, et = EL.etf[code];
-  const o = { code, f, name: f.name || et?.name || code, price: et?.price, mchg: et?.chg, amt: et?.amt, rows: [], ok: 0, n: 0, est: null, iopv: et?.iopv ?? null };
+  const o = { code, f, name: f.name || et?.name || code, price: et?.price, mchg: et?.chg, amt: et?.amt, rows: [], ok: 0, n: 0, est: null, iopv: et?.iopv ?? null, tm: et?.time || '' };
   const inav = et?.inav || f.nav;
   o.ichg = o.iopv && inav ? o.iopv / inav - 1 : null;
   o.iprem = o.iopv && o.price ? o.price / o.iopv - 1 : null;
@@ -4532,9 +4535,9 @@ function renderEtf() {
   const hero = `<div class="box ef-hero">
       <div class="ef-hd"><b>${esc(etfShort(o.name))}</b><span class="c">${o.code}</span><span class="ef-grp">${esc(o.g)}</span></div>
       <div class="ef-trio">
-        <div class="key"><span>估算参考净值(人民币)</span><b class="num"><small>¥</small>${o.est ? o.est.toFixed(4) : '—'}</b>
-          <em>基于 ${f.navD ? f.navD.slice(5) + ' ' : ''}官方净值 ${nf(f.nav, 4)} 推算</em></div>
-        <div><span>净值涨跌<i class="qtip" tabindex="0" data-tip="<b>比的是昨天的官方净值</b>背后那一篮子股票按人民币算,相对昨天官方净值涨了多少。下面拆成股票和汇率。<p>它和右边「较昨收」不是同一个数。净值在涨,场内价仍可能跌:成交价里的溢价如果缩小,缩小的幅度盖过净值上涨,你看到的价格就跌了。</p>">?</i></span><b class="num ${cls(o.est ? o.chg : null)}">${o.est ? sgn(o.chg, 3) : '—'}</b>
+        <div class="key"><span>${o.iopv ? '实时净值' : '估算参考净值(人民币)'}<i class="qtip" tabindex="0" data-tip="${o.iopv ? '<b>交易所盘中公布的参考净值</b>交易时段大约每 15 秒更新,就是券商里的实时净值(IOPV)。大数字用的是这个,涨跌相对上一笔官方净值。<p>本站估算是用季报持仓、美股和汇率自己推的,只放在下面作对照。官方净值一天才公布一次,日期会停在上一个公布日。</p>' : '<b>还没有拿到交易所实时净值</b>这是用最近一次官方净值,按持仓和汇率推出来的。开盘后会换成交易所 IOPV。'}" >?</i></span><b class="num"><small>¥</small>${(o.iopv || o.est) ? (o.iopv || o.est).toFixed(4) : '—'}</b>
+          <em>${o.iopv ? `${o.tm ? o.tm + ' · ' : ''}较昨净值 <i class="${cls(o.ichg)}">${sgn(o.ichg, 3)}</i>${o.est ? `<br>本站估算 ${o.est.toFixed(4)} · 基于 ${f.navD ? f.navD.slice(5) + ' ' : ''}官方净值 ${nf(f.nav, 4)}` : ''}` : `基于 ${f.navD ? f.navD.slice(5) + ' ' : ''}官方净值 ${nf(f.nav, 4)} 推算`}</em></div>
+        <div><span>估算涨跌<i class="qtip" tabindex="0" data-tip="<b>比的是昨天的官方净值</b>这是本站自己推的涨跌:背后那一篮子股票按人民币算,相对昨天官方净值涨了多少。下面拆成股票和汇率。<p>它和左边的实时净值、右边的「较昨收」都不是同一个数。</p>">?</i></span><b class="num ${cls(o.est ? o.chg : null)}">${o.est ? sgn(o.chg, 3) : '—'}</b>
           <em>${o.est ? `股票 <i class="${cls(o.sr)}">${pp(o.sr)}</i> · 汇率 <i class="${cls(o.fp)}">${pp(o.fp)}</i>` : '等待行情'}</em></div>
         <div class="pv ${lv}"><span>ETF 二级市场价格<i class="qtip" tabindex="0" data-tip="<b>比的是昨天的收盘价</b>交易所里的成交价,「较昨收」是今天相对昨天收盘涨跌多少。你实际买到的是这个价,不是左边的净值。<p>两者的差距就是下面的溢价。溢价变小的时候,哪怕净值在涨,这个价格也会下跌。</p>">?</i></span><b class="num"><small>¥</small>${o.price ? o.price.toFixed(3) : '—'} <i class="${cls(o.mchg)}">${o.mchg == null || !isFinite(o.mchg) ? '—' : '较昨收 ' + sgn(o.mchg)}</i></b>
           <em>${o.pe ? '估算溢价(暂无 IOPV)' : '官方溢价(对 IOPV)'}${o.p != null && o.p < 0 ? ' · 折价' : ''} <span class="pm ${lv}">${o.p == null ? '—' : sgn(o.p, 3)}</span></em>
