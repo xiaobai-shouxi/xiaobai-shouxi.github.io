@@ -840,6 +840,10 @@
   .ef-trio .pv.l2 { border-color: rgba(250,204,21,.38); } .ef-trio .pv.l2 .vt { color: #fde047; }
   .ef-trio .pv.l3 { border-color: rgba(248,113,113,.42); background: linear-gradient(160deg, rgba(248,113,113,.08), transparent); } .ef-trio .pv.l3 .vt { color: #fca5a5; }
   .ef-meta { font-size: 12px; color: var(--muted-2); line-height: 1.7; } .ef-meta b { color: var(--text); font-weight: 600; } .ef-meta i { font-style: normal; }
+  .ef-bias { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 10px 14px; border-radius: 12px; background: var(--card-2); border: 1px solid var(--border-soft); }
+  .ef-bias > span { font-size: 13px; color: var(--muted); }
+  .ef-bias b { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .ef-bias em { font-style: normal; font-size: 12px; color: var(--muted-2); }
   .ef-det summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; cursor: pointer; list-style: none; }
   .ef-det summary::-webkit-details-marker { display: none; }
   .ef-det summary .sec-h { margin: 0; }
@@ -4277,6 +4281,62 @@ async function tqKline(sym, n) {
 }
 const lastOnOrBefore = (map, D) => { let best = null, bd = ''; for (const k in map) if (k <= D && k > bd) { bd = k; best = map[k]; } return best; };
 
+/* 本轮高点:从最近一个已确认显著低点之后的最高收盘价。回撤达到 R 且没再创新高,高点确认;收盘突破则取消并更新 */
+const SWING_R = 0.15, SWING_N = 800;
+async function etfMaBars(code) {
+  const sym = tqSym('F', code), v = '__xbma' + (++seq);
+  await loadScript(`https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?_var=${v}&param=${sym},day,,,${SWING_N},qfq`);
+  const r = window[v]; try { delete window[v]; } catch {}
+  const d = r?.data?.[sym] || {};
+  return (d.qfqday || d.day || []).map(x => [x[0], +x[2]]).filter(x => x[0] && x[1] > 0);
+}
+async function etfMaLoad() {
+  EC.ma ||= {};
+  const phase = aOpen() ? 'open' : 'shut';
+  const need = E.list.filter(c => {
+    const m = EC.ma[c];
+    return !(m && m.day === TODAY && m.phase === phase && Array.isArray(m.bars) && m.bars.length >= 30);
+  });
+  for (let i = 0; i < need.length; i += 3) {
+    await Promise.all(need.slice(i, i + 3).map(async c => {
+      try {
+        const bars = await etfMaBars(c);
+        if (bars.length) EC.ma[c] = { day: TODAY, phase, bars: bars.slice(-SWING_N) };
+      } catch {}
+    }));
+  }
+}
+function etfBias(code, price) {
+  const bars = EC.ma?.[code]?.bars;
+  if (!bars?.length || !(price > 0)) return null;
+  const done = bars.filter(x => x[0] < TODAY || (x[0] === TODAY && !aOpen()));
+  if (done.length < 2) return { n: done.length, bias: null };
+  const R = SWING_R;
+  let hi = { i: 0, p: done[0][1], d: done[0][0] }, lo = { i: 0, p: done[0][1], d: done[0][0] }, mode = 0;
+  const lows = [];
+  for (let i = 1; i < done.length; i++) {
+    const p = done[i][1], pt = { i, p, d: done[i][0] };
+    if (mode === 0) {
+      if (p >= hi.p) hi = pt;
+      if (p <= lo.p) lo = pt;
+      if (hi.i < lo.i && lo.p <= hi.p * (1 - R)) { mode = -1; lo = pt; }
+      else if (lo.i < hi.i && hi.p >= lo.p * (1 + R)) { lows.push(lo); mode = 1; hi = pt; }
+      continue;
+    }
+    if (mode === 1) {
+      if (p >= hi.p) hi = pt;
+      else if (p <= hi.p * (1 - R)) { mode = -1; lo = pt; }
+    } else if (p <= lo.p) lo = pt;
+    else if (p >= lo.p * (1 + R)) { lows.push(lo); mode = 1; hi = pt; }
+  }
+  const low = lows.at(-1);
+  const start = low ? low.i : 0;
+  let high = done[start];
+  for (let i = start + 1; i < done.length; i++) if (done[i][1] >= high[1]) high = done[i];
+  const last = done.at(-1)[1];
+  return { n: done.length, high: high[1], highDate: high[0], low: low?.p ?? done[0][1], lowDate: low?.d || done[0][0], confirmed: last <= high[1] * (1 - R), bias: price / high[1] - 1 };
+}
+
 /* 迷你纳指主连:CME 小型纳指当月连续,和券商里的 NQ0W 主连是同一类合约。大数字用最新价,涨跌由最新价对上一结算价现算 */
 async function etfNq() {
   try {
@@ -4385,6 +4445,9 @@ function etfCalc(code) {
   o.iprem = o.iopv && o.price ? o.price / o.iopv - 1 : null;
   const rows = etfRows(code);
   o.n = rows.length;
+  const mb = etfBias(code, o.price);
+  o.hi = mb?.high ?? null; o.hiD = mb?.highDate || ''; o.loD = mb?.lowDate || ''; o.loP = mb?.low ?? null;
+  o.bias = mb?.bias ?? null; o.hiOk = !!mb?.confirmed;
   if (!(f.nav > 0) || !D || !EL.t) return o;
   let sr = 0, W = 0;
   for (const r of rows) {
@@ -4418,7 +4481,7 @@ function etfEnter() {
   if (!$('#efBody')) buildEtf();
   renderEtf();
   if (!EL.t || Date.now() - EL.t > 25e3) etfRefresh();
-  else etfNq();
+  else { etfMaLoad().then(() => { eCache(); renderEtf(); }); etfNq(); }
   etfTick();
   nqTick();
 }
@@ -4483,7 +4546,8 @@ async function etfRefresh(force) {
   try {
     const order = [E.cur, ...E.list.filter(c => c !== E.cur)];
     await etfLoadFund(order[0], force === 'hold');
-    await etfQuotes(); await etfBases(); renderEtf();
+    const maP = etfMaLoad();
+    await etfQuotes(); await etfBases(); await maP; renderEtf();
     for (const c of order.slice(1)) await etfLoadFund(c, force === 'hold');
     await etfQuotes(); await etfBases();
   } catch (e) { etfErr = e.message || '网络错误'; }
@@ -4524,7 +4588,7 @@ function renderEtf() {
       ${E.list.length > 1 ? `<span class="x" data-efx="${x.code}" title="移出监控"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></span>` : ''}
       <div class="hd"><span class="n">${esc(etfShort(x.name))}</span><span class="c">${x.code}</span>${best[x.g] === x ? '<span class="ef-best">溢价最低</span>' : ''}</div>
       <div class="m"><span>场内 <b class="num">${x.price ? x.price.toFixed(3) : '—'}</b> <i class="${cls(x.mchg)}">${sgn(x.mchg)}</i></span><span class="pm ${pmLv(x.p)}">${x.p == null ? '—' : sgn(x.p)}</span></div>
-      <div class="s"><span>成交 ${x.amt ? etfAmt(x.amt) : '—'}</span>${x.pe ? '<span>溢价按本站估算</span>' : ''}</div>
+      <div class="s"><span>成交 ${x.amt ? etfAmt(x.amt) : '—'}</span><span class="${cls(x.bias)}">${x.bias == null ? '' : '高点 ' + sgn(x.bias)}</span>${x.pe ? '<span>溢价按本站估算</span>' : ''}</div>
     </button>`;
   let list;
   if (E.sort === 'def') list = Object.entries(groups).map(([g, xs]) => `<div class="ef-gh">${esc(g)}<small>${xs.length} 只</small></div>${xs.map(card).join('')}`).join('');
@@ -4551,6 +4615,7 @@ function renderEtf() {
           <em>${o.pe ? '估算溢价(暂无 IOPV)' : '官方溢价(对 IOPV)'}${o.p != null && o.p < 0 ? ' · 折价' : ''} <span class="pm ${lv}">${o.p == null ? '—' : sgn(o.p, 3)}</span></em>
           <em class="vt" title="${esc(vs)}">${vt}${o.p != null && o.p >= .05 ? ' · 可等回落再买' : o.p != null && o.p >= .02 ? ' · 优先挑同指数溢价低的' : ''}</em></div>
       </div>
+      <div class="ef-bias"><span>较本轮高点<i class="qtip" tabindex="0" data-tip="<b>本轮行情的最高收盘价</b>从最近一个已确认的显著低点之后,到今天为止的最高收盘价。显著是指反向走出 15%:低点之后上涨 15% 才确认这个低点;高点之后回撤 15% 且没再创新高,才确认这个高点。<p>收盘价突破已确认的高点,确认就取消,高点改成新的收盘价。盘中的现价不改高点,只用来算下面的涨跌幅。负数是还在高点下面。</p>">?</i></span><b class="num ${cls(o.bias)}">${o.bias == null ? '—' : sgn(o.bias)}</b><em>${o.bias == null ? '正在取日线' : `高点 ${o.hi.toFixed(3)} · ${o.hiD.slice(5)} · 起于 ${o.loD.slice(5)} 低点 ${o.loP.toFixed(3)} · ${o.hiOk ? '高点已确认' : '高点未确认'}`}</em></div>
       ${alt}
       <div class="ef-meta">${[esc(f.co || ''), esc(f.idx || ''), etfExch(o.code).replace('证券交易所', '所'), fee != null ? `费率 ${fee.toFixed(2)}%/年` : ''].filter(Boolean).join(' · ')}</div>
     </div>`;
