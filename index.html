@@ -656,7 +656,7 @@
   .pl-ty.oth { color: #c4b5fd; background: rgba(167,139,250,.16); }
   .pl-tbl th.pl-evh, .pl-tbl tbody tr[data-k] td.pl-ev { text-align: left; padding-left: 12px; }
   .pl-tbl td.pl-ev { white-space: normal; min-width: 260px; }
-  .pl-eg { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 14px; }
+  .pl-eg { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 14px; }
   .pl-et { display: flex; flex-direction: column; gap: 2px; }
   .pl-et em { font-style: normal; font-size: 11px; color: var(--muted-2); white-space: nowrap; }
   .pl-tp { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; white-space: nowrap; }
@@ -689,9 +689,11 @@
   .pl-pr em { font-style: normal; color: var(--muted-2); margin-right: 4px; font-size: 11px; }
   .pl-pr b { font-weight: 650; }
   .pl-pr span:last-child b { color: #6ee7b7; }
+  .pl-pr.lkd { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .pl-pos:has(.pl-pr.lkd) { width: 148px; }
   .pl-pr .off b { color: #94a3b8; }
   .pl-pr .off .lk { margin-left: 3px; font-style: normal; font-size: 10px; color: #94a3b8; }
-  .pl-pr .gamb b { color: #f87171; border-bottom: 1px dashed #f87171; }
+  .pl-pr span.gamb b { color: #f87171; border-bottom: 1px dashed #f87171; }
   .pl-ps.bet { color: #fbbf24; }
   .pl-why { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 650; line-height: 18px; white-space: nowrap; }
   .pl-grp td { font-size: 12px; font-weight: 700; color: #fca5a5; background: rgba(248,113,113,.06); cursor: default; }
@@ -4043,9 +4045,8 @@ function renderPool() {
   const lockLine = o => o.b1 ? `<span class="off" title="当前不用这条买入线"><em>买入线</em><b class="num">${px(o.b1)}</b><i class="lk">锁</i></span>` : '';
   const posCell = o => {
     if (o.cl?.c === 'k' || o.cl?.c === 'r') {
-      const tip = o.cl.c === 'k' ? distressTip(o) : '暂不考虑，买入线停用';
-      return `<td class="ct"><span class="pl-pos"><span class="pl-ph">${o.lv != null ? `<span class="pl-lv ${POOL_LV[o.lv][0]}" title="${esc(posTip(o))}">${POOL_LV[o.lv][1]}</span>` : ''}<span class="pl-ps bet">${esc(tip)}</span></span>${o.pct != null ? `<span class="pl-bar" title="${esc(posTip(o))}"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>` : ''}
-      <span class="pl-pr"><span><em>现价</em><b class="num">${px(o.q.price)}</b></span>${lockLine(o)}${o.cl.c === 'k' && o.gamb ? `<span class="gamb" title="合理价 × (1 − 1.5 × 月度波动)"><em>博弈线</em><b class="num">${px(o.gamb)}</b></span>` : ''}</span></span></td>`;
+      return `<td class="ct"><span class="pl-pos"><span class="pl-ph">${o.lv != null ? `<span class="pl-lv ${POOL_LV[o.lv][0]}" title="${esc(posTip(o))}">${POOL_LV[o.lv][1]}</span>` : ''}</span>${o.pct != null ? `<span class="pl-bar" title="${esc(posTip(o))}"><i style="left:${((1 - o.pct) * 100).toFixed(1)}%"></i></span>` : ''}
+      <span class="pl-pr lkd"><span><em>现价</em><b class="num">${px(o.q.price)}</b></span>${lockLine(o)}${o.cl.c === 'k' && o.gamb ? `<span class="gamb" title="合理价 × (1 − 1.5 × 月度波动)"><em>博弈线</em><b class="num">${px(o.gamb)}</b></span>` : ''}</span></span></td>`;
     }
     if (o.lv == null) return '<td class="ct"><span class="sm">历史不足</span></td>';
     const g = o.b1 ? o.q.price / o.b1 - 1 : null;
