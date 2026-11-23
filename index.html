@@ -3914,12 +3914,12 @@ function poolClassify(o) {
   const Q = o.qual?.s;
   add(Q == null ? null : Q >= 65, Q == null ? '公司质量:年报不足 3 年,算不出来' : `公司质量 ${Q.toFixed(0)} 分 · ${qGrade(Q)[1]}${o.qual.low ? ' · 置信度低' : ''}(65 分以上才进重点关注)`, 'qual');
   /* 第三层 · 估值只看综合位置和利差分位,不再另算估值温度 */
-  const C = o.pct, P = o.sprP;
-  add(C == null ? null : C >= .6, C == null ? '综合位置:历史不够,判断不了贵不贵' : `综合位置 ${fp(C)}${C >= .6 ? ',到了便宜区' : ',还没到 60%,先观察'}`, 'pos');
+  const pos = o.pct, P = o.sprP;
+  add(pos == null ? null : pos >= .6, pos == null ? '综合位置:历史不够,判断不了贵不贵' : `综合位置 ${fp(pos)}${pos >= .6 ? ',到了便宜区' : ',还没到 60%,先观察'}`, 'pos');
   add(P == null ? null : P >= .2, P == null ? '股息率−国债利差分位:历史不够' : `股息率−国债利差 ${pp1(o.spr)},近 3 年分位 ${fp(P)}(<20% 降到一般观察)`, 'spr');
   const deadGap = why.some(w => (w.key === 'st' || w.key === 'loss' || w.key === 'cash' || w.key === 'div') && w.ok == null);
-  const unverified = Q == null || C == null || P == null || why.some(w => GATE.has(w.key) && w.key !== 'dg' && w.ok == null);
-  const tier0 = poolTier({ hard: false, live: live.length > 0, deadGap, unverified, t: o.t, Q, C, P });
+  const unverified = Q == null || pos == null || P == null || why.some(w => GATE.has(w.key) && w.key !== 'dg' && w.ok == null);
+  const tier0 = poolTier({ hard: false, live: live.length > 0, deadGap, unverified, t: o.t, Q, C: pos, P });
   if (tier0 === 'k') {
     const shine = o.qual?.s >= 65 && o.yp >= .8;
     return { c: 'k', why, live, shine, tag: live.map(x => x[1]).join(' · ') };
@@ -3928,14 +3928,14 @@ function poolClassify(o) {
     const bits = [];
     if (why.some(w => GATE.has(w.key) && w.key !== 'dg' && w.ok == null)) bits.push('排雷数据不全');
     if (Q == null) bits.push('年报不足');
-    if (C == null || P == null) bits.push('估值历史不足');
+    if (pos == null || P == null) bits.push('估值历史不足');
     return { c: 'd', why, tag: `待验证 · ${bits.join(' · ') || '数据不足'}` };
   }
   if (o.t === 'cyc') { add(o.cycTop ? false : null, `周期位置:${o.cycTxt}${o.cycTop ? ',景气可能见顶' : ''}。周期股分红波动大,不进重点关注;综合位置到偏低以下才会给可以买`, 'cyc'); return { c: 'y', why, tag: o.cycTop ? '周期股 · 景气可能见顶' : '周期股 · 位置偏低才考虑' }; }
   if (Q < 65) return { c: 'y', why, tag: `公司质量${qGrade(Q)[1]}${o.qual?.low ? ' · 置信度低' : ''}` };
-  if (C < .6) return { c: 'y', why, tag: `综合位置 ${fp(C)} · 等更便宜` };
+  if (pos < .6) return { c: 'y', why, tag: `综合位置 ${fp(pos)} · 等更便宜` };
   if (P < .2) return { c: 'y', why, tag: `利差分位 ${fp(P)} 偏低` };
-  return { c: 'g', why, tag: `质量${qGrade(Q)[1]} · 综合位置 ${fp(C)}` };
+  return { c: 'g', why, tag: `质量${qGrade(Q)[1]} · 综合位置 ${fp(pos)}` };
 }
 const GATE = new Set(['st', 'loss', 'cash', 'div', 'pr', 'dg', 'cat', 'hiY']);
 const CL = { g: ['重点关注', '★'], y: ['观察', '☆'], k: ['困境观察', '⚠'], d: ['待验证', '◇'], r: ['有风险', '⚠'] };
