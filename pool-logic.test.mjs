@@ -31,8 +31,11 @@ const code = [
   grab('poolTier'),
   grab('gambPrice'),
   grab('distressAct'),
+  grab('yieldLadder'),
+  grab('dayAmp'),
+  grab('gridOn'),
 ].join('\n');
-const fns = new Function(`${code}\nreturn { sgOf, fwdAdj, poolTier, gambPrice, distressAct };`)();
+const fns = new Function(`${code}\nreturn { sgOf, fwdAdj, poolTier, gambPrice, distressAct, yieldLadder, dayAmp, gridOn };`)();
 
 test('送转股数按每 10 股折成比例', () => {
   assert.equal(fns.sgOf('10派5.00元(含税)送2股转增3股'), 0.5);
@@ -84,4 +87,41 @@ test('困境股不到博弈价不买，跌破就可以轻仓', () => {
   assert.equal(fns.distressAct(7.4, 7.5), 'bet');
   assert.equal(fns.distressAct(7.5, 7.5), 'bet');
   assert.equal(fns.distressAct(7.4, null), 'na');
+});
+
+test('阶梯价按当前股息率向下取 0.5 个百分点', () => {
+  const bank = 8.8 * 0.0591;
+  const sh = fns.yieldLadder(bank, 0.0591);
+  assert.ok(Math.abs(sh.r1 - 0.055) < 1e-9);
+  assert.ok(Math.abs(sh.r2 - 0.06) < 1e-9);
+  assert.ok(sh.p1 > 8.8 && sh.p2 < 8.8);
+  const gree = 37.13 * 0.0808;
+  const gl = fns.yieldLadder(gree, 0.0808);
+  assert.ok(Math.abs(gl.p1 - 37.5) < 0.02);
+  assert.ok(Math.abs(gl.p2 - 35.29) < 0.02);
+  const haier = fns.yieldLadder(19.69 * 0.0453, 0.0453);
+  assert.ok(Math.abs(haier.r1 - 0.045) < 1e-9);
+  assert.ok(Math.abs(haier.r2 - 0.05) < 1e-9);
+  assert.equal(fns.yieldLadder(0, 0.05), null);
+  assert.equal(fns.yieldLadder(1, 0), null);
+});
+
+test('日振幅是每天高低差的平均，不是 20 日最高减最低', () => {
+  const bars = Array.from({ length: 20 }, (_, i) => ['d' + i, 10.19, 10, 10]);
+  assert.ok(Math.abs(fns.dayAmp(bars) - 0.019) < 1e-9);
+  assert.equal(fns.dayAmp(bars.slice(0, 9)), null);
+  const wide = [...bars];
+  wide[0] = ['d0', 12, 8, 10];
+  assert.ok(fns.dayAmp(wide) < 0.05);
+  assert.ok(fns.dayAmp(wide) > 0.019);
+});
+
+test('网格只在重点关注到买入价或困境观察到博弈线时出现', () => {
+  assert.equal(fns.gridOn({ cl: { c: 'g' }, q: { price: 10 }, b1: 10.5 }), true);
+  assert.equal(fns.gridOn({ cl: { c: 'g' }, q: { price: 11 }, b1: 10.5 }), false);
+  assert.equal(fns.gridOn({ cl: { c: 'y' }, q: { price: 9 }, b1: 10 }), false);
+  assert.equal(fns.gridOn({ cl: { c: 'k' }, q: { price: 7.9 }, gamb: 8, b1: 9 }), true);
+  assert.equal(fns.gridOn({ cl: { c: 'k' }, q: { price: 8.8 }, gamb: 7.98, b1: 8.2 }), false);
+  assert.equal(fns.gridOn({ cl: { c: 'r' }, q: { price: 5 }, b1: 8, gamb: 7 }), false);
+  assert.equal(fns.gridOn({ cl: { c: 'd' }, q: { price: 5 }, b1: 8 }), false);
 });
