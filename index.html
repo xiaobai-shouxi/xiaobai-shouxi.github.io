@@ -899,9 +899,19 @@
     .ef-side { position: static; max-height: none; grid-auto-flow: column; grid-auto-columns: 262px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 8px; }
     .ef-gh { display: none; }
   }
+  .ef-back { display: none; align-items: center; gap: 4px; margin: 0 0 10px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
   @media (max-width: 640px) {
-    .ef-side { grid-auto-columns: 250px; }
-    .ef-card.active .x { opacity: 1; }
+    /* 手机先看期货对比和基金列表,明细进子页 */
+    .ef-nq { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 10px 14px; }
+    .ef-nq > div:first-child { grid-column: 1 / -1; padding-bottom: 8px; border-bottom: 1px solid var(--border-soft); }
+    .ef-nq .sep { display: none; }
+    .ef-side { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: minmax(0, 1fr); overflow: visible; max-height: none; padding: 0; }
+    .ef-gh { display: flex; }
+    .ef-layout:not(.ef-open) .ef-main { display: none; }
+    .ef-layout.ef-open .ef-side { display: none; }
+    #efBody:has(.ef-open) > .ef-nq, #efBody:has(.ef-open) > .ef-bar { display: none; }
+    .ef-layout.ef-open .ef-back { display: inline-flex; }
+    .ef-card .x, .ef-card.active .x { opacity: .72; }
     .ef-trio { gap: 6px; }
     .ef-trio > div { padding: 9px 10px; }
     .ef-trio { grid-template-columns: 1fr 1fr; }
@@ -4665,7 +4675,23 @@ function buildEtf() {
   el.addEventListener('click', e => {
     const card = e.target.closest('[data-efc]');
     if (e.target.closest('[data-efx]')) return etfRemove(e.target.closest('[data-efx]').dataset.efx);
-    if (card) { E.cur = card.dataset.efc; eSave(); renderEtf(); return; }
+    if (e.target.closest('[data-efback]')) {
+      if (history.state?.efDetail) history.back();
+      else { efPhoneDetail = false; renderEtf(); }
+      return;
+    }
+    if (card) {
+      E.cur = card.dataset.efc; eSave();
+      if (isPhone()) {
+        efPhoneDetail = true;
+        const st = { efDetail: E.cur };
+        if (history.state?.efDetail) history.replaceState(st, '', '#/etf');
+        else history.pushState(st, '', '#/etf');
+        scrollTo({ top: 0, behavior: 'instant' });
+      }
+      renderEtf();
+      return;
+    }
     if (e.target.closest('[data-efadd]')) return etfAdd();
     const so = e.target.closest('[data-efs]');
     if (so) {
@@ -4715,7 +4741,14 @@ const etfVerdict = p => p == null ? ['', '等待估值', '行情和净值加载�
   : p < .02 ? ['l1', '溢价合理', '场内价和净值差不多']
   : p < .05 ? ['l2', '溢价偏高', `多花 ${(p * 100).toFixed(2)}% 买,优先挑同指数溢价低的`]
   : ['l3', '溢价很高', `相当于多花 ${(p * 100).toFixed(2)}% 买,可以等溢价回落再买`];
-let efDet = true;
+let efDet = true, efPhoneDetail = false;
+addEventListener('popstate', () => {
+  const code = history.state?.efDetail || '';
+  if (!!code === efPhoneDetail && (!code || code === E.cur)) return;
+  efPhoneDetail = !!code;
+  if (code) E.cur = code;
+  if ($('#efBody')) { renderEtf(); if (isPhone()) scrollTo({ top: 0, behavior: 'instant' }); }
+});
 
 function renderEtf() {
   const body = $('#efBody'); if (!body) return;
@@ -4746,6 +4779,7 @@ function renderEtf() {
     const sv = x => E.sort === 'prem' ? x.p : x.amt;
     list = [...all].sort((a, b) => { const va = sv(a), vb = sv(b); return va == null ? 1 : vb == null ? -1 : (E.dir || -1) < 0 ? vb - va : va - vb; }).map(card).join('');
   }
+  const phoneDetail = isPhone() && efPhoneDetail;
   const side = `<aside class="ef-side">${list}<button class="ef-card add" data-efadd>+ 添加 ETF</button></aside>`;
   if (!o) { body.innerHTML = `<div class="ef-layout">${side}<div></div></div>`; return; }
 
@@ -4794,7 +4828,7 @@ function renderEtf() {
       <div class="hint">前十大持仓 ${o.W ? o.W.toFixed(2) + '%' : '—'} 来自最新季报,其余 ${o.rest ? o.rest.w.toFixed(2) + '%' : '0%'} 按同指数美股 ETF 走势代理;美股报价约延时 15 分钟。交易所 IOPV 由基金公司按自己的口径计算,和本站估算有差距很常见。</div>
     </details>`;
   body.innerHTML = `<div class="ef-nq" id="efNq">${nqInner()}</div><div class="ef-bar"><span class="hint" id="efSt">${esc(st)}</span><div class="chips ef-sort"><span>排序</span>${sortBar}</div></div>
-    <div class="ef-layout">${side}<div class="ef-main">${hero}${det}
+    <div class="ef-layout${phoneDetail ? ' ef-open' : ''}">${side}<div class="ef-main">${phoneDetail ? '<button type="button" class="ef-back" data-efback>‹ 返回列表</button>' : ''}${hero}${det}
     <div class="hint">溢价 = 场内价格 ÷ 交易所 IOPV − 1,拿不到 IOPV 时用本站估算净值 <span class="pm l1">&lt;2% 合理</span> <span class="pm l2">2–5% 偏高</span> <span class="pm l3">&gt;5% 很高</span></div></div></div>`;
 }
 
